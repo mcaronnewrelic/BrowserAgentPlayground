@@ -161,6 +161,10 @@
   .js-code { white-space: nowrap; }
 
   /* ---------- Header + scorecard (sticky together) ---------- */
+  .topbar { background: var(--black); color: var(--sand); font-size: 15px; }
+  .topbar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 10px; padding-bottom: 10px; }
+  .topbar a { color: var(--green); text-decoration: none; font-weight: 600; }
+  .topbar a:hover { text-decoration: underline; }
   .sticky { position: sticky; top: 0; z-index: 20; }
   header.site { background: var(--black); color: var(--white); border-bottom: 1px solid rgba(253,252,240,.08); }
   header.site .wrap { display: flex; align-items: center; justify-content: space-between; height: 76px; gap: 24px; }
@@ -338,6 +342,7 @@
   }
   @media (max-width: 560px) {
     .wrap { padding: 0 14px; }
+    .topbar { display: none; }
     /* Phones: logo + badge on the first row, page switcher full width on the second. */
     header.site .wrap { height: auto; flex-wrap: wrap; row-gap: 10px; padding-top: 12px; padding-bottom: 10px; }
     .brand-row { display: contents; }
@@ -362,6 +367,13 @@
 </style>
 </head>
 <body>
+
+<div class="topbar">
+  <div class="wrap">
+    <span>Core Web Vitals are captured automatically by the Pro, Pro+SPA, and Lite browser agent.</span>
+    <a href="https://docs.newrelic.com/docs/browser/new-relic-browser/page-load-timing-resources/pageviewtiming-async-or-dynamic-page-details/" target="_blank" rel="noopener">Read the docs</a>
+  </div>
+</div>
 
 <div class="sticky">
 <header class="site">
@@ -392,6 +404,7 @@
         <a href="vitals.html" aria-current="page">Vitals</a>
         <a href="interactions.html">Interactions</a>
         <a href="actions.html">Actions</a>
+        <a href="replay.html">Replay</a>
       </nav>
     </div>
     <span id="agentBadge" class="agent-badge" role="status" aria-live="polite"><span class="dot"></span><span id="agentText">Checking for browser agent…</span></span>
@@ -636,6 +649,7 @@ recalculateTotals()</pre>
       safe(function () { nr.setCustomAttribute('demoUser', state.name || 'anonymous'); });
       safe(function () { nr.setCustomAttribute('lcpMode', M.lcp); });
       safe(function () { nr.setCustomAttribute('clsMode', M.cls); });
+      if (typeof nr.setUserId === 'function') safe(function () { nr.setUserId(state.name || null); });
     }
     Array.prototype.forEach.call(document.querySelectorAll('.js-code'), function (el) { el.textContent = state.code; });
     $('nrqlMine').textContent = L.buildMineNrql(state.code);

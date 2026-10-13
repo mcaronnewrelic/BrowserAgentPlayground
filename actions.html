@@ -4,7 +4,7 @@
 <!-- ===================================================================
      NEW RELIC BROWSER SNIPPET
      Same snippet as index.html. PageAction and recordCustomEvent are
-     plain API calls -- nothing here turns them on. BrowserInteraction
+     plain API calls, nothing here turns them on. BrowserInteraction
      needs no snippet change either; it just needs a route (URL) change
      followed by a DOM update after a click, which this page proves out.
      =================================================================== -->
@@ -356,6 +356,7 @@
         <a href="vitals.html">Vitals</a>
         <a href="interactions.html">Interactions</a>
         <a href="actions.html" aria-current="page">Actions</a>
+        <a href="replay.html">Replay</a>
       </nav>
     </div>
     <span id="agentBadge" class="agent-badge" role="status" aria-live="polite"><span class="dot"></span><span id="agentText">Checking for browser agent…</span></span>
@@ -369,7 +370,7 @@
       <div>
         <div class="eyebrow">New Relic browser events</div>
         <h1 class="display" style="margin-top:18px">Something<br>happened.</h1>
-        <p class="lede">Three ways to tell New Relic. One you call explicitly and it always lands as <code>PageAction</code>. One you call explicitly and you pick the name. One fires on its own — but not for the reason most people assume.</p>
+        <p class="lede">Three ways to tell New Relic. One you call explicitly and it always lands as <code>PageAction</code>. One you call explicitly and you pick the name. One fires on its own, but not for the reason most people assume.</p>
         <div class="ctas">
           <a class="btn" href="#step-1">Start comparing <span class="arrow" aria-hidden="true">→</span></a>
           <a class="btn secondary" href="#step-3">Jump to the query</a>
@@ -403,7 +404,7 @@ el.textContent = <span class="s">'done'</span> <span class="c">// 2. then DOM ch
       <div class="step-head">
         <div class="eyebrow"><span class="step-num">Step 01</span> / Identify yourself</div>
         <h2 class="display" style="margin-top:14px">Who are you?</h2>
-        <p class="muted">Everyone shares one New Relic account, so your clicks are tagged as <code>demoUser</code> and <code>demoCode</code> custom attributes, carried onto every <code>PageAction</code>, <code>DemoAction</code> and <code>BrowserInteraction</code> event you generate below.</p>
+        <p class="muted">Everyone shares one New Relic account, so your clicks are tagged as <code>demoUser</code> and <code>demoCode</code> custom attributes (your name is also set as your end-user ID via <code>setUserId()</code>), carried onto every <code>PageAction</code>, <code>DemoAction</code> and <code>BrowserInteraction</code> event you generate below.</p>
       </div>
       <div class="identity">
         <div class="field">
@@ -429,7 +430,7 @@ el.textContent = <span class="s">'done'</span> <span class="c">// 2. then DOM ch
       <div class="step-head">
         <div class="eyebrow"><span class="step-num">Step 02</span> / Trigger one</div>
         <h2 class="display" style="margin-top:14px">Pick your event</h2>
-        <p class="muted">Four buttons, four outcomes. The agent decides what actually gets saved, and this page has no way to read that verdict back — the activity feed on the right only shows what you did locally. Give it a minute or two, then check Step 03 for what New Relic actually recorded.</p>
+        <p class="muted">Four buttons, four outcomes. The agent decides what actually gets saved, and this page has no way to read that verdict back. The activity feed on the right only shows what you did locally. Give it a minute or two, then check Step 03 for what New Relic actually recorded.</p>
       </div>
 
       <div class="playground">
@@ -438,15 +439,15 @@ el.textContent = <span class="s">'done'</span> <span class="c">// 2. then DOM ch
           <article class="card wide" aria-labelledby="howTitle">
             <div class="tag">How each one fires</div>
             <h3 id="howTitle">Explicit, explicit, automatic-but-not-how-you'd-guess</h3>
-            <p><b>addPageAction(name, attrs)</b> — fully manual, works for anything. Always lands as the fixed event type <code>PageAction</code>. Needs agent v593+ (effectively always available). Free attributes you didn't ask for: <code>actionName</code>, <code>timeSinceLoad</code>, <code>referrerUrl</code>, <code>browserWidth</code>, <code>browserHeight</code>. Has its own on/off switch, <code>init.page_action.enabled</code> (on by default).</p>
-            <p><b>recordCustomEvent(eventType, attrs)</b> — also fully manual, but you name the event type instead of always getting <code>PageAction</code>. Needs agent v1.277.0+ — genuinely newer. No bonus attributes, just what you send. Not gated by <code>page_action.enabled</code>. New Relic's own guidance: keep it to roughly 5 event types per account, not one per action.</p>
-            <p><b>BrowserInteraction</b> — the only one of the three that fires on its own. It's easy to assume an AJAX call is what triggers it. It isn't. The agent requires a click, <i>then a URL (route) change, then a DOM update after that change</i> — in that order. An AJAX call with no route change never becomes its own <code>BrowserInteraction</code>, no matter how many times you click. The two buttons below prove both halves of that.</p>
+            <p><b>addPageAction(name, attrs)</b>: fully manual, works for anything. Always lands as the fixed event type <code>PageAction</code>. Needs agent v593+ (effectively always available). Free attributes you didn't ask for: <code>actionName</code>, <code>timeSinceLoad</code>, <code>referrerUrl</code>, <code>browserWidth</code>, <code>browserHeight</code>. Has its own on/off switch, <code>init.page_action.enabled</code> (on by default).</p>
+            <p><b>recordCustomEvent(eventType, attrs)</b>: also fully manual, but you name the event type instead of always getting <code>PageAction</code>. Needs agent v1.277.0+, genuinely newer. No bonus attributes, just what you send. Not gated by <code>page_action.enabled</code>. New Relic's own guidance: keep it to roughly 5 event types per account, not one per action.</p>
+            <p><b>BrowserInteraction</b>: the only one of the three that fires on its own. It's easy to assume an AJAX call is what triggers it. It isn't. The agent requires a click, <i>then a URL (route) change, then a DOM update after that change, in that order</i>. An AJAX call with no route change never becomes its own <code>BrowserInteraction</code>, no matter how many times you click. The two buttons below prove both halves of that.</p>
           </article>
 
           <article class="card" aria-labelledby="paTitle">
             <div class="tag">1 · PageAction</div>
             <h3 id="paTitle">addPageAction()</h3>
-            <p>Purely client-side. No request, no route change — just a button that matters to you.</p>
+            <p>Purely client-side. No request, no route change: just a button that matters to you.</p>
             <button id="pageActionBtn" class="btn" type="button">Add to cart</button>
             <p id="pageActionStatus">Nothing sent yet.</p>
           </article>
@@ -462,7 +463,7 @@ el.textContent = <span class="s">'done'</span> <span class="c">// 2. then DOM ch
           <article class="card" aria-labelledby="ajaxOnlyTitle">
             <div class="tag">3 · BrowserInteraction, half the recipe</div>
             <h3 id="ajaxOnlyTitle">AJAX only, no route change</h3>
-            <p>Fetches <code>data/products.json</code> and shows the result. No matter how many times you click this, it will not become its own <code>BrowserInteraction</code> — watch Step 03.</p>
+            <p>Fetches <code>data/products.json</code> and shows the result. No matter how many times you click this, it will not become its own <code>BrowserInteraction</code>. Watch Step 03.</p>
             <button id="ajaxOnlyBtn" class="btn secondary" type="button">Load catalog</button>
             <p id="ajaxOnlyStatus">Nothing sent yet.</p>
           </article>
@@ -510,7 +511,7 @@ el.textContent = <span class="s">'done'</span> <span class="c">// 2. then DOM ch
         <div class="find-card full">
           <h3>All three side by side</h3>
           <ol>
-            <li>Open the query builder in New Relic and run this. If a route didn't change, no <code>BrowserInteraction</code> row shows up here at all — that's expected, not a bug.</li>
+            <li>Open the query builder in New Relic and run this. If a route didn't change, no <code>BrowserInteraction</code> row shows up here at all. That's expected, not a bug.</li>
           </ol>
           <pre id="nrqlCompare"></pre>
           <div class="actions">
@@ -520,7 +521,7 @@ el.textContent = <span class="s">'done'</span> <span class="c">// 2. then DOM ch
         </div>
         <div class="find-card">
           <h3>Just your PageAction events</h3>
-          <p><code>actionName</code>, <code>timeSinceLoad</code> and <code>referrerUrl</code> came free — you never set them.</p>
+          <p><code>actionName</code>, <code>timeSinceLoad</code> and <code>referrerUrl</code> came free; you never set them.</p>
           <pre id="nrqlPageAction"></pre>
           <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlPageAction" type="button">Copy NRQL</button></div>
         </div>
@@ -540,14 +541,14 @@ el.textContent = <span class="s">'done'</span> <span class="c">// 2. then DOM ch
           <h3>See it in the UI</h3>
           <ol>
             <li>Go to <b>Browser</b>, open the demo app, then <b>Browser interactions</b> or <b>Page views</b> to see <code>BrowserInteraction</code> rows for real route changes across the whole app.</li>
-            <li>There's no dedicated UI page for <code>PageAction</code> or custom events — the query builder and dashboards are how you see them.</li>
+            <li>There's no dedicated UI page for <code>PageAction</code> or custom events. The query builder and dashboards are how you see them.</li>
             <li>Filter any of the above by <code id="uiFilter">demoCode = NR-XXXX</code> to see only your events.</li>
           </ol>
         </div>
       </div>
       <div class="tips">
-        <div class="tip"><b>Not seeing a BrowserInteraction from the AJAX-only button?</b>That's correct, not broken. It needs a route change first — the AJAX-only button deliberately never gives it one.</div>
-        <div class="tip"><b>Not seeing anything at all?</b>Make sure the agent badge up top says "detected." Then give it a minute or two — events harvest roughly every 30 seconds.</div>
+        <div class="tip"><b>Not seeing a BrowserInteraction from the AJAX-only button?</b>That's correct, not broken. It needs a route change first. The AJAX-only button deliberately never gives it one.</div>
+        <div class="tip"><b>Not seeing anything at all?</b>Make sure the agent badge up top says "detected." Then give it a minute or two. Events harvest roughly every 30 seconds.</div>
         <div class="tip"><b>Learn more</b><a href="https://docs.newrelic.com/docs/browser/new-relic-browser/browser-apis/addpageaction/" target="_blank" rel="noopener">addPageAction()</a> · <a href="https://docs.newrelic.com/docs/browser/new-relic-browser/browser-apis/recordCustomEvent/" target="_blank" rel="noopener">recordCustomEvent()</a> · <a href="https://docs.newrelic.com/docs/browser/new-relic-browser/browser-apis/interaction/" target="_blank" rel="noopener">interaction()</a></div>
       </div>
     </div>
@@ -582,7 +583,7 @@ el.textContent = <span class="s">'done'</span> <span class="c">// 2. then DOM ch
   function sanitizeCode(code) { return String(code || '').toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 16); }
 
   // The event type name chosen for the recordCustomEvent() demo. Not a reserved name
-  // (PageAction, UserAction, BrowserPerformance) -- those are silently rejected by the agent.
+  // (PageAction, UserAction, BrowserPerformance). Those are silently rejected by the agent.
   var CUSTOM_EVENT_TYPE = 'DemoAction';
 
   function buildCompareNrql(code) {
@@ -653,6 +654,7 @@ el.textContent = <span class="s">'done'</span> <span class="c">// 2. then DOM ch
     if (nr) {
       safe(function () { nr.setCustomAttribute('demoUser', userName()); });
       safe(function () { nr.setCustomAttribute('demoCode', state.code); });
+      if (typeof nr.setUserId === 'function') safe(function () { nr.setUserId(state.name || null); });
     }
     Array.prototype.forEach.call(document.querySelectorAll('.js-code'), function (el) { el.textContent = state.code; });
     Array.prototype.forEach.call(document.querySelectorAll('.js-event-type'), function (el) { el.textContent = L.CUSTOM_EVENT_TYPE; });
@@ -699,12 +701,12 @@ el.textContent = <span class="s">'done'</span> <span class="c">// 2. then DOM ch
     state.stats.pageAction++;
     var nr = agent();
     var attrs = { demoUser: userName(), demoCode: state.code, item: 'demo-widget' };
-    $('pageActionStatus').textContent = nr ? 'addPageAction() called just now.' : 'No agent detected -- nothing was sent.';
+    $('pageActionStatus').textContent = nr ? 'addPageAction() called just now.' : 'No agent detected. Nothing was sent.';
     if (nr && typeof nr.addPageAction === 'function') {
       safe(function () { nr.addPageAction('Added to cart', attrs); });
     }
     record('PageAction button', nr ? "addPageAction('Added to cart', " + JSON.stringify(attrs) + ')' : 'skipped (no agent)');
-    toast(nr ? 'PageAction sent' : 'No agent -- nothing sent');
+    toast(nr ? 'PageAction sent' : 'No agent, nothing sent');
   }
 
   // ---- 2. Custom event -------------------------------------------------------
@@ -712,12 +714,12 @@ el.textContent = <span class="s">'done'</span> <span class="c">// 2. then DOM ch
     state.stats.custom++;
     var nr = agent();
     var attrs = { demoUser: userName(), demoCode: state.code, item: 'demo-widget' };
-    $('customEventStatus').textContent = nr ? 'recordCustomEvent() called just now.' : 'No agent detected -- nothing was sent.';
+    $('customEventStatus').textContent = nr ? 'recordCustomEvent() called just now.' : 'No agent detected. Nothing was sent.';
     if (nr && typeof nr.recordCustomEvent === 'function') {
       safe(function () { nr.recordCustomEvent(L.CUSTOM_EVENT_TYPE, attrs); });
     }
     record('Custom event button', nr ? "recordCustomEvent('" + L.CUSTOM_EVENT_TYPE + "', " + JSON.stringify(attrs) + ')' : 'skipped (no agent)');
-    toast(nr ? L.CUSTOM_EVENT_TYPE + ' sent' : 'No agent -- nothing sent');
+    toast(nr ? L.CUSTOM_EVENT_TYPE + ' sent' : 'No agent, nothing sent');
   }
 
   // ---- 3. BrowserInteraction, half the recipe: AJAX only, no route change ------
@@ -730,9 +732,9 @@ el.textContent = <span class="s">'done'</span> <span class="c">// 2. then DOM ch
       .then(function (r) { return r.json(); })
       .then(function (data) {
         var count = (data && data.data && data.data.products) ? data.data.products.length : 0;
-        $('ajaxOnlyStatus').textContent = 'Loaded ' + count + ' products. Still no route change -- this will not show up as a BrowserInteraction.';
+        $('ajaxOnlyStatus').textContent = 'Loaded ' + count + ' products. Still no route change. This will not show up as a BrowserInteraction.';
         record('AJAX-only button', 'fetch(data/products.json) -> ' + count + ' products, URL unchanged');
-        toast('Loaded ' + count + ' products -- no route change');
+        toast('Loaded ' + count + ' products, no route change');
       })
       .catch(function (err) {
         $('ajaxOnlyStatus').textContent = 'Fetch failed: ' + err.message;
@@ -753,7 +755,7 @@ el.textContent = <span class="s">'done'</span> <span class="c">// 2. then DOM ch
     safe(function () { history.pushState(null, '', newUrl); });
     $('routeChangeStatus').textContent = 'Route changed to ' + newUrl.split('#')[1] + ' (step ' + routeChangeCount + '). This should show up as a BrowserInteraction with category "Route change".';
     record('Route-change button', 'history.pushState -> #' + newUrl.split('#')[1] + ', then DOM update');
-    toast('Route changed -- check Step 03 in a minute');
+    toast('Route changed, check Step 03 in a minute');
   }
 
   // ---- Copy ----------------------------------------------------------------

@@ -353,6 +353,7 @@
         <a href="vitals.html">Vitals</a>
         <a href="interactions.html">Interactions</a>
         <a href="actions.html">Actions</a>
+        <a href="replay.html">Replay</a>
       </nav>
     </div>
     <span id="agentBadge" class="agent-badge" role="status" aria-live="polite"><span class="dot"></span><span id="agentText">Checking for browser agent…</span></span>
@@ -395,7 +396,7 @@
       <div class="step-head">
         <div class="eyebrow"><span class="step-num">Step 01</span> / Identify yourself</div>
         <h2 class="display" style="margin-top:14px">Who are you?</h2>
-        <p class="muted">Your name and code are attached to your browser data as <code>demoUser</code> and <code>demoCode</code> and sent to the backend, which tags its transactions too. The inspector also keeps the trace ID of every request you make, so Step 03 can look up exactly your traces.</p>
+        <p class="muted">Your name and code are attached to your browser data as <code>demoUser</code> and <code>demoCode</code> (your name also becomes your end-user ID via <code>setUserId()</code>), and sent to the backend, which tags its transactions too. The inspector also keeps the trace ID of every request you make, so Step 03 can look up exactly your traces.</p>
       </div>
       <div class="identity">
         <div class="field">
@@ -758,6 +759,7 @@ newrelic.<span class="k">log</span>(<span class="s">'GET /api/products 200'</spa
     if (nr) {
       safe(function () { nr.setCustomAttribute('demoUser', userName()); });
       safe(function () { nr.setCustomAttribute('demoCode', state.code); });
+      if (typeof nr.setUserId === 'function') safe(function () { nr.setUserId(state.name || null); });
     }
     Array.prototype.forEach.call(document.querySelectorAll('.js-code'), function (el) { el.textContent = state.code; });
     $('nrqlAjax').textContent = L.buildAjaxNrql(state.code);

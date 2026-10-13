@@ -356,6 +356,7 @@
         <a href="vitals.html">Vitals</a>
         <a href="interactions.html">Interactions</a>
         <a href="actions.html">Actions</a>
+        <a href="replay.html">Replay</a>
       </nav>
     </div>
     <span id="agentBadge" class="agent-badge" role="status" aria-live="polite"><span class="dot"></span><span id="agentText">Checking for browser agent…</span></span>
@@ -404,7 +405,7 @@ newrelic.<span class="k">setErrorHandler</span>(err =&gt;
       <div class="step-head">
         <div class="eyebrow"><span class="step-num">Step 01</span> / Identify yourself</div>
         <h2 class="display" style="margin-top:14px">Who are you?</h2>
-        <p class="muted">Everyone shares one New Relic account, so we tag your errors. Your name and code are attached as <code>demoUser</code> and <code>demoCode</code>, and the code is added to the start of each error message. Pick an app version too: <code>addRelease()</code> stamps it on every error so you can compare releases.</p>
+        <p class="muted">Everyone shares one New Relic account, so we tag your errors. Your name and code are attached as <code>demoUser</code> and <code>demoCode</code>, and the code is added to the start of each error message. Your name is also set as your end-user ID via <code>newrelic.setUserId()</code>, which is what powers the <b>Users affected</b> count in Errors Inbox. Pick an app version too: <code>addRelease()</code> stamps it on every error so you can compare releases.</p>
       </div>
       <div class="identity">
         <div class="field">
@@ -730,6 +731,7 @@ newrelic.<span class="k">setErrorHandler</span>(err =&gt;
         safe(function () { nr.setCustomAttribute('demoCode', state.code); });
       }
       if (typeof nr.addRelease === 'function') safe(function () { nr.addRelease(RELEASE_NAME, state.release); });
+      if (typeof nr.setUserId === 'function') safe(function () { nr.setUserId(state.name || null); });
     }
     Array.prototype.forEach.call(document.querySelectorAll('.js-code'), function (el) { el.textContent = state.code; });
     $('nrqlErrors').textContent = L.buildErrorsNrql(state.code);

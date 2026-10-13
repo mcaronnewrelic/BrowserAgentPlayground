@@ -378,6 +378,7 @@
         <a href="vitals.html">Vitals</a>
         <a href="interactions.html">Interactions</a>
         <a href="actions.html">Actions</a>
+        <a href="replay.html">Replay</a>
       </nav>
     </div>
     <span id="agentBadge" class="agent-badge" role="status" aria-live="polite"><span class="dot"></span><span id="agentText">Checking for browser agent…</span></span>
@@ -427,7 +428,7 @@ newrelic.<span class="k">wrapLogger</span>(myLogger, <span class="s">'warn'</spa
         <div>
           <div class="eyebrow"><span class="step-num">Step 01</span> / Identify yourself</div>
           <h2 class="display" style="margin-top:14px">Who are you?</h2>
-          <p class="muted">Everyone shares one New Relic account, so we tag your logs. Your name and session code are attached to every log as <code>demoUser</code> and <code>demoCode</code>, and the code is added to the start of each message.</p>
+          <p class="muted">Everyone shares one New Relic account, so we tag your logs. Your name and session code are attached to every log as <code>demoUser</code> and <code>demoCode</code>, your name also becomes your end-user ID via <code>newrelic.setUserId()</code>, and the code is added to the start of each message.</p>
         </div>
       </div>
       <div class="identity">
@@ -722,6 +723,7 @@ newrelic.<span class="k">wrapLogger</span>(appLogger, <span class="s">'error'</s
       safe(function () { nr.setCustomAttribute('demoUser', userName()); });
       safe(function () { nr.setCustomAttribute('demoCode', state.code); });
     }
+    if (nr && typeof nr.setUserId === 'function') safe(function () { nr.setUserId(state.name || null); });
     Array.prototype.forEach.call(document.querySelectorAll('.js-code'), function (el) { el.textContent = state.code; });
     $('nrql').textContent = L.buildNrql(state.code);
     $('logsSearch').textContent = L.buildLogsSearch(state.code);

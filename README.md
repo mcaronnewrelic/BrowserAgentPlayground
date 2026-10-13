@@ -10,7 +10,9 @@ Self-serve demo pages for the New Relic browser agent (Pro+SPA). Each visitor ge
 
 - [Interactions demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/interactions.html) (`interactions.html`): triggers the browser agent's rage click, dead click and error click detection on purpose, then builds a query from your own `UserAction` events, tagged with `demoCode`.
 
-- [Actions demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/actions.html) (`actions.html`): compares `newrelic.addPageAction()`, `newrelic.recordCustomEvent()` and the automatic `BrowserInteraction` event. Proves that an AJAX call alone never creates a `BrowserInteraction` — it needs a route (URL) change followed by a DOM update — by triggering both the half-recipe and the full recipe side by side.
+- [Actions demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/actions.html) (`actions.html`): compares `newrelic.addPageAction()`, `newrelic.recordCustomEvent()` and the automatic `BrowserInteraction` event. Proves that an AJAX call alone never creates a `BrowserInteraction`, which needs a route (URL) change followed by a DOM update, by triggering both the half-recipe and the full recipe side by side.
+
+- [Replay demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/replay.html) (`replay.html`): shows that session replay masks everything by default, then uses `newrelic.recordReplay()` to force a replay to run and `newrelic.pauseReplay()` to stop one, alongside `nr-unmask`, `nr-block` and `nr-ignore` to demonstrate the privacy controls live.
 
 ## Change tracking
 
