@@ -14,6 +14,8 @@ Self-serve demo pages for the New Relic browser agent (Pro+SPA). Each visitor ge
 
 - [Replay demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/replay.html) (`replay.html`): shows that session replay masks everything by default, then uses `newrelic.recordReplay()` to force a replay to run and `newrelic.pauseReplay()` to stop one, alongside `nr-unmask`, `nr-block` and `nr-ignore` to demonstrate the privacy controls live.
 
+- [SPA API demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/spa.html) (`spa.html`): takes manual control of SPA tracking with the `newrelic.interaction()` handle (`.save()`, `.ignore()`, `.setName()`, `.actionText()`, `.setAttribute()`, `.end()`) plus the separate top-level calls `setCurrentRouteName()`, `setPageViewName()` and `finished()`, forcing, suppressing and renaming `BrowserInteraction` events instead of relying on the automatic route-change heuristic from `actions.html`.
+
 ## Change tracking
 
 `.github/workflows/change-tracking.yml` sends New Relic [change tracking events](https://docs.newrelic.com/docs/change-tracking/overview/) to the browser app, so markers show up on its charts:
