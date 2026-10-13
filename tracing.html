@@ -351,6 +351,8 @@
         <a href="errors.html">Errors</a>
         <a href="tracing.html" aria-current="page">Tracing</a>
         <a href="vitals.html">Vitals</a>
+        <a href="interactions.html">Interactions</a>
+        <a href="actions.html">Actions</a>
       </nav>
     </div>
     <span id="agentBadge" class="agent-badge" role="status" aria-live="polite"><span class="dot"></span><span id="agentText">Checking for browser agent…</span></span>
@@ -844,12 +846,16 @@ newrelic.<span class="k">log</span>(<span class="s">'GET /api/products 200'</spa
     renderSpanQuery();
   }
   // Writes one browser log per request, on the request's trace (see the "Logs in the trace" card).
+  // Error-level requests also get a matching noticeError() call so the trace shows up on the Errors page too.
   function logRequest(opts, url, status, errMsg, trace) {
     var level = L.logLevelFor(status, !!errMsg);
     var message = '[' + state.code + '] ' + opts.method + ' ' + shortUrl(url) + ' ' + (status || 'failed') + (errMsg ? ' (' + errMsg + ')' : '');
     var attrs = L.buildLogAttributes({ trace: trace, url: shortUrl(url), method: opts.method, status: status, via: opts.via });
     var nr = agent(), sent = false;
     if (nr && typeof nr.log === 'function') { safe(function () { nr.log(message, { level: level, customAttributes: attrs }); }); sent = true; }
+    if (nr && level === 'error' && typeof nr.noticeError === 'function') {
+      safe(function () { nr.noticeError(new Error(message), attrs); });
+    }
     return { level: level, message: message, attrs: attrs, sent: sent, trace: trace };
   }
 

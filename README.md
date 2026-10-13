@@ -8,6 +8,10 @@ Self-serve demo pages for the New Relic browser agent (Pro+SPA). Each visitor ge
 
 - [Core Web Vitals demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/vitals.html) (`vitals.html`): makes LCP (a slow hero image), CLS (late banners) and INP (blocking click handlers) good or poor on purpose, with a live scorecard. Results land in `PageViewTiming`, tagged with `demoCode`, `lcpMode` and `clsMode`.
 
+- [Interactions demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/interactions.html) (`interactions.html`): triggers the browser agent's rage click, dead click and error click detection on purpose, then builds a query from your own `UserAction` events, tagged with `demoCode`.
+
+- [Actions demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/actions.html) (`actions.html`): compares `newrelic.addPageAction()`, `newrelic.recordCustomEvent()` and the automatic `BrowserInteraction` event. Proves that an AJAX call alone never creates a `BrowserInteraction` — it needs a route (URL) change followed by a DOM update — by triggering both the half-recipe and the full recipe side by side.
+
 ## Change tracking
 
 `.github/workflows/change-tracking.yml` sends New Relic [change tracking events](https://docs.newrelic.com/docs/change-tracking/overview/) to the browser app, so markers show up on its charts:
