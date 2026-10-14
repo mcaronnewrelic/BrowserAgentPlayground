@@ -2,7 +2,7 @@
 // New Relic Node.js agent config. Secrets come from environment variables only;
 // never commit a license key to this repo (it is published by GitHub Pages).
 exports.config = {
-  app_name: [process.env.NEW_RELIC_APP_NAME || 'BrowserLogsDemo API'],
+  app_name: [process.env.NEW_RELIC_APP_NAME || 'Browser Agent Playground API'],
   license_key: process.env.NEW_RELIC_LICENSE_KEY,
   distributed_tracing: { enabled: true },
   // Logs in context: newrelic.recordLogEvent() forwards each request log with
