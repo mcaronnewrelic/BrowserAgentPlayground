@@ -4,7 +4,11 @@
 exports.config = {
   app_name: [process.env.NEW_RELIC_APP_NAME || 'Browser Agent Playground API'],
   license_key: process.env.NEW_RELIC_LICENSE_KEY,
-  distributed_tracing: { enabled: true },
+  // Sample every trace the browser starts; the demo wants the full span tree each time.
+  distributed_tracing: {
+    enabled: true,
+    sampler: { remote_parent_sampled: 'always_on', remote_parent_not_sampled: 'always_on' }
+  },
   // Logs in context: newrelic.recordLogEvent() forwards each request log with
   // trace.id / span.id, so it shows up on the trace next to the browser's logs.
   application_logging: { enabled: true, forwarding: { enabled: true } },

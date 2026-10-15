@@ -9,13 +9,13 @@ Self-serve demo pages for the New Relic browser agent (Pro+SPA). Each visitor ge
 
 - [Core Web Vitals demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/vitals.html) (`vitals.html`): makes LCP (a slow hero image), CLS (late banners) and INP (blocking click handlers) good or poor on purpose, with a live scorecard. Results land in `PageViewTiming`, tagged with `demoCode`, `lcpMode` and `clsMode`.
 
-- [Interactions demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/interactions.html) (`interactions.html`): triggers the browser agent's rage click, dead click and error click detection on purpose, then builds a query from your own `UserAction` events, tagged with `demoCode`.
+- [Frustration demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/frustration.html) (`frustration.html`): triggers the browser agent's rage click, dead click and error click detection on purpose, then builds a query from your own `UserAction` events, tagged with `demoCode`.
 
-- [Actions demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/actions.html) (`actions.html`): compares `newrelic.addPageAction()`, `newrelic.recordCustomEvent()` and the automatic `BrowserInteraction` event. Proves that an AJAX call alone never creates a `BrowserInteraction`, which needs a route (URL) change followed by a DOM update, by triggering both the half-recipe and the full recipe side by side.
+- [Events demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/events.html) (`events.html`): compares `newrelic.addPageAction()`, `newrelic.recordCustomEvent()` and the automatic `BrowserInteraction` event. Proves that an AJAX call alone never creates a `BrowserInteraction`, which needs a route (URL) change followed by a DOM update, by triggering both the half-recipe and the full recipe side by side.
 
 - [Replay demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/replay.html) (`replay.html`): shows that session replay masks everything by default, then uses `newrelic.recordReplay()` to force a replay to run and `newrelic.pauseReplay()` to stop one, alongside `nr-unmask`, `nr-block` and `nr-ignore` to demonstrate the privacy controls live.
 
-- [SPA API demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/spa.html) (`spa.html`): takes manual control of SPA tracking with the `newrelic.interaction()` handle (`.save()`, `.ignore()`, `.setName()`, `.actionText()`, `.setAttribute()`, `.end()`) plus the separate top-level calls `setCurrentRouteName()`, `setPageViewName()` and `finished()`, forcing, suppressing and renaming `BrowserInteraction` events instead of relying on the automatic route-change heuristic from `actions.html`.
+- [SPA API demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/spa.html) (`spa.html`): takes manual control of SPA tracking with the `newrelic.interaction()` handle (`.save()`, `.ignore()`, `.setName()`, `.actionText()`, `.setAttribute()`, `.end()`) plus the separate top-level calls `setCurrentRouteName()`, `setPageViewName()` and `finished()`, forcing, suppressing and renaming `BrowserInteraction` events instead of relying on the automatic route-change heuristic from `events.html`.
 
 ## Change tracking
 
@@ -33,4 +33,23 @@ SELECT timestamp, category, type, shortDescription, user FROM ChangeTrackingEven
 
 GitHub pauses scheduled workflows after 60 days without commits to the repository; re-enable it from the Actions tab if that happens.
 
-All pages share the same browser snippet. If you change Application settings that live in the snippet (for example, CORS allowed origins for tracing), re-copy the snippet into every page.
+All pages share one browser snippet, split into three files so you edit it once:
+
+- `nr-config.js`: your account (`loader_config` and `info`). **This is the only file to edit to report to a different account.**
+- `nr-init.js`: the demo's agent settings (session replay, distributed tracing, privacy).
+- `nr-agent.js`: the agent loader. Replace it when you copy a newer snippet.
+
+If you change Application settings that live in the snippet (for example, CORS allowed origins for tracing), re-copy the two lines into `nr-config.js`.
+
+### Your name and session code
+
+The home page asks for a name (required, it becomes the end-user ID via `setUserId()`) and a session code. `demo-identity.js` keeps both in `sessionStorage`, so every page in the same tab reuses them. A page opened without them sends you to the home page first and brings you back afterward. A new tab starts empty. Tests: `node --test backend/demo-identity.test.js`.
+
+### Run it in Docker (pages and API on one origin)
+
+```bash
+docker build -t browser-agent-playground .
+docker run -p 3000:3000 -e NEW_RELIC_LICENSE_KEY=your_ingest_key browser-agent-playground
+```
+
+Then open `http://localhost:3000`. The container serves the pages and the tracing API together, so there is no CORS to set up. The APM agent injects the browser agent, so `nr-config.js` and `nr-agent.js` are not used, and the data goes to the account that owns the license key. The container will not start without `NEW_RELIC_LICENSE_KEY`.

@@ -5,6 +5,7 @@
 const nr = process.env.NEW_RELIC_LICENSE_KEY ? require('newrelic') : null;
 
 const http = require('node:http');
+const { createPages } = require('./pages.js');
 
 const DEFAULT_ORIGINS = ['https://mcaronnewrelic.github.io', 'http://localhost:8080', 'http://127.0.0.1:8080'];
 const ALLOW_HEADERS = 'newrelic, traceparent, tracestate, content-type';
@@ -35,6 +36,8 @@ function createServer(opts) {
     }
     return undefined;
   }
+
+  const pages = opts.siteRoot ? createPages({ root: opts.siteRoot, getBrowserHeader: () => apm('getBrowserTimingHeader') }) : null;
 
   function cors(req, res) {
     const origin = req.headers.origin;
@@ -123,6 +126,7 @@ function createServer(opts) {
     const withCode = (p) => p + (ctx.demoCode ? '?demoCode=' + encodeURIComponent(ctx.demoCode) : '');
 
     try {
+      if (pages && await pages.handle(req, res, path, route)) return;
       if (path === '/' || path === '/api/health') {
         route('api/health');
         return send(req, res, 200, { data: { ok: true, apm: Boolean(agent) } }, ctx);
@@ -184,10 +188,16 @@ function createServer(opts) {
 module.exports = { createServer };
 
 if (require.main === module) {
+  if (process.env.SITE_ROOT && !nr) {
+    // The pages carry no account of their own, so without a key there is nothing to report to.
+    console.error('NEW_RELIC_LICENSE_KEY is required when SITE_ROOT is set.');
+    process.exit(1);
+  }
   const origins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean) : DEFAULT_ORIGINS;
   const port = Number(process.env.PORT) || 3000;
-  createServer({ allowedOrigins: origins }).listen(port, () => {
+  createServer({ allowedOrigins: origins, siteRoot: process.env.SITE_ROOT }).listen(port, () => {
     console.log('Tracing demo backend on port ' + port + (nr ? ' with New Relic APM' : ' (no NEW_RELIC_LICENSE_KEY, APM off)'));
     console.log('Allowed origins: ' + origins.join(', '));
+    if (process.env.SITE_ROOT) console.log('Serving the demo pages from ' + process.env.SITE_ROOT);
   });
 }

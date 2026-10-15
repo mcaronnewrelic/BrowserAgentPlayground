@@ -31,6 +31,7 @@ The same line is printed to stdout as JSON for local runs. Responses also carry 
 | `NEW_RELIC_APP_NAME` | `BrowserLogsDemo API` | APM app name |
 | `ALLOWED_ORIGINS` | `https://mcaronnewrelic.github.io,http://localhost:8080,http://127.0.0.1:8080` | Comma-separated origins allowed to call the API |
 | `PORT` | `3000` | |
+| `SITE_ROOT` | none (set to `/app/site` in the Docker image) | Folder of demo pages to serve. When set, the server also injects the browser agent into each page and requires `NEW_RELIC_LICENSE_KEY`. |
 
 ## Run locally
 
@@ -45,7 +46,7 @@ Then open `https://mcaronnewrelic.github.io/BrowserLogsDemo/tracing.html?backend
 ## Deploy to Render (example)
 
 1. In Render, choose **New > Web Service** and connect this repo.
-2. Set **Root Directory** to `backend` and **Runtime** to Docker (or Node, with build command `npm install` and start command `npm start`).
+2. Set **Runtime** to Docker and leave **Root Directory** empty (the `Dockerfile` is at the repo root and also serves the pages). For an API-only service, use Node instead, with Root Directory `backend`, build command `npm install` and start command `npm start`.
 3. Add the environment variables `NEW_RELIC_LICENSE_KEY` and, optionally, `NEW_RELIC_APP_NAME`.
 4. Deploy, then open `https://<your-service>.onrender.com/api/health`. It should return `"apm": true`.
 

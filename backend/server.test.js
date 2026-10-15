@@ -2,6 +2,9 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const { createServer } = require('./server.js');
 
 const ORIGIN = 'https://mcaronnewrelic.github.io';
@@ -214,5 +217,76 @@ test('without APM, logging still prints to stdout and nothing throws', async () 
 test('health reports whether APM is attached', async () => {
   await withServer({ nr: fakeNewRelic() }, async (base) => {
     assert.deepStrictEqual((await (await fetch(base + '/api/health')).json()).data, { ok: true, apm: true });
+  });
+});
+
+// ---- serving the demo pages ----
+
+const PAGE = '<head>\n<script src="nr-init.js"></script>\n<!-- NR:SNIPPET -->\n<script src="nr-config.js"></script>\n<script src="nr-agent.js"></script>\n<!-- /NR:SNIPPET -->\n</head><body>hi</body>';
+const AGENT_HEADER = "<script type='text/javascript'>window.NREUM||(NREUM={});NREUM.info = {\"applicationID\":\"42\"}; $& loader</script>";
+
+async function withSite(opts, fn) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'site-'));
+  fs.writeFileSync(path.join(root, 'index.html'), PAGE);
+  fs.writeFileSync(path.join(root, 'tracing.html'), PAGE);
+  fs.writeFileSync(path.join(root, 'nr-config.js'), '// account');
+  fs.writeFileSync(path.join(root, '.secret.html'), 'nope');
+  fs.mkdirSync(path.join(root, 'backend'));
+  fs.writeFileSync(path.join(root, 'backend', 'server.js'), 'nope');
+  try { await withServer(Object.assign({ siteRoot: root }, opts), fn); } finally { fs.rmSync(root, { recursive: true, force: true }); }
+}
+
+test('pages: the static snippet is replaced by the APM agent header, with named transaction', async () => {
+  const named = [];
+  const nr = Object.assign(fakeNewRelic(), {
+    setTransactionName: (n) => named.push(n),
+    getBrowserTimingHeader: () => AGENT_HEADER
+  });
+  await withSite({ nr }, async (base) => {
+    const res = await fetch(base + '/tracing.html');
+    const html = await res.text();
+    assert.strictEqual(res.headers.get('content-type'), 'text/html; charset=utf-8');
+    assert.strictEqual(res.headers.get('cache-control'), 'no-store');
+    assert.ok(html.includes(AGENT_HEADER), 'header inserted verbatim ($ patterns untouched)');
+    assert.ok(!html.includes('nr-config.js') && !html.includes('nr-agent.js'));
+    assert.ok(html.includes('nr-init.js'), 'demo settings stay');
+    assert.ok(html.includes('<meta name="demo-backend" content="same-origin">'));
+    assert.deepStrictEqual(named, ['pages/tracing.html']);
+  });
+});
+
+test('pages: "/" serves index.html while /api/health still answers', async () => {
+  await withSite({ nr: Object.assign(fakeNewRelic(), { getBrowserTimingHeader: () => AGENT_HEADER }) }, async (base) => {
+    assert.ok((await (await fetch(base + '/')).text()).includes('<body>hi</body>'));
+    assert.strictEqual((await (await fetch(base + '/api/health')).json()).data.ok, true);
+  });
+});
+
+test('pages: with no usable agent header the account snippet is dropped, never shipped', async () => {
+  const nr = Object.assign(fakeNewRelic(), { getBrowserTimingHeader: () => '<!-- NREUM: (4) -->' });
+  for (const opts of [{ nr }, { nr: null }]) {
+    await withSite(opts, async (base) => {
+      const html = await (await fetch(base + '/index.html')).text();
+      assert.ok(!html.includes('nr-config.js') && !html.includes('nr-agent.js'));
+      assert.ok(html.includes('<body>hi</body>'));
+    });
+  }
+});
+
+test('pages: assets are served, and hidden or backend files are not', async () => {
+  await withSite({ nr: null }, async (base) => {
+    const js = await fetch(base + '/nr-config.js');
+    assert.strictEqual(js.status, 200);
+    assert.strictEqual(js.headers.get('content-type'), 'text/javascript; charset=utf-8');
+    for (const p of ['/.secret.html', '/backend/server.js', '/%2e%2e/etc/passwd', '/..%2fserver.js', '/missing.html', '/%E0%A4%A']) {
+      assert.strictEqual((await fetch(base + p)).status, 404, p);
+    }
+  });
+});
+
+test('pages: without siteRoot the server stays API-only', async () => {
+  await withServer({ nr: null }, async (base) => {
+    assert.strictEqual((await (await fetch(base + '/')).json()).data.ok, true);
+    assert.strictEqual((await fetch(base + '/index.html')).status, 404);
   });
 });
