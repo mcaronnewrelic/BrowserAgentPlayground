@@ -22,7 +22,7 @@ Self-serve demo pages for the New Relic browser agent (Pro+SPA). Each visitor ge
 `.github/workflows/change-tracking.yml` sends New Relic [change tracking events](https://docs.newrelic.com/docs/change-tracking/overview/) to the browser app, so markers show up on its charts:
 
 - **Deployment** events every time GitHub Pages publishes `main` (version = short commit SHA, with the commit message and a link to the commit).
-- **One demo event a day at 9 AM Pacific**, rotating by weekday through Feature Flag, Business Event, Operational and Deployment, so every kind of marker appears. The rotation lives in `.github/scripts/daily-change-event.sh` (tests: `bash .github/scripts/daily-change-event.test.sh`).
+- **One demo event a day**, sent around 9 AM Pacific (GitHub may start it hours late), rotating by weekday through Feature Flag, Business Event, Operational and Deployment, so every kind of marker appears. The rotation lives in `.github/scripts/daily-change-event.sh` (tests: `bash .github/scripts/daily-change-event.test.sh`).
 - **Run workflow** on the Actions tab sends today's daily event immediately.
 
 It uses the repository secrets `NEW_RELIC_API_KEY` (a User key, `NRAK-...`) and `NEW_RELIC_DEPLOYMENT_ENTITY_GUID`. To see the events, open the browser app in New Relic and look for the markers on its charts or the **Change tracking** view, or run:

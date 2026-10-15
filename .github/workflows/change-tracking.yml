@@ -1,7 +1,7 @@
 # Sends New Relic change tracking events for the BrowserLogsDemo browser app.
 #
 #  1. deploy-marker: a Deployment event each time GitHub Pages finishes publishing main.
-#  2. daily-event:   one demo event at 9 AM Pacific, rotating categories by weekday
+#  2. daily-event:   one demo event a day, rotating categories by weekday
 #                    (logic and tests in .github/scripts/daily-change-event*.sh).
 #                    "Run workflow" on the Actions tab runs it on demand.
 #
@@ -18,9 +18,10 @@ on:
     workflows: ["pages-build-deployment"]
     types: [completed]
   schedule:
-    # GitHub cron is UTC only. 16:07 UTC = 9:07 AM PDT, 17:07 UTC = 9:07 AM PST.
-    # Both fire; the run that is not in the 9 o'clock hour in Los Angeles skips itself.
-    - cron: "7 16,17 * * *"
+    # GitHub cron is UTC only: 16:07 UTC is 9:07 AM PDT or 8:07 AM PST. GitHub often starts
+    # scheduled runs hours late, so the run never checks the time of day, only the date in
+    # Los Angeles. One cron entry means one event a day.
+    - cron: "7 16 * * *"
   workflow_dispatch: {}
 
 permissions: {}
@@ -95,17 +96,10 @@ jobs:
 
       - name: Pick today's event
         id: pick
-        env:
-          # Scheduled runs only send in the 9 o'clock hour Pacific; manual runs always send.
-          ENFORCE_HOUR: ${{ github.event_name == 'schedule' }}
         run: bash .github/scripts/daily-change-event.sh
 
-      - name: Not 9 AM in Los Angeles, skipping
-        if: steps.pick.outputs.skip == 'true'
-        run: echo "The other scheduled run handles today's event." >> "$GITHUB_STEP_SUMMARY"
-
       - name: Send Deployment event
-        if: steps.pick.outputs.skip != 'true' && steps.pick.outputs.category == 'Deployment'
+        if: steps.pick.outputs.category == 'Deployment'
         uses: newrelic/deployment-marker-action@d88a59ea8f713ad6935e60de27273157790b1e3b # v2.6.2
         with:
           apiKey: ${{ secrets.NEW_RELIC_API_KEY }}
@@ -121,7 +115,7 @@ jobs:
           customAttributes: '{source: "daily-demo-schedule", trigger: "${{ github.event_name }}"}'
 
       - name: Send Feature Flag event
-        if: steps.pick.outputs.skip != 'true' && steps.pick.outputs.category == 'Feature Flag'
+        if: steps.pick.outputs.category == 'Feature Flag'
         uses: newrelic/deployment-marker-action@d88a59ea8f713ad6935e60de27273157790b1e3b # v2.6.2
         with:
           apiKey: ${{ secrets.NEW_RELIC_API_KEY }}
@@ -138,7 +132,6 @@ jobs:
 
       - name: Send Business or Operational event
         if: >-
-          steps.pick.outputs.skip != 'true' &&
           steps.pick.outputs.category != 'Deployment' &&
           steps.pick.outputs.category != 'Feature Flag'
         uses: newrelic/deployment-marker-action@d88a59ea8f713ad6935e60de27273157790b1e3b # v2.6.2
@@ -155,7 +148,6 @@ jobs:
           customAttributes: '{source: "daily-demo-schedule", trigger: "${{ github.event_name }}"}'
 
       - name: Summary
-        if: steps.pick.outputs.skip != 'true'
         env:
           CATEGORY: ${{ steps.pick.outputs.category }}
           TYPE: ${{ steps.pick.outputs.type }}

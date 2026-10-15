@@ -5,8 +5,8 @@ here="$(cd "$(dirname "$0")" && pwd)"
 script="$here/daily-change-event.sh"
 pass=0
 
-# run NOW [ENFORCE_HOUR] -> prints key=value lines
-run() { NOW="$1" ENFORCE_HOUR="${2:-false}" GITHUB_OUTPUT="" bash "$script"; }
+# run NOW -> prints key=value lines
+run() { NOW="$1" GITHUB_OUTPUT="" bash "$script"; }
 get() { grep -E "^$2=" <<<"$1" | head -1 | cut -d= -f2-; }
 expect() { # name actual expected
   if [[ "$2" != "$3" ]]; then echo "FAIL - $1: got '$2', want '$3'"; exit 1; fi
@@ -18,7 +18,6 @@ out=$(run "2026-10-12T16:07:00Z")
 expect "mon category" "$(get "$out" category)" "Feature Flag"
 expect "mon type" "$(get "$out" type)" "Basic"
 expect "mon flag" "$(get "$out" flag_id)" "vitals-poor-by-default"
-expect "mon skip" "$(get "$out" skip)" "false"
 
 out=$(run "2026-10-13T16:07:00Z")
 expect "tue category" "$(get "$out" category)" "Business Event"
@@ -55,20 +54,18 @@ out=$(run "2026-10-14T16:07:00Z")
 [[ -n "$(get "$out" description)" ]] && pass=$((pass + 1)) || { echo "FAIL - description empty"; exit 1; }
 expect "group id" "$(get "$out" group_id)" "demo-week-2026-W42"
 
-# 9 AM guard. Summer (PDT, UTC-7): 16:07Z runs, 17:07Z skips.
-expect "pdt 16Z runs" "$(get "$(run 2026-10-14T16:07:00Z true)" skip)" "false"
-expect "pdt 17Z skips" "$(get "$(run 2026-10-14T17:07:00Z true)" skip)" "true"
-# Winter (PST, UTC-8): 16:07Z skips, 17:07Z runs.
-expect "pst 16Z skips" "$(get "$(run 2026-12-02T16:07:00Z true)" skip)" "true"
-expect "pst 17Z runs" "$(get "$(run 2026-12-02T17:07:00Z true)" skip)" "false"
-# A delayed scheduled run (GitHub can lag) still counts if it is within the 9 o'clock hour.
-expect "delayed run" "$(get "$(run 2026-10-14T16:52:00Z true)" skip)" "false"
-# Manual runs never skip.
-expect "manual never skips" "$(get "$(run 2026-10-14T23:00:00Z false)" skip)" "false"
+# The event follows the date in Los Angeles, never the time of day. GitHub starts scheduled
+# runs hours late (observed: 12:59 PM to 3:52 PM Pacific), and a late run must still send.
+expect "no skip output" "$(get "$(run 2026-10-14T16:07:00Z)" skip)" ""
+expect "late run, same day" "$(get "$(run 2026-10-12T22:52:00Z)" category)" "Feature Flag"       # Monday 3:52 PM PDT
+expect "midnight UTC is still the same LA day" "$(get "$(run 2026-10-13T02:30:00Z)" category)" "Feature Flag"  # Monday 7:30 PM PDT
+expect "winter late run" "$(get "$(run 2026-12-07T21:10:00Z)" category)" "Feature Flag"           # Monday 1:10 PM PST
+expect "LA date, not UTC date" "$(get "$(run 2026-10-13T06:59:00Z)" category)" "Feature Flag"     # Monday 11:59 PM PDT
+expect "next LA day starts at 07:00Z" "$(get "$(run 2026-10-13T07:00:00Z)" category)" "Business Event"  # Tuesday 12:00 AM PDT
 
 # When GITHUB_OUTPUT is set, values are written there instead of stdout.
 tmp=$(mktemp)
-NOW="2026-10-15T16:07:00Z" ENFORCE_HOUR=false GITHUB_OUTPUT="$tmp" bash "$script" >/dev/null
+NOW="2026-10-15T16:07:00Z" GITHUB_OUTPUT="$tmp" bash "$script" >/dev/null
 expect "writes GITHUB_OUTPUT" "$(grep -E '^category=' "$tmp" | cut -d= -f2-)" "Deployment"
 rm -f "$tmp"
 
