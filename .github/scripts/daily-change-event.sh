@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Picks today's demo change event for the BrowserLogsDemo site.
+# Picks today's demo change event for the BrowserAgentPlayground site.
 #
 # Inputs (env):
 #   NOW           ISO timestamp to use instead of the current time (tests)
@@ -30,7 +30,7 @@ case "$dow" in
      long="Daily demo event: the 25% off swag promo banner on the vitals page is running." ;;
   3) category="Operational"; type="Scheduled Maintenance Period"
      short="Scheduled demo maintenance window"
-     long="Daily demo event: routine maintenance window for the BrowserLogsDemo site." ;;
+     long="Daily demo event: routine maintenance window for the BrowserAgentPlayground site." ;;
   4) category="Deployment"; type="Canary"; version="daily-$ymd"
      short="Daily canary $version"
      long="Daily demo event: simulated canary deployment of the demo pages." ;;

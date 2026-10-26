@@ -27,6 +27,13 @@
 <link rel="apple-touch-icon" href="favicons/apple-touch-icon.png" sizes="180x180">
 <meta name="theme-color" content="#080F11">
 <meta name="description" content="See how New Relic session replay masks everything by default, force a replay to run with newrelic.recordReplay(), then compare masked, unmasked, blocked and ignored content for yourself.">
+<!-- Link previews (Slack, email, social). The image URL is absolute, so it works from any host. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Browser Agent Playground">
+<meta property="og:title" content="Browser Session Replay Demo | New Relic">
+<meta property="og:description" content="See how New Relic session replay masks everything by default, force a replay to run with newrelic.recordReplay(), then compare masked, unmasked, blocked and ignored content for yourself.">
+<meta property="og:image" content="https://mcaronnewrelic.github.io/BrowserAgentPlayground/images/vitals-hero.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,200..900&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -205,23 +212,26 @@
   <section class="step find" id="find">
     <div class="wrap">
       <div class="step-head">
-        <div class="eyebrow">Find it / Search the shared account</div>
+        <div class="eyebrow">Find it / In New Relic</div>
         <h2 class="display" style="margin-top:14px">Find your replay</h2>
         <p>This step works differently than the other demo pages. There's no <code>SessionReplay</code> event you can query directly. Replays aren't stored as flat rows, they're a recording you open in a player.</p>
       </div>
       <div class="find-grid">
+        <div class="find-step">1 · Query it: find your session</div>
         <div class="find-card full">
           <h3>Find your session ID</h3>
           <ol>
             <li>Run this to get the <code>session</code> ID tied to your own replay. <code>hasReplay</code> is <code>true</code> only when a replay actually exists for that event.</li>
             <li>Copy the <code>session</code> value from the result.</li>
           </ol>
+          <p class="expect"><b>You should see:</b> Your clicks and page actions from sessions that have a replay, each with its <code>session</code> ID.</p>
           <pre id="nrqlSession"></pre>
           <div class="actions">
             <button class="btn green small js-copy" data-copy-target="nrqlSession" type="button">Copy NRQL</button>
             <a class="btn ghost-dark small" href="https://one.newrelic.com" target="_blank" rel="noopener">Open New Relic <span class="arrow" aria-hidden="true">→</span></a>
           </div>
         </div>
+        <div class="find-step">2 · See it in New Relic</div>
         <div class="find-card full">
           <h3>Open the replay itself</h3>
           <ol>
@@ -232,6 +242,7 @@
           <p>Watch for the contrast from the cards above: one line of text readable, one line all asterisks, an input field visible but empty of your typing, and a box that's simply gone.</p>
         </div>
       </div>
+      <div class="find-step tips-head">3 · Didn't see it?</div>
       <div class="tips">
         <div class="tip"><b>Not finding your session?</b>Make sure you clicked "Start recording" first. Without it, this session only had a 10% chance of recording anything at all.</div>
         <div class="tip"><b>Replay looks empty?</b>Give it a minute or two. Replay data is sent on its own schedule, separate from other events (<a href="install.html#timing">why</a>).</div>
@@ -286,8 +297,7 @@
            "FROM UserAction, PageAction\n" +
            "WHERE demoCode = '" + code + "' AND hasReplay = true\n" +
            "SINCE 1 hour ago\n" +
-           "ORDER BY timestamp DESC\n" +
-           "LIMIT 20";
+           "LIMIT 100";
   }
 
   root.ReplayDemo = { buildSessionNrql: buildSessionNrql };

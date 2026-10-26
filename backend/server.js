@@ -151,7 +151,8 @@ function createServer(opts) {
       if (pages && await pages.handle(req, res, path, route)) return;
       if (path === '/' || path === '/api/health') {
         route('api/health');
-        return send(req, res, 200, { data: { ok: true, apm: Boolean(agent) } }, ctx);
+        // websocket: this build answers /ws (websockets.html checks it before connecting from another site).
+        return send(req, res, 200, { data: { ok: true, apm: Boolean(agent), websocket: true } }, ctx);
       }
       if (path === '/api/products' && req.method === 'GET') {
         route('api/products');

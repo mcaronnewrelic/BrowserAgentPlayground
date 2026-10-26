@@ -1,0 +1,40 @@
+# Runs on every push and pull request:
+#  - tests: the backend tests, which also load every demo page, check that each inline script parses,
+#    test each page's pure functions and check every NRQL query the pages offer (backend/README.md).
+#  - workflows: actionlint on the GitHub workflows.
+name: Checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Tests (Node 24)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # The same Node version as the Docker image. The tests need no npm install.
+    container: node:24
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run tests
+        working-directory: backend
+        run: npm test
+
+  workflows:
+    name: Lint workflows
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: actionlint
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.7@sha256:887a259a5a534f3c4f36cb02dca341673c6089431057242cdc931e9f133147e9 -color
+      - name: shellcheck
+        run: docker run --rm -v "$PWD:/repo" -w /repo koalaman/shellcheck:v0.10.0 -x -P newrelic newrelic/*.sh .github/scripts/*.sh

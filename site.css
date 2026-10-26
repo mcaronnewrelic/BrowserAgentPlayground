@@ -202,6 +202,8 @@ section.step { padding: 64px 0; border-top: 1px solid var(--line); }
 .q-opt.wrong { border-color: var(--magenta-2); background: rgba(236,170,211,.35); text-decoration: line-through; }
 .q-opt:disabled:not(.right):not(.wrong) { opacity: .55; }
 .q-feedback { margin: 0; font-size: 15px; color: var(--ink-2); }
+/* The empty live region takes no space until it has something to say. */
+.q-feedback:empty { margin-top: -12px; }
 .q-feedback b { color: var(--black); }
 .quiz-note { margin: 0 0 18px; max-width: 72ch; font-size: 14px; color: var(--ink-2); }
 
@@ -251,6 +253,12 @@ section.find .step-head p { color: var(--sand); }
 }
 .find-card .actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .find-card.full { grid-column: 1 / -1; }
+/* Every Find section runs in the same three steps: see it in New Relic, query it, didn't see it? */
+.find-step { grid-column: 1 / -1; margin: 14px 0 -4px; font: 500 13px/1.4 var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--green); }
+.find-grid > .find-step:first-child { margin-top: 0; }
+.find-step.tips-head { margin: 32px 0 -12px; }
+.find-card .expect { margin: 0; color: var(--sand); font-size: 15px; }
+.find-card .expect b { color: var(--white); }
 .tips { margin-top: 28px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 .tip { border-top: 1px solid rgba(253,252,240,.15); padding-top: 16px; font-size: 15px; color: var(--sand); }
 .tip b { color: var(--white); display: block; margin-bottom: 4px; }

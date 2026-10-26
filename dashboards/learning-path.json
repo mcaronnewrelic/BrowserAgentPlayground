@@ -1,0 +1,46 @@
+{
+  "name": "Agent Playground Learning Path",
+  "description": "How visitors move through the six stages of the learning path. Page views from the browser app 1117825756 (GitHub Pages and browser.nru.to), without the hourly synthetic journey (demoUser = Synthetic check). Stage pages match PAGES in site.js.",
+  "permissions": "PUBLIC_READ_WRITE",
+  "pages": [
+    {
+      "name": "Agent Playground Learning Path",
+      "description": null,
+      "widgets": [
+        {
+          "title": "Visitors",
+          "layout": { "column": 1, "row": 1, "width": 4, "height": 3 },
+          "visualization": { "id": "viz.billboard" },
+          "rawConfiguration": {
+            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT uniqueCount(session) AS 'Sessions', count(*) AS 'Page views' FROM PageView WHERE appId = 1117825756 AND (demoUser IS NULL OR demoUser != 'Synthetic check') SINCE 1 week ago" }]
+          }
+        },
+        {
+          "title": "Sessions reaching each stage, in order",
+          "layout": { "column": 5, "row": 1, "width": 8, "height": 6 },
+          "visualization": { "id": "viz.funnel" },
+          "rawConfiguration": {
+            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT funnel(session, WHERE pageUrl LIKE '%/install.html' AS '1. Start here', WHERE (pageUrl LIKE '%/vitals.html' OR pageUrl LIKE '%/errors.html' OR pageUrl LIKE '%/frustration.html') AS '2. What you get for free', WHERE (pageUrl LIKE '%/logs.html' OR pageUrl LIKE '%/events.html' OR pageUrl LIKE '%/measures.html') AS '3. What you add', WHERE (pageUrl LIKE '%/tracing.html' OR pageUrl LIKE '%/websockets.html') AS '4. Follow the network', WHERE pageUrl LIKE '%/spa.html' AS '5. Single-page apps', WHERE pageUrl LIKE '%/replay.html' AS '6. Privacy') FROM PageView WHERE appId = 1117825756 AND (demoUser IS NULL OR demoUser != 'Synthetic check') SINCE 1 week ago" }]
+          }
+        },
+        {
+          "title": "Page views by page",
+          "layout": { "column": 1, "row": 4, "width": 4, "height": 6 },
+          "visualization": { "id": "viz.bar" },
+          "rawConfiguration": {
+            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT count(*) AS 'Page views' FROM PageView WHERE appId = 1117825756 AND (demoUser IS NULL OR demoUser != 'Synthetic check') FACET pageUrl SINCE 1 week ago LIMIT 20" }]
+          }
+        },
+        {
+          "title": "Where sessions end (last page viewed)",
+          "layout": { "column": 5, "row": 7, "width": 8, "height": 3 },
+          "visualization": { "id": "viz.table" },
+          "rawConfiguration": {
+            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT count(*) AS 'Sessions' FROM (SELECT latest(pageUrl) AS 'lastPage' FROM PageView WHERE appId = 1117825756 AND (demoUser IS NULL OR demoUser != 'Synthetic check') FACET session LIMIT MAX) FACET lastPage SINCE 1 week ago LIMIT 20" }]
+          }
+        }
+      ]
+    }
+  ],
+  "variables": []
+}

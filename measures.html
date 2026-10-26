@@ -31,6 +31,13 @@ try { performance.mark('demo:head-parsed', { detail: { demoCode: window.DemoIden
 <link rel="apple-touch-icon" href="favicons/apple-touch-icon.png" sizes="180x180">
 <meta name="theme-color" content="#080F11">
 <meta name="description" content="Time your own moments with performance.mark(), performance.measure() and newrelic.measure(), then find the BrowserPerformance events they create in a shared New Relic account.">
+<!-- Link previews (Slack, email, social). The image URL is absolute, so it works from any host. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Browser Agent Playground">
+<meta property="og:title" content="Browser Marks &amp; Measures Demo | New Relic">
+<meta property="og:description" content="Time your own moments with performance.mark(), performance.measure() and newrelic.measure(), then find the BrowserPerformance events they create in a shared New Relic account.">
+<meta property="og:image" content="https://mcaronnewrelic.github.io/BrowserAgentPlayground/images/vitals-hero.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,200..900&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -243,16 +250,26 @@ newrelic.<span class="k">measure</span>(<span class="s">'demo:checkout'</span>, 
   <section class="step find" id="find">
     <div class="wrap">
       <div class="step-head">
-        <div class="eyebrow">Find it / Search the shared account</div>
+        <div class="eyebrow">Find it / In New Relic</div>
         <h2 class="display" style="margin-top:14px">Find your timings</h2>
         <p>Data arrives in batches, usually within a minute (<a href="install.html#timing">why</a>). Everything below is already filled in with your code, <code class="js-code" style="color:var(--green)">NR-XXXX</code>.</p>
       </div>
       <div class="find-grid">
+        <div class="find-step">1 · See it in New Relic</div>
+        <div class="find-card full">
+          <h3>There's no marks and measures page in the UI</h3>
+          <ol>
+            <li><code>BrowserPerformance</code> events don't have a page of their own under <b>Browser</b>. You see them by querying.</li>
+            <li>Open <b>Query your data</b>, run <b>How long things take, for everyone</b> below, and choose <b>Add to dashboard</b>. A chart of your own timings on a dashboard is how teams usually watch them.</li>
+          </ol>
+        </div>
+        <div class="find-step">2 · Query it</div>
         <div class="find-card full">
           <h3>Every timing you made</h3>
           <ol>
             <li>Open the query builder in New Relic and run this. Marks show an <code>entryDuration</code> of 0. <code>entryDetail.*</code> holds what you passed as <code>detail</code>, and <code>step</code> comes from <code>newrelic.measure()</code>'s custom attributes.</li>
           </ol>
+          <p class="expect"><b>You should see:</b> Your marks (<code>entryDuration</code> 0), your <code>demo:search</code> measures, and the <code>newrelic.measure()</code> ones with <code>step</code> set.</p>
           <pre id="nrqlAll"></pre>
           <div class="actions">
             <button class="btn green small js-copy" data-copy-target="nrqlAll" type="button">Copy NRQL</button>
@@ -262,22 +279,26 @@ newrelic.<span class="k">measure</span>(<span class="s">'demo:checkout'</span>, 
         <div class="find-card">
           <h3>How long things take, for everyone</h3>
           <p>Not filtered by your code: every visitor's measures together. This is the chart you would put on a dashboard.</p>
+          <p class="expect"><b>You should see:</b> The average and 95th percentile for each <code>demo:</code> measure name, across everyone.</p>
           <pre id="nrqlChart"></pre>
           <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlChart" type="button">Copy NRQL</button></div>
         </div>
         <div class="find-card">
           <h3>Split by what you put in detail</h3>
           <p>The search speed you picked rode along in <code>detail</code>, so you can facet on <code>entryDetail.speed</code>.</p>
+          <p class="expect"><b>You should see:</b> One row per search speed you tried. Slower speeds take longer.</p>
           <pre id="nrqlDetail"></pre>
           <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlDetail" type="button">Copy NRQL</button></div>
         </div>
         <div class="find-card full">
           <h3>Marks and measures from somewhere else</h3>
           <p>Everything this app captured that this demo didn't name. On a real site, this is how you find timings your framework or a third-party script is already sending (and paying for).</p>
+          <p class="expect"><b>You should see:</b> Few or no rows on this site. On a real site, the timings your framework and third-party scripts already send.</p>
           <pre id="nrqlOther"></pre>
           <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlOther" type="button">Copy NRQL</button></div>
         </div>
       </div>
+      <div class="find-step tips-head">3 · Didn't see it?</div>
       <div class="tips">
         <div class="tip"><b>Not seeing marks, only newrelic.measure()?</b>Then <code>capture_marks</code> and <code>capture_measures</code> are off for this app. They live in the snippet's <code>init.performance</code>, not in the New Relic UI.</div>
         <div class="tip"><b>Name things on purpose.</b>Pick a prefix like <code>demo:</code> so you can tell your timings apart from everything else on the page, and keep the number of different names small so charts stay readable.</div>
@@ -339,7 +360,6 @@ newrelic.<span class="k">measure</span>(<span class="s">'demo:checkout'</span>, 
            "FROM BrowserPerformance\n" +
            whereYours(code) +
            "SINCE 1 hour ago\n" +
-           "ORDER BY timestamp DESC\n" +
            "LIMIT 100";
   }
   function buildChartNrql() {

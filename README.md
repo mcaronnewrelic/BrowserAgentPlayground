@@ -1,25 +1,29 @@
-# BrowserLogsDemo
+# BrowserAgentPlayground
 
 Self-serve demo pages for the New Relic browser agent (Pro+SPA). Each visitor gets a session code so they can find their own data in a shared account.
 
-- [Home](https://mcaronnewrelic.github.io/BrowserLogsDemo/) (`index.html`): the entry point. Explains what this site is and links out to every demo below.
-- [Logs demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/logs.html) (`logs.html`): console auto-logging, `newrelic.log()`, `newrelic.wrapLogger()`, and how log verbosity filters events.
-- [Errors demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/errors.html) (`errors.html`): uncaught errors and promise rejections, `newrelic.noticeError()`, `newrelic.setErrorHandler()` for ignoring and grouping, `newrelic.addRelease()`, and how errors relate to ERROR logs.
-- [Tracing demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/tracing.html) (`tracing.html`): distributed tracing from the browser. It shows the `traceparent`, `tracestate` and `newrelic` headers the agent adds to each request, and builds a query from your own trace IDs. Each request also writes a browser log with `trace.id`, and the backend logs with `recordLogEvent()`, so browser and server logs appear together on the trace. It is full stack wherever it runs: served by the APM-instrumented API in [`backend/`](backend/README.md) it calls that same server, and anywhere else (GitHub Pages, a local static server) it calls the deployed backend at `https://browser.nru.to` across origins. `?backend=none` switches it to browser-only mode, using `data/*.json`.
+- [Home](https://mcaronnewrelic.github.io/BrowserAgentPlayground/) (`index.html`): the entry point. Explains what this site is and links out to every demo below.
+- [Logs demo](https://mcaronnewrelic.github.io/BrowserAgentPlayground/logs.html) (`logs.html`): console auto-logging, `newrelic.log()`, `newrelic.wrapLogger()`, and how log verbosity filters events.
+- [Errors demo](https://mcaronnewrelic.github.io/BrowserAgentPlayground/errors.html) (`errors.html`): uncaught errors and promise rejections, `newrelic.noticeError()`, `newrelic.setErrorHandler()` for ignoring and grouping, `newrelic.addRelease()`, and how errors relate to ERROR logs.
+- [Tracing demo](https://mcaronnewrelic.github.io/BrowserAgentPlayground/tracing.html) (`tracing.html`): distributed tracing from the browser. It shows the `traceparent`, `tracestate` and `newrelic` headers the agent adds to each request, and builds a query from your own trace IDs. Each request also writes a browser log with `trace.id`, and the backend logs with `recordLogEvent()`, so browser and server logs appear together on the trace. It is full stack wherever it runs: served by the APM-instrumented API in [`backend/`](backend/README.md) it calls that same server, and anywhere else (GitHub Pages, a local static server) it calls the deployed backend at `https://browser.nru.to` across origins. `?backend=none` switches it to browser-only mode, using `data/*.json`.
 
-- [WebSockets demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/websockets.html) (`websockets.html`): turns on WebSocket tracking (`init.web_sockets.enabled`, set on this page only) and opens sockets to an echo server on purpose: a clean close, a custom close code, a connection that never opens, an error thrown in a message handler (only `addEventListener` handlers are linked to the socket through `socketId`), and a socket left open when the page reloads. It shows the agent's running tally for each socket, then queries the `WebSocket` events, one per connection, sent when it closes. On GitHub Pages it uses the public `wss://echo.websocket.org`. When the pages are served by [`backend/`](backend/README.md), it uses the backend's own `/ws` endpoint, which repeats your close reason and logs each connection to New Relic. Add `?ws=wss://your-server` to use any other server.
+- [WebSockets demo](https://mcaronnewrelic.github.io/BrowserAgentPlayground/websockets.html) (`websockets.html`): turns on WebSocket tracking (`init.web_sockets.enabled`, set on this page only) and opens sockets to an echo server on purpose: a clean close, a custom close code, a connection that never opens, an error thrown in a message handler (only `addEventListener` handlers are linked to the socket through `socketId`), and a socket left open when the page reloads. It shows the agent's running tally for each socket, then queries the `WebSocket` events, one per connection, sent when it closes. It uses the `/ws` endpoint of [`backend/`](backend/README.md), which repeats your close reason and logs each connection to New Relic: the page's own backend when the backend serves it, or `wss://browser.nru.to/ws` anywhere else, once that server's `/api/health` reports `websocket: true`. If the deployed backend is older or unreachable, the page falls back to the public `wss://echo.websocket.org`. Add `?ws=wss://your-server` to use any other server.
 
-- [Core Web Vitals demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/vitals.html) (`vitals.html`): makes LCP (a slow hero image), CLS (late banners) and INP (blocking click handlers) good or poor on purpose, with a live scorecard. Results land in `PageViewTiming`, tagged with `demoCode`, `lcpMode` and `clsMode`.
+- [Core Web Vitals demo](https://mcaronnewrelic.github.io/BrowserAgentPlayground/vitals.html) (`vitals.html`): makes LCP (a slow hero image), CLS (late banners) and INP (blocking click handlers) good or poor on purpose, with a live scorecard. Results land in `PageViewTiming`, tagged with `demoCode`, `lcpMode` and `clsMode`.
 
-- [Marks & measures demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/measures.html) (`measures.html`): times things with `performance.mark()`, `performance.measure()` and `newrelic.measure()`, shows the browser's performance timeline live, and finds the resulting `BrowserPerformance` events (`entryName`, `entryType`, `entryDuration`, and `entryDetail.*` from `detail`). Marks and measures are only captured because `nr-init.js` turns on `init.performance.capture_marks` and `capture_measures`, and the agent takes every mark on the page, including ones made by scripts other than yours.
+- [Marks & measures demo](https://mcaronnewrelic.github.io/BrowserAgentPlayground/measures.html) (`measures.html`): times things with `performance.mark()`, `performance.measure()` and `newrelic.measure()`, shows the browser's performance timeline live, and finds the resulting `BrowserPerformance` events (`entryName`, `entryType`, `entryDuration`, and `entryDetail.*` from `detail`). Marks and measures are only captured because `nr-init.js` turns on `init.performance.capture_marks` and `capture_measures`, and the agent takes every mark on the page, including ones made by scripts other than yours.
 
-- [Frustration demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/frustration.html) (`frustration.html`): triggers the browser agent's rage click, dead click and error click detection on purpose, then builds a query from your own `UserAction` events, tagged with `demoCode`.
+- [Frustration demo](https://mcaronnewrelic.github.io/BrowserAgentPlayground/frustration.html) (`frustration.html`): triggers the browser agent's rage click, dead click and error click detection on purpose, then builds a query from your own `UserAction` events, tagged with `demoCode`.
 
-- [Events demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/events.html) (`events.html`): compares `newrelic.addPageAction()`, `newrelic.recordCustomEvent()` and the automatic `BrowserInteraction` event. Proves that an AJAX call alone never creates a `BrowserInteraction`, which needs a route (URL) change followed by a DOM update, by triggering both the half-recipe and the full recipe side by side.
+- [Events demo](https://mcaronnewrelic.github.io/BrowserAgentPlayground/events.html) (`events.html`): compares `newrelic.addPageAction()`, `newrelic.recordCustomEvent()` and the automatic `BrowserInteraction` event. Proves that an AJAX call alone never creates a `BrowserInteraction`, which needs a route (URL) change followed by a DOM update, by triggering both the half-recipe and the full recipe side by side.
 
-- [Replay demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/replay.html) (`replay.html`): shows that session replay masks everything by default, then uses `newrelic.recordReplay()` to force a replay to run and `newrelic.pauseReplay()` to stop one, alongside `nr-unmask`, `nr-block` and `nr-ignore` to demonstrate the privacy controls live.
+- [Replay demo](https://mcaronnewrelic.github.io/BrowserAgentPlayground/replay.html) (`replay.html`): shows that session replay masks everything by default, then uses `newrelic.recordReplay()` to force a replay to run and `newrelic.pauseReplay()` to stop one, alongside `nr-unmask`, `nr-block` and `nr-ignore` to demonstrate the privacy controls live.
 
-- [SPA API demo](https://mcaronnewrelic.github.io/BrowserLogsDemo/spa.html) (`spa.html`): takes manual control of SPA tracking with the `newrelic.interaction()` handle (`.save()`, `.ignore()`, `.setName()`, `.actionText()`, `.setAttribute()`, `.end()`) plus the separate top-level calls `setCurrentRouteName()`, `setPageViewName()` and `finished()`, forcing, suppressing and renaming `BrowserInteraction` events instead of relying on the automatic route-change heuristic from `events.html`.
+- [SPA API demo](https://mcaronnewrelic.github.io/BrowserAgentPlayground/spa.html) (`spa.html`): takes manual control of SPA tracking with the `newrelic.interaction()` handle (`.save()`, `.ignore()`, `.setName()`, `.actionText()`, `.setAttribute()`, `.end()`) plus the separate top-level calls `setCurrentRouteName()`, `setPageViewName()` and `finished()`, forcing, suppressing and renaming `BrowserInteraction` events instead of relying on the automatic route-change heuristic from `events.html`.
+
+## Dashboards, synthetic checks, alerts and workload
+
+`newrelic/` holds scripts that create the site's dashboards, three hourly synthetic checks on browser.nru.to (availability, the backend's health, and an end-to-end journey with a load-time budget), an email alert when any check fails, and the **Agent Playground** workload. They use the same `NEW_RELIC_API_KEY` secret as change tracking, only create what is missing, and run either from the **New Relic setup** workflow or from your own shell. To restore something changed by hand, delete it in New Relic and run them again. See [newrelic/README.md](newrelic/README.md).
 
 ## Change tracking
 
@@ -28,6 +32,7 @@ Self-serve demo pages for the New Relic browser agent (Pro+SPA). Each visitor ge
 - **Deployment** events every time GitHub Pages publishes `main` (version = short commit SHA, with the commit message and a link to the commit).
 - **One demo event a day**, sent around 9 AM Pacific (GitHub may start it hours late), rotating by weekday through Feature Flag, Business Event, Operational and Deployment, so every kind of marker appears. The rotation lives in `.github/scripts/daily-change-event.sh` (tests: `bash .github/scripts/daily-change-event.test.sh`).
 - **Run workflow** on the Actions tab sends today's daily event immediately.
+- **A server deploy marker, by hand.** GitHub Pages publishing doesn't change the server at browser.nru.to, so after you redeploy it, run the workflow with **event** set to `server-deploy` and the version you deployed: `gh workflow run change-tracking.yml -f event=server-deploy -f version=<image tag or commit>`. Without a version, it uses the current commit.
 
 It uses the repository secrets `NEW_RELIC_API_KEY` (a User key, `NRAK-...`) and `NEW_RELIC_DEPLOYMENT_ENTITY_GUID`, which holds the APM app's entity GUID. To see the events, open the APM app (or the browser app's related changes) in New Relic and look for the markers on its charts or the **Change tracking** view, or run:
 
@@ -49,14 +54,17 @@ Every demo page follows the same learning shape:
 
 1. A **primer** at the top of "Try it": what you'll learn, whether the feature is automatic or needs your code, and a **Before you start** list of what the page needs, each tagged with where that setting lives (on by default, the snippet's `NREUM.init`, Application settings, agent version or backend).
 2. The hands-on cards and activity feed.
-3. **Find it**: where the data shows up in New Relic, and NRQL to query it.
-4. **Check yourself**: two questions with answers hidden until opened.
+3. **Find it**, in three steps: **See it in New Relic** (where it appears in the UI, or a plain note that it has no page and goes on a dashboard), **Query it** (NRQL with a "You should see" line for each query), and **Didn't see it?** (troubleshooting tips). Queries follow one convention, checked by `backend/page-logic.test.js`: your own data with `SINCE 1 hour ago`, everyone's with `SINCE 1 day ago`, listings capped at `LIMIT 100`, and no `ORDER BY` (raw rows already come back newest first). Replay runs its query first, because the query gives you the session to look for.
+4. **Check yourself**: two multiple-choice questions.
+5. **Up next**: a link to the next page on the learning path.
 
 ### Knowledge check answers and dashboard
 
 Each **Check yourself** question is multiple choice. Every pick is recorded with `newrelic.recordCustomEvent()` as a `DemoQuizAnswer` event (`site.js`), carrying `questionId`, `question`, `answer`, `outcome` (`correct` or `incorrect`), `attempt` (1 for a first try; a wrong pick can be retried) and `demoPage`, plus the usual `demoCode` and `demoUser`. Only the option picked is recorded, never free text. Question IDs (`data-qid`) are meant to stay the same when a question is reworded, so its history carries over.
 
-`dashboards/knowledge-checks.json` is a ready-made dashboard: first-try accuracy overall, by page and by question (hardest first), the most-picked wrong answers, and tries needed to get each question right. To add it, open **Dashboards** in New Relic, choose **Import dashboard**, and paste the file's contents. Its queries use account `6932347`, the one in `nr-config.js`. If your data goes to another account (for example the Docker image with your own license key), change `accountIds` first.
+`dashboards/knowledge-checks.json` is a ready-made dashboard: first-try accuracy overall, by page and by question (hardest first), the most-picked wrong answers, and tries needed to get each question right. `newrelic/dashboards.sh` creates it if it's missing (see [newrelic/README.md](newrelic/README.md)); you can also import it by hand under **Dashboards → Import dashboard**. Its queries use account `6932347`, the one in `nr-config.js`. If your data goes to another account (for example the Docker image with your own license key), change `accountIds` first.
+
+`dashboards/learning-path.json` shows how visitors move through the learning path: a funnel of sessions reaching each of the six stages in order, page views by page, and the last page each session viewed (where people drop off). Its queries also filter on the browser app (`appId = 1117825756`); change that too if you report to another app. If you add or move a page in `PAGES` in `site.js`, update the funnel's stage conditions to match.
 
 ```sql
 SELECT percentage(count(*), WHERE outcome = 'correct') FROM DemoQuizAnswer WHERE attempt = 1 FACET question SINCE 1 week ago
@@ -79,6 +87,20 @@ If you change Application settings that live in the snippet (for example, CORS a
 ### Your name and session code
 
 The home page asks for a name (required, it becomes the end-user ID via `setUserId()`) and a session code. `demo-identity.js` keeps both in `sessionStorage`, so every page in the same tab reuses them. A page opened without them sends you to the home page first and brings you back afterward. A new tab starts empty. Tests: `node --test backend/demo-identity.test.js`.
+
+### Preview the pages locally
+
+The pages are static files, so any web server works. From the repository folder:
+
+```bash
+python -m http.server 8080
+```
+
+Then open `http://localhost:8080`. Use port 8080: the deployed backend at browser.nru.to allows `http://localhost:8080` by default, so the Tracing and WebSockets pages can reach it from your machine. The pages report to the account in `nr-config.js`, the same as on GitHub Pages. Opening the files directly (`file://`) doesn't work, because the pages fetch other files and keep your name and code in `sessionStorage`.
+
+If nothing reaches New Relic, check that your network or an ad blocker isn't blocking `js-agent.newrelic.com` (where most of the agent's code loads from) or `bam.nr-data.net` (where it sends data). The Install page's request list shows whether anything is being sent.
+
+To run the tests: `cd backend && npm test` (Node 24, no install needed).
 
 ### Run it in Docker (pages and API on one origin)
 

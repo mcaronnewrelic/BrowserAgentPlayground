@@ -26,51 +26,23 @@
 <link rel="apple-touch-icon" href="favicons/apple-touch-icon.png" sizes="180x180">
 <meta name="theme-color" content="#080F11">
 <meta name="description" content="A self-serve tour of the New Relic browser agent: logs, errors, tracing, WebSockets, Core Web Vitals, marks and measures, frustration signals, custom events, session replay and manual SPA control, each one in its own demo page.">
+<!-- Link previews (Slack, email, social). The image URL is absolute, so it works from any host. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Browser Agent Playground">
+<meta property="og:title" content="Browser Agent Demos | New Relic">
+<meta property="og:description" content="A self-serve tour of the New Relic browser agent: logs, errors, tracing, WebSockets, Core Web Vitals, marks and measures, frustration signals, custom events, session replay and manual SPA control, each one in its own demo page.">
+<meta property="og:image" content="https://mcaronnewrelic.github.io/BrowserAgentPlayground/images/vitals-hero.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,200..900&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="site.css">
 <style>
-  :root {
-    color-scheme: light;
-    --green: #1CE783;
-    --green-deep: #00CE7C;
-    --green-1: #AAF2CE;
-    --black: #080F11;
-    --panel: #141A20;
-    --panel-2: #1D252C;
-    --white: #FDFCF0;
-    --sys-white: #F1F0E4;
-    --sand: #E5E4D8;
-    --gray: #888C8D;
-    --ink-2: #3B4245;
-    --line: rgba(8, 15, 17, .12);
-    --blue-1: #A3E5E5;
-    --magenta-1: #ECAAD3;
-    --magenta-2: #DC466F;
-    --ember-1: #F7D354;
-    --display: "Mona Sans", "Arial Narrow", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-    --body: Inter, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-    --mono: "Geist Mono", "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-    --radius-lg: 28px;
-    --radius-md: 18px;
-    --pill: 999px;
-  }
-
-  .agent-badge .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--gray); }
-
   /* ---------- Buttons ---------- */
-  .btn {
-    appearance: none; border: 0; cursor: pointer; text-decoration: none;
-    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-    font: 600 16px/1 var(--body); letter-spacing: -0.3px;
-    padding: 16px 26px; border-radius: var(--pill); white-space: nowrap;
-    background: var(--black); color: var(--sys-white);
-    transition: transform .12s ease, background .15s ease, box-shadow .15s ease;
-  }
+  .btn { transition: transform .12s ease, background .15s ease, box-shadow .15s ease; }
 
   /* ---------- Hero ---------- */
-  html { scroll-padding-top: 96px; }
+
   .hero-note { margin-top: 28px; max-width: 520px; font-size: 15px; color: var(--ink-2); }
   .start-form { margin-top: 32px; display: grid; gap: 16px; max-width: 520px; }
   .start-form label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
@@ -89,20 +61,17 @@
   .term pre { margin: 0; white-space: pre-wrap; word-break: break-word; }
 
   /* ---------- Sections ---------- */
-  .step-head p { margin: 14px 0 0; max-width: 60ch; }
+  .step-head p { max-width: 60ch; }
 
   /* ---------- Identity ---------- */
-  .identity {
-    background: var(--black); color: var(--white); border-radius: var(--radius-lg);
-    padding: 36px; display: grid; grid-template-columns: 1fr 1fr auto; gap: 28px; align-items: end;
-  }
+  .identity { grid-template-columns: 1fr 1fr auto; gap: 28px; }
   .field label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
   .input, select.input, textarea.input {
     width: 100%; font: 500 16px/1.3 var(--body); letter-spacing: -0.2px;
     padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line);
     background: var(--white); color: var(--black);
   }
-  .identity .hint { grid-column: 1 / -1; margin: 0; font-size: 14px; color: var(--sand); opacity: .8; }
+  .identity .hint { opacity: .8; }
 
   /* ---------- Playground ---------- */
   .card .tag-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -125,19 +94,12 @@
     .stage-head { position: static; }
   }
   .card > .btn { margin-top: auto; }
-  .snippet {
-    background: var(--black); color: var(--sand); border-radius: 14px; padding: 14px 16px;
-    font-family: var(--mono); font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; margin: 0;
-  }
+  .snippet { white-space: pre-wrap; word-break: break-word; margin: 0; }
   .snippet .s { color: var(--blue-1); }
   .snippet .c { color: var(--gray); }
   .card .field label { color: var(--black); }
 
-  .chip {
-    display: inline-flex; align-items: center; padding: 3px 9px; border-radius: var(--pill);
-    font: 600 11px/1.4 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--black);
-    background: var(--sand); white-space: nowrap;
-  }
+  .chip { letter-spacing: .04em; text-transform: uppercase; }
   .chip.error { background: var(--magenta-1); }
   .chip.trace { background: transparent; box-shadow: inset 0 0 0 1px var(--gray); }
   .entry .chip.trace, .scenario .chip.trace { color: var(--white); }
@@ -146,7 +108,7 @@
   .keep.no { opacity: .7; }
 
   /* ---------- Feed ---------- */
-  .status { margin-left: auto; padding: 2px 8px; border-radius: var(--pill); font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; }
+  .status { margin-left: auto; font-size: 10.5px; }
 
   /* ---------- Find ---------- */
 
@@ -164,7 +126,7 @@
 
 <div class="topbar">
   <div class="wrap">
-    <span>Eleven small pages, one shared account. Click around and watch your own data show up.</span>
+    <span><span data-count="pages">Eleven</span> small pages, one shared account. Click around and watch your own data show up.</span>
     <a href="https://docs.newrelic.com/docs/browser/" target="_blank" rel="noopener">Read the docs</a>
   </div>
 </div>
@@ -178,7 +140,7 @@
       <div>
         <div class="eyebrow">New Relic browser agent</div>
         <h1 class="display" style="margin-top:18px">Click it.<br>Then find it.</h1>
-        <p class="lede">Eleven small demo pages, one shared New Relic account. Each page triggers a specific browser agent feature on purpose, then shows you exactly where to find the data it produced.</p>
+        <p class="lede"><span data-count="pages">Eleven</span> small demo pages, one shared New Relic account. Each page triggers a specific browser agent feature on purpose, then shows you exactly where to find the data it produced.</p>
         <form class="start-form" id="startForm" novalidate>
           <div>
             <label for="userName">Your name or handle</label>
@@ -219,7 +181,7 @@
     <div class="wrap">
       <div class="step-head">
         <div class="eyebrow">The learning path</div>
-        <h2 class="display" style="margin-top:14px">Six stages, eleven pages</h2>
+        <h2 class="display" style="margin-top:14px"><span data-count="stages">Six</span> stages, <span data-count="pages">eleven</span> pages</h2>
         <p class="muted">Each stage builds on the one before, and each page ends with a link to the next. Every page also stands on its own, so you can jump straight to the one you need.</p>
       </div>
       <ol class="path">

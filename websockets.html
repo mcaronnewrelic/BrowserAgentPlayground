@@ -32,6 +32,13 @@ NREUM.init.web_sockets={enabled:true};
 <link rel="apple-touch-icon" href="favicons/apple-touch-icon.png" sizes="180x180">
 <meta name="theme-color" content="#080F11">
 <meta name="description" content="Open, use and close WebSocket connections on purpose, see the browser agent's running tally for each one, then find the WebSocket events in a shared New Relic account.">
+<!-- Link previews (Slack, email, social). The image URL is absolute, so it works from any host. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Browser Agent Playground">
+<meta property="og:title" content="Browser WebSockets Demo | New Relic">
+<meta property="og:description" content="Open, use and close WebSocket connections on purpose, see the browser agent's running tally for each one, then find the WebSocket events in a shared New Relic account.">
+<meta property="og:image" content="https://mcaronnewrelic.github.io/BrowserAgentPlayground/images/vitals-hero.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,200..900&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -52,7 +59,7 @@ NREUM.init.web_sockets={enabled:true};
   /* ---------- Playground ---------- */
   .card .field label { color: var(--black); }
   .card > .btn, .card > .btn-row { margin-top: auto; }
-  .row > .field { flex: 1 1 200px; min-width: 0; }
+  .row > .field { flex: 1 1 200px; }
   .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
   .conn-state { display: inline-flex; align-items: center; gap: 8px; font: 600 13px/1.4 var(--mono); }
   .conn-state .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--gray); }
@@ -154,7 +161,7 @@ ws.close(<span class="k">1000</span>)      <span class="c">// closeCode, connect
         </div>
         <div>
           <div class="tag-row"><div class="tag">Before you start</div></div>
-          <ul class="needs"><li><span class="chip where-snippet">Snippet: NREUM.init</span><span><code>init.web_sockets.enabled: true</code>. Off by default, so this page turns it on for itself.</span></li><li><span class="chip where-backend">Backend</span><span>Optional: the demo backend's <code>/ws</code> endpoint, used automatically when the backend serves this page. Otherwise a public echo server.</span></li></ul>
+          <ul class="needs"><li><span class="chip where-snippet">Snippet: NREUM.init</span><span><code>init.web_sockets.enabled: true</code>. Off by default, so this page turns it on for itself.</span></li><li><span class="chip where-backend">Backend</span><span>Optional: the demo backend's <code>/ws</code> endpoint, on this site's own backend or at browser.nru.to, for the server-side logs. Used automatically when it's reachable. Otherwise a public echo server.</span></li></ul>
         </div>
       </div>
       <div class="identity page-setup">
@@ -274,16 +281,27 @@ ws.close(<span class="k">1000</span>)      <span class="c">// closeCode, connect
   <section class="step find" id="find">
     <div class="wrap">
       <div class="step-head">
-        <div class="eyebrow">Find it / Search the shared account</div>
+        <div class="eyebrow">Find it / In New Relic</div>
         <h2 class="display" style="margin-top:14px">Find your sockets</h2>
         <p>A socket's event is sent after it closes, then arrives within about a minute (<a href="install.html#timing">why</a>). Everything below is already filled in with your code, <code class="js-code" style="color:var(--green)">NR-XXXX</code>.</p>
       </div>
       <div class="find-grid">
+        <div class="find-step">1 · See it in New Relic</div>
+        <div class="find-card full">
+          <h3>There's no WebSocket page in the UI</h3>
+          <ol>
+            <li>WebSocket events don't have a page of their own under <b>Browser</b>. You see them by querying.</li>
+            <li>Open <b>Query your data</b>, run the first query below, then choose <b>Add to dashboard</b> to keep it.</li>
+            <li>With the demo backend, its side of each connection is in <b>Logs</b>: search <code>route:"ws"</code> and your code.</li>
+          </ol>
+        </div>
+        <div class="find-step">2 · Query it</div>
         <div class="find-card full">
           <h3>Every socket you opened</h3>
           <ol>
             <li>Open the query builder in New Relic and run this. One row per connection, however many messages it carried. A socket that is still open has no row yet.</li>
           </ol>
+          <p class="expect"><b>You should see:</b> One row per closed socket: 1000 for a clean close, 4000 for your custom close, 1006 for the one that never opened, 1001 for one left open on reload. Sockets still open have no row yet.</p>
           <pre id="nrqlSockets"></pre>
           <div class="actions">
             <button class="btn green small js-copy" data-copy-target="nrqlSockets" type="button">Copy NRQL</button>
@@ -293,31 +311,37 @@ ws.close(<span class="k">1000</span>)      <span class="c">// closeCode, connect
         <div class="find-card">
           <h3>Traffic per server</h3>
           <p>Bytes each way and how long connections stay open, per URL your sockets connected to.</p>
+          <p class="expect"><b>You should see:</b> One row per server URL, with the bytes sent and received and how long connections stayed open on average.</p>
           <pre id="nrqlTraffic"></pre>
           <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlTraffic" type="button">Copy NRQL</button></div>
         </div>
         <div class="find-card">
           <h3>How sockets end, for everyone</h3>
           <p>Not filtered by your code. 1000 is a normal close, 1001 means the page went away, 1006 means the connection dropped or never opened.</p>
+          <p class="expect"><b>You should see:</b> Counts by close code for everyone. Expect mostly 1000, with some 1001 and 1006.</p>
           <pre id="nrqlCloseCodes"></pre>
           <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlCloseCodes" type="button">Copy NRQL</button></div>
         </div>
         <div class="find-card full">
           <h3>Errors tied to a socket</h3>
           <p>Two queries, run one at a time. The first lists your errors from the buttons above: only the one from <code>addEventListener</code> has a <code>socketId</code>.</p>
+          <p class="expect"><b>You should see:</b> Your two thrown errors: the <code>addEventListener</code> one with a <code>socketId</code>, the <code>onmessage</code> one without.</p>
           <pre id="nrqlErrors"></pre>
           <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlErrors" type="button">Copy NRQL</button></div>
           <p>The second lists your sockets marked <code>hasErrors</code>. Its <code>socketId</code> matches the error's.</p>
+          <p class="expect"><b>You should see:</b> The socket from the <code>addEventListener</code> button, with <code>hasErrors</code> true and the same <code>socketId</code>.</p>
           <pre id="nrqlSocketErrors"></pre>
           <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlSocketErrors" type="button">Copy NRQL</button></div>
         </div>
         <div class="find-card full" id="backendCard" hidden>
           <h3>The same sockets, seen by the server</h3>
           <p>The demo backend writes one log per connection when it ends, with what it counted from its side. The page adds your code to the socket's URL (<code>/ws?demoCode=…</code>) so the log can carry it. These logs belong to the backend's APM entity and have no <code>trace.id</code>: a WebSocket upgrade isn't an APM transaction, so it isn't part of a distributed trace.</p>
+          <p class="expect"><b>You should see:</b> One log per connection, with the close code and reason as the server saw them.</p>
           <pre id="nrqlBackend"></pre>
           <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlBackend" type="button">Copy NRQL</button></div>
         </div>
       </div>
+      <div class="find-step tips-head">3 · Didn't see it?</div>
       <div class="tips">
         <div class="tip"><b>No WebSocket rows at all?</b>Check that the socket closed (an open one sends nothing yet), and that the agent badge up top says "detected". Then give it a minute.</div>
         <div class="tip"><b>Not the same as AJAX.</b>WebSockets don't create <code>AjaxRequest</code> events, don't get distributed tracing headers, and don't count toward a <code>BrowserInteraction</code>.</div>
@@ -384,6 +408,22 @@ ws.close(<span class="k">1000</span>)      <span class="c">// closeCode, connect
     return url + (url.indexOf('?') > -1 ? '&' : '?') + 'demoCode=' + encodeURIComponent(code) + '&demoUser=' + encodeURIComponent(user);
   }
 
+  // The deployed demo backend, used when this page isn't served by a backend itself (GitHub Pages, a static server).
+  var DEMO_BACKEND = 'https://browser.nru.to';
+
+  // Which server to use, first match wins: ?ws= in the address, this page's own backend, the deployed demo
+  // backend (only if its health check says it answers /ws), and finally the public echo server.
+  // onBackend: it's the demo backend, so the socket URL carries your code and its logs can be queried.
+  function pickServer(o) {
+    if (o.wsParam) return { server: normalizeServer(o.wsParam), onBackend: false, source: 'param' };
+    if (o.servedByBackend) return { server: backendServer(o.location), onBackend: true, source: 'same-origin' };
+    if (o.remoteWebSocket) {
+      var u = new URL(DEMO_BACKEND);
+      return { server: backendServer({ protocol: u.protocol, host: u.host }), onBackend: true, source: 'remote' };
+    }
+    return { server: DEFAULT_SERVER, onBackend: false, source: 'echo' };
+  }
+
   // Fields of the agent's per-socket record, in the order the tally shows them.
   var TALLY_FIELDS = [
     'socketId', 'requestedUrl', 'protocol', 'messageCount', 'messageBytes', 'messageTypes',
@@ -397,7 +437,6 @@ ws.close(<span class="k">1000</span>)      <span class="c">// closeCode, connect
            "FROM WebSocket\n" +
            "WHERE demoCode = '" + code + "'\n" +
            "SINCE 1 hour ago\n" +
-           "ORDER BY timestamp DESC\n" +
            "LIMIT 100";
   }
   function buildTrafficNrql(code) {
@@ -435,7 +474,7 @@ ws.close(<span class="k">1000</span>)      <span class="c">// closeCode, connect
   }
 
   root.SocketsDemo = {
-    DEFAULT_SERVER: DEFAULT_SERVER, UNREACHABLE: UNREACHABLE,
+    DEFAULT_SERVER: DEFAULT_SERVER, UNREACHABLE: UNREACHABLE, DEMO_BACKEND: DEMO_BACKEND, pickServer: pickServer,
     normalizeServer: normalizeServer, backendServer: backendServer, withIdentity: withIdentity, TALLY_FIELDS: TALLY_FIELDS,
     buildSocketsNrql: buildSocketsNrql, buildTrafficNrql: buildTrafficNrql,
     buildCloseCodesNrql: buildCloseCodesNrql, buildErrorsNrql: buildErrorsNrql, buildSocketErrorsNrql: buildSocketErrorsNrql, buildBackendNrql: buildBackendNrql
@@ -454,11 +493,11 @@ ws.close(<span class="k">1000</span>)      <span class="c">// closeCode, connect
   var ID = window.DemoIdentity.current();
   var LEFT_OPEN_KEY = 'nrDemoSocketLeftOpen';
   var wsParam = new URLSearchParams(location.search).get('ws');
-  // Served by backend/server.js? Then its own /ws endpoint is used, unless ?ws= picks another server.
-  var onBackend = !wsParam && !!document.querySelector('meta[name="demo-backend"]');
+  var servedByBackend = !!document.querySelector('meta[name="demo-backend"]');
+  // Until the deployed backend's health check answers, the page uses the echo server (see pickServer).
+  var choice = L.pickServer({ wsParam: wsParam, servedByBackend: servedByBackend, location: location, remoteWebSocket: false });
   var state = {
-    name: ID.name, code: ID.code, onBackend: onBackend,
-    server: onBackend ? L.backendServer(location) : L.normalizeServer(wsParam),
+    name: ID.name, code: ID.code, onBackend: choice.onBackend, server: choice.server, source: choice.source,
     live: null, latest: null, stats: { opened: 0, sent: 0, received: 0, closed: 0 }
   };
 
@@ -672,15 +711,40 @@ ws.close(<span class="k">1000</span>)      <span class="c">// closeCode, connect
   }
 
   // ---- Init ----------------------------------------------------------------
+  // ---- Which server --------------------------------------------------------------
+  var SERVER_NOTES = {
+    'same-origin': 'This site\'s own backend (backend/websocket.js). It echoes everything back, repeats your close code and reason, and writes one log per connection to New Relic. Add ?ws=wss://your-server to the address to use another server.',
+    remote: 'The demo backend at browser.nru.to (backend/websocket.js). It echoes everything back, repeats your close code and reason, and writes one log per connection to New Relic. Add ?ws=wss://your-server to the address to use another server.',
+    param: 'Your own server, from ?ws= in the address. Remove it to go back to the demo backend.',
+    echo: 'A public echo server: everything you send comes straight back, after one greeting message of its own. The demo backend at browser.nru.to wasn\'t reachable from here, so its server-side logs aren\'t available. To try your own server, add ?ws=wss://your-server to this page\'s address.'
+  };
+  function renderServer() {
+    $('serverUrl').textContent = state.server;
+    $('serverSub').textContent = SERVER_NOTES[state.source];
+    $('backendCard').hidden = !state.onBackend;
+  }
+  // Off the backend's own pages, ask the deployed backend whether it answers /ws before using it. A build
+  // without it (or a backend that doesn't allow this page's origin) leaves the page on the echo server.
+  function checkDemoBackend() {
+    if (state.source !== 'echo' || typeof fetch !== 'function') return;
+    $('serverSub').textContent = 'Checking the demo backend at browser.nru.to…';
+    var timeout = new Promise(function (resolve) { setTimeout(function () { resolve(null); }, 5000); });
+    var health = fetch(L.DEMO_BACKEND + '/api/health', { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; });
+    Promise.race([health, timeout]).then(function (body) {
+      // Don't switch servers under a socket that is already open.
+      var remote = !!(body && body.data && body.data.websocket) && !state.latest;
+      var picked = L.pickServer({ wsParam: null, servedByBackend: false, location: location, remoteWebSocket: remote });
+      state.server = picked.server; state.onBackend = picked.onBackend; state.source = picked.source;
+      renderServer();
+    });
+  }
+
   function init() {
     Demo.start({ state: state, onIdentity: onIdentity });
-    $('serverUrl').textContent = state.server;
-    if (state.onBackend) {
-      $('serverSub').textContent = 'This site\'s own backend (backend/websocket.js). It echoes everything back, repeats your close code and reason, and writes one log per connection to New Relic. Add ?ws=wss://your-server to the address to use another server.';
-      $('backendCard').hidden = false;
-    } else if (state.server !== L.DEFAULT_SERVER) {
-      $('serverSub').textContent = 'Your own server, from ?ws= in the address. Remove it to go back to the ' + (document.querySelector('meta[name="demo-backend"]') ? 'demo backend.' : 'public echo server.');
-    }
+    renderServer();
+    checkDemoBackend();
     $('connectBtn').addEventListener('click', onConnect);
     $('sendTextBtn').addEventListener('click', onSendText);
     $('sendBinaryBtn').addEventListener('click', onSendBinary);

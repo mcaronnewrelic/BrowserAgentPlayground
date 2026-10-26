@@ -2,7 +2,7 @@
   "name": "browser-tracing-demo-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "Tiny APM-instrumented API for the BrowserLogsDemo distributed tracing page.",
+  "description": "Tiny APM-instrumented API for the BrowserAgentPlayground distributed tracing page.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

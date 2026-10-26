@@ -26,6 +26,13 @@
 <link rel="apple-touch-icon" href="favicons/apple-touch-icon.png" sizes="180x180">
 <meta name="theme-color" content="#080F11">
 <meta name="description" content="Try Core Web Vitals with New Relic: make LCP, CLS and INP good or poor on purpose, watch them live, then find them in your browser data.">
+<!-- Link previews (Slack, email, social). The image URL is absolute, so it works from any host. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Browser Agent Playground">
+<meta property="og:title" content="Core Web Vitals Demo | New Relic">
+<meta property="og:description" content="Try Core Web Vitals with New Relic: make LCP, CLS and INP good or poor on purpose, watch them live, then find them in your browser data.">
+<meta property="og:image" content="https://mcaronnewrelic.github.io/BrowserAgentPlayground/images/vitals-hero.jpg">
+<meta name="twitter:card" content="summary_large_image">
 
 <!-- ================= LOGIC (pure functions, tested by backend/page-logic.test.js) ================= -->
 <script>
@@ -130,18 +137,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,200..900&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="site.css">
 <style>
-  :root {
-    color-scheme: light;
-    --green: #1CE783; --green-deep: #00CE7C; --green-1: #AAF2CE;
-    --black: #080F11; --panel: #141A20; --panel-2: #1D252C;
-    --white: #FDFCF0; --sys-white: #F1F0E4; --sand: #E5E4D8; --gray: #888C8D; --ink-2: #3B4245;
-    --line: rgba(8, 15, 17, .12);
-    --blue-1: #A3E5E5; --blue-2: #3D9DFF; --magenta-1: #ECAAD3; --magenta-2: #DC466F; --ember-1: #F7D354; --ember-2: #FF7F4D;
-    --display: "Mona Sans", "Arial Narrow", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-    --body: Inter, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-    --mono: "Geist Mono", "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-    --radius-lg: 28px; --radius-md: 18px; --pill: 999px;
-  }
+  :root { --ember-2: #FF7F4D; }
 
   /* ---------- Header + scorecard (sticky together) ---------- */
   .sticky { position: sticky; top: 0; z-index: 20; }
@@ -198,16 +194,16 @@
   .hero-band .loading { position: absolute; right: 24px; top: 20px; z-index: 2; font: 500 12px/1.3 var(--mono); color: var(--gray); }
 
   /* ---------- Buttons ---------- */
-  .btn { appearance: none; border: 0; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 10px; font: 600 16px/1 var(--body); letter-spacing: -0.3px; white-space: nowrap; padding: 16px 26px; border-radius: var(--pill); background: var(--black); color: var(--sys-white); transition: background .15s ease; }
+  .btn { transition: background .15s ease; }
 
   /* ---------- Sections ---------- */
   .step-head { margin-bottom: 32px; }
-  .step-head p { margin: 14px 0 0; max-width: 66ch; }
+  .step-head p { max-width: 66ch; }
 
   /* ---------- Setup ---------- */
-  .identity { background: var(--black); color: var(--white); border-radius: var(--radius-lg); padding: 32px; display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 24px; align-items: end; }
-  .field label, .field .label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--sand); }
-  .input { width: 100%; font: 500 16px/1.3 var(--body); letter-spacing: -0.2px; padding: 14px 16px; border-radius: 14px; border: 1px solid rgba(253,252,240,.12); background: var(--panel-2); color: var(--white); }
+  .identity { padding: 32px; grid-template-columns: 1fr 1fr 1.5fr; }
+  .field label, .field .label { color: var(--sand); }
+  .input { border: 1px solid rgba(253,252,240,.12); background: var(--panel-2); color: var(--white); }
   .input::placeholder { color: var(--gray); }
   .toggles { display: grid; gap: 10px; }
   .toggle-row { display: grid; grid-template-columns: 54px 1fr; align-items: center; gap: 12px; }
@@ -223,13 +219,13 @@
 
   /* ---------- Labs ---------- */
   .labs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
-  .card { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 26px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-  .card .tag { font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2); display: flex; justify-content: space-between; gap: 8px; }
+  .card { gap: 14px; }
+  .card .tag { display: flex; justify-content: space-between; gap: 8px; }
   .card .mode-now { font: 600 11px/1.4 var(--mono); padding: 2px 8px; border-radius: var(--pill); }
   .mode-now.poor { background: var(--magenta-1); } .mode-now.good { background: var(--green); }
   .facts { background: var(--black); color: var(--sand); border-radius: 16px; padding: 14px 16px; font: 500 12.5px/1.6 var(--mono); display: grid; gap: 4px; }
   .facts b { color: var(--white); font-weight: 500; }
-  .snippet { background: var(--black); color: var(--sand); border-radius: 14px; padding: 12px 14px; font: 500 12.5px/1.6 var(--mono); white-space: pre-wrap; word-break: break-word; margin: 0; }
+  .snippet { padding: 12px 14px; font: 500 12.5px/1.6 var(--mono); white-space: pre-wrap; word-break: break-word; margin: 0; }
   .snippet .k { color: var(--green); } .snippet .c { color: var(--gray); } .snippet .s { color: var(--blue-1); }
   .btn-col { display: grid; gap: 10px; }
   .lab-btn { appearance: none; cursor: pointer; text-align: left; border: 1px solid var(--line); background: var(--sys-white); color: var(--black); border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; font: 600 14px/1.25 var(--body); letter-spacing: -0.2px; transition: border-color .15s, background .15s; }
@@ -270,7 +266,7 @@
   @media (max-width: 560px) {
     .wrap { padding: 0 14px; }
     /* Phones: logo + badge on the first row, page switcher full width on the second. */
-    .agent-badge { order: 2; padding: 9px; }
+
     .scorecard .wrap { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding-top: 6px; padding-bottom: 6px; }
     .metric { height: 52px; padding: 6px 9px; }
     .metric.small { display: none; }
@@ -456,15 +452,26 @@ recalculateTotals()</pre>
   <section class="step find" id="find">
     <div class="wrap">
       <div class="step-head">
-        <div class="eyebrow">Find it / Search the shared account</div>
+        <div class="eyebrow">Find it / In New Relic</div>
         <h2 class="display" style="margin-top:14px">Find your vitals</h2>
         <p>Core Web Vitals land as <code>PageViewTiming</code> events, one per metric (<code>timingName</code> = <code>lcp</code>, <code>cls</code>, <code>inp</code>, and more). Durations are stored in seconds.</p>
       </div>
       <div class="callout" style="margin-bottom:20px"><b>CLS and INP are sent when you leave this page view.</b> Switch tabs, reload, or use "Reload with these settings" to send them. LCP is sent after your first interaction or when you leave. <a href="install.html#timing">More on timing</a>.</div>
       <div class="find-grid">
+        <div class="find-step">1 · See it in New Relic</div>
+        <div class="find-card full">
+          <h3>In the Browser UI</h3>
+          <ol>
+            <li>Open <b>Browser</b>, pick the demo app, and look at the <b>Core Web Vitals</b> charts on its <b>Summary</b>.</li>
+            <li>Open <b>Page views</b> and select <code>vitals.html</code> to see vitals for just this page.</li>
+            <li>For slow interactions, the INP attributes <code>interactionTarget</code>, <code>inputDelay</code>, <code>processingDuration</code> and <code>presentationDelay</code> tell you which element was slow and why.</li>
+          </ol>
+        </div>
+        <div class="find-step">2 · Query it</div>
         <div class="find-card">
           <h3>Your page views</h3>
           <p>Every vital from your visits, with the LCP element and the button that caused your worst INP.</p>
+          <p class="expect"><b>You should see:</b> One row per metric per page view (<code>lcp</code>, <code>cls</code>, <code>inp</code> and others), with <code>lcpMode</code> and <code>clsMode</code> showing the modes you picked.</p>
           <pre id="nrqlMine"></pre>
           <div class="actions">
             <button class="btn green small js-copy" data-copy-target="nrqlMine" type="button">Copy NRQL</button>
@@ -474,18 +481,12 @@ recalculateTotals()</pre>
         <div class="find-card">
           <h3>Good vs poor, everyone</h3>
           <p>The 75th percentile is how Google judges a page. Compare every visitor's runs by mode.</p>
+          <p class="expect"><b>You should see:</b> One row per mode combination. Poor modes score well above the good ones.</p>
           <pre id="nrqlCompare"></pre>
           <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlCompare" type="button">Copy NRQL</button></div>
         </div>
-        <div class="find-card full">
-          <h3>In the Browser UI</h3>
-          <ol>
-            <li>Open <b>Browser</b>, pick the demo app, and look at the <b>Core web vitals</b> charts on the summary.</li>
-            <li>Open <b>Page views</b> and select <code>vitals.html</code> to see vitals for just this page.</li>
-            <li>For slow interactions, the INP attributes <code>interactionTarget</code>, <code>inputDelay</code>, <code>processingDuration</code> and <code>presentationDelay</code> tell you which element was slow and why.</li>
-          </ol>
-        </div>
       </div>
+      <div class="find-step tips-head">3 · Didn't see it?</div>
       <div class="tips">
         <div class="tip"><b>Why do my numbers differ a little?</b>The scorecard is this page's own live measurement. New Relic uses Google's web-vitals library, which finalizes values at slightly different moments.</div>
         <div class="tip"><b>Learn more</b><a href="https://web.dev/articles/vitals" target="_blank" rel="noopener">Web Vitals</a> · <a href="https://web.dev/articles/optimize-inp" target="_blank" rel="noopener">Optimize INP</a> · <a href="https://web.dev/articles/optimize-cls" target="_blank" rel="noopener">Optimize CLS</a> · To time your own moments instead, see <a href="measures.html">marks &amp; measures</a></div>

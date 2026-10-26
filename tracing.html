@@ -78,16 +78,23 @@ NREUM.init.api={register:{enabled:true,duplicate_data_to_container:false}};
 <link rel="apple-touch-icon" href="favicons/apple-touch-icon.png" sizes="180x180">
 <meta name="theme-color" content="#080F11">
 <meta name="description" content="Try New Relic distributed tracing from the browser: send requests, see the trace headers the agent adds, and follow your own traces into the backend.">
+<!-- Link previews (Slack, email, social). The image URL is absolute, so it works from any host. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Browser Agent Playground">
+<meta property="og:title" content="Browser Distributed Tracing Demo | New Relic">
+<meta property="og:description" content="Try New Relic distributed tracing from the browser: send requests, see the trace headers the agent adds, and follow your own traces into the backend.">
+<meta property="og:image" content="https://mcaronnewrelic.github.io/BrowserAgentPlayground/images/vitals-hero.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,200..900&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="site.css">
 <style>
   /* ---------- Hero ---------- */
-  .hero .wrap { display: grid; grid-template-columns: 1.1fr .9fr; gap: 56px; align-items: center; }
+  .hero .wrap { grid-template-columns: 1.1fr .9fr; }
   /* Repeated from site.css because the rule above comes after it. */
   @media (max-width: 900px) { .hero .wrap { grid-template-columns: 1fr; } }
-  .note { margin-top: 28px; display: flex; gap: 12px; align-items: flex-start; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 14px 18px; font-size: 15px; max-width: 580px; }
+  .note { max-width: 580px; }
   .waterfall { background: var(--black); color: var(--sand); border-radius: var(--radius-lg); padding: 24px; box-shadow: 0 30px 60px -30px rgba(8,15,17,.45); font-family: var(--mono); font-size: 12.5px; }
   .waterfall .bar { display: flex; gap: 7px; margin-bottom: 16px; }
   .waterfall .bar i { width: 11px; height: 11px; border-radius: 50%; background: rgba(253,252,240,.18); display: block; }
@@ -105,10 +112,10 @@ NREUM.init.api={register:{enabled:true,duplicate_data_to_container:false}};
   .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
 
   /* ---------- Sections ---------- */
-  .step-head p { margin: 14px 0 0; max-width: 64ch; }
+  .step-head p { max-width: 64ch; }
 
   /* ---------- Identity ---------- */
-  .identity { background: var(--black); color: var(--white); border-radius: var(--radius-lg); padding: 36px; display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 24px; align-items: end; }
+  .identity { grid-template-columns: 1fr 1fr 1.2fr; }
   .field label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
   .mode-box { background: var(--panel-2); border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
   .mode-box .label { font-size: 14px; font-weight: 600; color: var(--sand); }
@@ -116,7 +123,7 @@ NREUM.init.api={register:{enabled:true,duplicate_data_to_container:false}};
   .mode-box .mode-sub { font: 500 12.5px/1.4 var(--mono); color: var(--gray); word-break: break-all; }
 
   /* ---------- Playground ---------- */
-  .playground { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 28px; align-items: start; }
+  .playground { grid-template-columns: minmax(0, 1fr) 420px; }
   .btn-col { display: grid; gap: 10px; }
   .req-btn { appearance: none; cursor: pointer; text-align: left; border: 1px solid var(--line); background: var(--sys-white); color: var(--black); border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; font: 600 13px/1.25 var(--mono); letter-spacing: 0; transition: border-color .15s, background .15s, transform .1s; }
   .req-btn:hover { border-color: var(--black); background: #fff; }
@@ -151,7 +158,7 @@ NREUM.init.api={register:{enabled:true,duplicate_data_to_container:false}};
   .entry .logline b { color: var(--white); font-weight: 600; }
   .entry .logline .lvl { display: inline-block; padding: 0 6px; border-radius: 6px; margin-right: 6px; color: var(--black); font-weight: 600; }
   .lvl.info { background: var(--blue-1); } .lvl.warn { background: var(--ember-1); } .lvl.error { background: var(--magenta-1); }
-  .snippet { background: var(--black); color: var(--sand); border-radius: 14px; padding: 14px 16px; font: 500 12.5px/1.6 var(--mono); white-space: pre-wrap; word-break: break-word; margin: 0; }
+  .snippet { font: 500 12.5px/1.6 var(--mono); white-space: pre-wrap; word-break: break-word; margin: 0; }
   .snippet .k { color: var(--green); } .snippet .c { color: var(--gray); } .snippet .s { color: var(--blue-1); }
   .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .compare > div { background: var(--sys-white); border-radius: 16px; padding: 14px 16px; font-size: 14px; }
@@ -172,7 +179,7 @@ NREUM.init.api={register:{enabled:true,duplicate_data_to_container:false}};
   @media (max-width: 1180px) {
     /* Repeated from site.css because this page's own .playground rule above comes after it. */
     .playground { grid-template-columns: 1fr; }
-    .feed { position: static; max-height: 560px; }
+    .feed { max-height: 560px; }
     .identity .mode-box { grid-column: 1 / -1; }
   }
 
@@ -345,17 +352,28 @@ newrelic.<span class="k">log</span>(<span class="s">'GET /api/products 200'</spa
   <section class="step find" id="find">
     <div class="wrap">
       <div class="step-head">
-        <div class="eyebrow">Find it / Search the shared account</div>
+        <div class="eyebrow">Find it / In New Relic</div>
         <h2 class="display" style="margin-top:14px">Find your traces</h2>
         <p>Data arrives in batches, usually within a minute (<a href="install.html#timing">why</a>). The first query uses the trace IDs captured from your own requests, so it matches only your traces.</p>
       </div>
       <div class="find-grid">
+        <div class="find-step">1 · See it in New Relic</div>
+        <div class="find-card full">
+          <h3>In Distributed tracing</h3>
+          <ol>
+            <li>In New Relic, open <b>Browser</b>, select the app, then <b>Distributed tracing</b>.</li>
+            <li>Search for one of your trace IDs. The inspector above has a <b>Copy trace ID</b> button on each request.</li>
+            <li>The waterfall starts with the browser's span, then the API and, for checkout, its <code>inventory</code> and <code>payment</code> calls. Open the trace's <b>Logs</b> tab to see browser and backend logs side by side.</li>
+          </ol>
+        </div>
+        <div class="find-step">2 · Query it</div>
         <div class="find-card full">
           <h3>Your traces, by trace ID</h3>
           <ol>
             <li>Open the query builder in New Relic and run this. Browser spans show <code>browserApp.name</code>; backend spans show <code>appName</code>.</li>
             <li>To see a waterfall, open <b>Distributed tracing</b> and search for one of these trace IDs.</li>
           </ol>
+          <p class="expect"><b>You should see:</b> Spans from both sides of each trace: browser spans with <code>browserApp.name</code>, backend spans with <code>appName</code>.</p>
           <pre id="nrqlSpans" class="placeholder">Send a request above to fill in your trace IDs.</pre>
           <div class="actions">
             <button class="btn green small js-copy" data-copy-target="nrqlSpans" type="button">Copy NRQL</button>
@@ -368,26 +386,30 @@ newrelic.<span class="k">log</span>(<span class="s">'GET /api/products 200'</spa
             <li>Run this to see every log written on your traces. Browser logs have a <code>session</code>; backend logs have a <code>span.id</code>.</li>
             <li>Or open any of your traces in <b>Distributed tracing</b> and look at its <b>Logs</b> tab.</li>
           </ol>
+          <p class="expect"><b>You should see:</b> A browser log for each request (with a <code>session</code>), and backend logs with a <code>span.id</code>, all sharing the trace IDs.</p>
           <pre id="nrqlLogs" class="placeholder">Send a request above to fill in your trace IDs.</pre>
           <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlLogs" type="button">Copy NRQL</button></div>
         </div>
         <div class="find-card">
           <h3>Your requests, from the browser</h3>
           <p>Every request is also an <code>AjaxRequest</code> event tagged with your code.</p>
+          <p class="expect"><b>You should see:</b> One row per request you sent, with its URL, status code and time to settle.</p>
           <pre id="nrqlAjax"></pre>
           <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlAjax" type="button">Copy NRQL</button></div>
         </div>
         <div class="find-card">
           <h3>Your requests, from the backend</h3>
           <p id="txnNote">With the backend connected, its transactions carry your code too.</p>
+          <p class="expect"><b>You should see:</b> One row per backend transaction your requests caused. Its <code>traceId</code> matches the browser's.</p>
           <pre id="nrqlTxn"></pre>
           <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlTxn" type="button">Copy NRQL</button></div>
         </div>
       </div>
+      <div class="find-step tips-head">3 · Didn't see it?</div>
       <div class="tips">
         <div class="tip"><b>No backend spans?</b>In browser-only mode that is expected. Static files have no APM agent. Connect the backend in <code>backend/README.md</code> to see the full path.</div>
         <div class="tip"><b>No INFO logs?</b>Successful requests log at INFO. If your app keeps only WARN and above, raise the manual log verbosity under Browser &gt; Application settings.</div>
-        <div class="tip"><b>Backend not joining?</b>Add its origin under CORS in Application settings, then re-copy the snippet into the pages. The inspector tells you which step is missing.</div>
+        <div class="tip"><b>Backend not joining?</b>The inspector's status for each request says which piece is missing. <code>backend/README.md</code> lists the three settings that have to line up for a backend on another domain.</div>
         <div class="tip"><b>Learn more</b><a href="https://docs.newrelic.com/docs/browser/new-relic-browser/browser-pro-features/browser-data-distributed-tracing/" target="_blank" rel="noopener">Browser data in distributed tracing</a> · <a href="https://www.w3.org/TR/trace-context/" target="_blank" rel="noopener">W3C Trace Context</a> · WebSockets get no trace headers; see <a href="websockets.html">WebSockets</a></div>
       </div>
     </div>

@@ -36,6 +36,23 @@ const PAGES = fs.readdirSync(SITE).filter((f) => f.endsWith('.html')).sort();
 const RAW = Object.fromEntries(PAGES.map((p) => [p, loadLogic(p)]).filter(([, v]) => v));
 const L = Object.fromEntries(Object.entries(RAW).map(([p, api]) => [p, wrap(api)]));
 
+// ---- Every script on every page at least parses ----
+
+test('every inline script on every page, and site.js, is valid JavaScript', () => {
+  let checked = 0;
+  for (const page of PAGES) {
+    const html = fs.readFileSync(path.join(SITE, page), 'utf8');
+    for (const [i, m] of [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].entries()) {
+      assert.doesNotThrow(() => new vm.Script(m[1], { filename: page + ' inline script ' + (i + 1) }), page + ' inline script ' + (i + 1));
+      checked++;
+    }
+  }
+  for (const file of ['site.js', 'demo-identity.js', 'nr-init.js', 'nr-config.js']) {
+    assert.doesNotThrow(() => new vm.Script(fs.readFileSync(path.join(SITE, file), 'utf8'), { filename: file }), file);
+  }
+  assert.ok(checked >= 50, 'found ' + checked + ' inline scripts');
+});
+
 // ---- Every query a page offers is one runnable NRQL statement ----
 
 test('every demo page has a logic block', () => {
@@ -57,7 +74,12 @@ test('every NRQL builder returns a single query, filtered to your code when it t
       assert.match(q, /\bSINCE\b/, where + ' has SINCE');
       assert.ok(!/\n\s*\n/.test(q.trim()), where + ' is one statement (no blank line between two queries)');
       assert.strictEqual((q.match(/\bSELECT\b/g) || []).length, 1, where + ' has exactly one SELECT');
-      if (params.includes('code')) assert.ok(q.includes("'" + CODE + "'"), where + ' filters by your code');
+      // The site's convention (README): your own data over the last hour, no ORDER BY (raw rows come back newest first).
+      assert.ok(!/\bORDER BY\b/.test(q), where + ' has no ORDER BY');
+      if (params.includes('code')) {
+        assert.ok(q.includes("'" + CODE + "'"), where + ' filters by your code');
+        assert.match(q, /SINCE 1 hour ago/, where + ' looks back one hour');
+      }
       if (params.includes('traceIds')) assert.ok(q.includes(TRACE_IDS[0]), where + ' filters by your trace IDs');
       checked++;
     }
@@ -220,6 +242,19 @@ test('websockets: only ws and wss servers are accepted from the address', () => 
   assert.strictEqual(backendServer({ protocol: 'https:', host: 'browser.nru.to' }), 'wss://browser.nru.to/ws');
   assert.strictEqual(backendServer({ protocol: 'http:', host: 'localhost:3000' }), 'ws://localhost:3000/ws');
   assert.strictEqual(withIdentity('wss://h/ws', CODE, 'Ada L'), 'wss://h/ws?demoCode=' + CODE + '&demoUser=Ada%20L');
+});
+
+test('websockets: ?ws= wins, then the page\'s own backend, then browser.nru.to if it answers /ws, then the echo server', () => {
+  const { pickServer, DEFAULT_SERVER } = L['websockets.html'];
+  const here = { protocol: 'https:', host: 'mcaronnewrelic.github.io' };
+  assert.deepStrictEqual(pickServer({ wsParam: 'wss://mine.example/ws', servedByBackend: true, location: here, remoteWebSocket: true }),
+    { server: 'wss://mine.example/ws', onBackend: false, source: 'param' });
+  assert.deepStrictEqual(pickServer({ wsParam: null, servedByBackend: true, location: { protocol: 'http:', host: 'localhost:3000' }, remoteWebSocket: true }),
+    { server: 'ws://localhost:3000/ws', onBackend: true, source: 'same-origin' });
+  assert.deepStrictEqual(pickServer({ wsParam: null, servedByBackend: false, location: here, remoteWebSocket: true }),
+    { server: 'wss://browser.nru.to/ws', onBackend: true, source: 'remote' });
+  assert.deepStrictEqual(pickServer({ wsParam: null, servedByBackend: false, location: here, remoteWebSocket: false }),
+    { server: DEFAULT_SERVER, onBackend: false, source: 'echo' });
 });
 
 test('install: request paths drop the browser key, and the install method is detected', () => {

@@ -1,0 +1,2 @@
+# Shell scripts keep Unix line endings everywhere, including Windows checkouts: bash (Git Bash too) fails on CRLF.
+*.sh text eol=lf

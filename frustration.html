@@ -27,6 +27,13 @@
 <link rel="apple-touch-icon" href="favicons/apple-touch-icon.png" sizes="180x180">
 <meta name="theme-color" content="#080F11">
 <meta name="description" content="Try New Relic's rage click, dead click and error click detection: trigger each frustration signal on purpose, then find your own UserAction events in a shared account.">
+<!-- Link previews (Slack, email, social). The image URL is absolute, so it works from any host. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Browser Agent Playground">
+<meta property="og:title" content="Browser Frustration Demo | New Relic">
+<meta property="og:description" content="Try New Relic's rage click, dead click and error click detection: trigger each frustration signal on purpose, then find your own UserAction events in a shared account.">
+<meta property="og:image" content="https://mcaronnewrelic.github.io/BrowserAgentPlayground/images/vitals-hero.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,200..900&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -180,17 +187,28 @@ newrelic.<span class="k">noticeError</span>(err)
   <section class="step find" id="find">
     <div class="wrap">
       <div class="step-head">
-        <div class="eyebrow">Find it / Search the shared account</div>
+        <div class="eyebrow">Find it / In New Relic</div>
         <h2 class="display" style="margin-top:14px">Find your clicks</h2>
         <p>Data arrives in batches, usually within a minute (<a href="install.html#timing">why</a>). Everything below is already filled in with your code, <code class="js-code" style="color:var(--green)">NR-XXXX</code>.</p>
       </div>
       <div class="find-grid">
+        <div class="find-step">1 · See it in New Relic</div>
+        <div class="find-card full">
+          <h3>In the Browser UI</h3>
+          <ol>
+            <li>Go to <b>Browser</b>, open the demo app, then <b>Users → User impact → Frustration metrics</b> for the aggregate view: rage click trends, top affected pages and elements.</li>
+            <li>Filter any of the above by <code id="uiFilter">demoCode = NR-XXXX</code> to see only your clicks.</li>
+            <li>Session Replay is already on for this app. Open a session that includes one of your clicks and watch it happen.</li>
+          </ol>
+        </div>
+        <div class="find-step">2 · Query it</div>
         <div class="find-card full">
           <h3>All your clicks</h3>
           <ol>
             <li>Open the query builder in New Relic and run this. <code>rageClick</code>, <code>deadClick</code> and <code>errorClick</code> are booleans: <code>true</code> only when that signal fired.</li>
             <li>Everything else about the click (which element, how many times, how long) is on the same row.</li>
           </ol>
+          <p class="expect"><b>You should see:</b> One row per click. <code>rageClick</code>, <code>deadClick</code> or <code>errorClick</code> is true on the clicks that tripped a signal.</p>
           <pre id="nrqlAll"></pre>
           <div class="actions">
             <button class="btn green small js-copy" data-copy-target="nrqlAll" type="button">Copy NRQL</button>
@@ -199,28 +217,24 @@ newrelic.<span class="k">noticeError</span>(err)
         </div>
         <div class="find-card">
           <h3>Just your rage clicks</h3>
+          <p class="expect"><b>You should see:</b> A row for each burst of four or more fast clicks, with its <code>actionCount</code>.</p>
           <pre id="nrqlRage"></pre>
           <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlRage" type="button">Copy NRQL</button></div>
         </div>
         <div class="find-card">
           <h3>Just your dead clicks</h3>
+          <p class="expect"><b>You should see:</b> A row for each click that changed nothing on the page.</p>
           <pre id="nrqlDead"></pre>
           <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlDead" type="button">Copy NRQL</button></div>
         </div>
         <div class="find-card">
           <h3>Just your error clicks</h3>
+          <p class="expect"><b>You should see:</b> A row for each click followed by a JavaScript error.</p>
           <pre id="nrqlErrorClick"></pre>
           <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlErrorClick" type="button">Copy NRQL</button></div>
         </div>
-        <div class="find-card full">
-          <h3>See it in the UI</h3>
-          <ol>
-            <li>Go to <b>Browser</b>, open the demo app, then <b>Users → User impact → Frustration metrics</b> for the aggregate view: rage click trends, top affected pages and elements.</li>
-            <li>Filter any of the above by <code id="uiFilter">demoCode = NR-XXXX</code> to see only your clicks.</li>
-            <li>Session Replay is already on for this app. Open a session that includes one of your clicks and watch it happen.</li>
-          </ol>
-        </div>
       </div>
+      <div class="find-step tips-head">3 · Didn't see it?</div>
       <div class="tips">
         <div class="tip"><b>Not seeing a rage click?</b>All 4+ clicks need to land within one second of each other. Click faster, or get a friend to help.</div>
         <div class="tip"><b>Not seeing a dead click?</b>Any DOM change counts as "something happened," including this page's own background checks right after load. Wait a few seconds, then try again.</div>
@@ -278,7 +292,6 @@ newrelic.<span class="k">noticeError</span>(err)
            "FROM UserAction\n" +
            "WHERE demoCode = '" + code + "'\n" +
            "SINCE 1 hour ago\n" +
-           "ORDER BY timestamp DESC\n" +
            "LIMIT 100";
   }
   // field: 'rageClick' | 'deadClick' | 'errorClick'
@@ -287,7 +300,6 @@ newrelic.<span class="k">noticeError</span>(err)
            "FROM UserAction\n" +
            "WHERE demoCode = '" + code + "' AND " + field + " = true\n" +
            "SINCE 1 hour ago\n" +
-           "ORDER BY timestamp DESC\n" +
            "LIMIT 100";
   }
 

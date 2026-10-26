@@ -50,8 +50,10 @@ expect "pacific weekday" "$(get "$out" category)" "Feature Flag"
 
 # Every event has the descriptions and a group id for the week.
 out=$(run "2026-10-14T16:07:00Z")
-[[ -n "$(get "$out" short_description)" ]] && pass=$((pass + 1)) || { echo "FAIL - short_description empty"; exit 1; }
-[[ -n "$(get "$out" description)" ]] && pass=$((pass + 1)) || { echo "FAIL - description empty"; exit 1; }
+for field in short_description description; do
+  if [[ -z "$(get "$out" "$field")" ]]; then echo "FAIL - $field empty"; exit 1; fi
+  pass=$((pass + 1))
+done
 expect "group id" "$(get "$out" group_id)" "demo-week-2026-W42"
 
 # The event follows the date in Los Angeles, never the time of day. GitHub starts scheduled

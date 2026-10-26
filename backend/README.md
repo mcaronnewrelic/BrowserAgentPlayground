@@ -44,7 +44,7 @@ npm install
 NEW_RELIC_LICENSE_KEY=your_ingest_key node server.js
 ```
 
-Then open `https://mcaronnewrelic.github.io/BrowserLogsDemo/tracing.html?backend=http://localhost:3000`. Chrome allows a public page to call `localhost`, but it may first ask for permission to access devices on your local network.
+Then open `https://mcaronnewrelic.github.io/BrowserAgentPlayground/tracing.html?backend=http://localhost:3000`. Chrome allows a public page to call `localhost`, but it may first ask for permission to access devices on your local network.
 
 ## Deploy to Render (example)
 

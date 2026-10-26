@@ -216,7 +216,7 @@ test('without APM, logging still prints to stdout and nothing throws', async () 
 
 test('health reports whether APM is attached', async () => {
   await withServer({ nr: fakeNewRelic() }, async (base) => {
-    assert.deepStrictEqual((await (await fetch(base + '/api/health')).json()).data, { ok: true, apm: true });
+    assert.deepStrictEqual((await (await fetch(base + '/api/health')).json()).data, { ok: true, apm: true, websocket: true });
   });
 });
 

@@ -27,6 +27,13 @@
 <link rel="apple-touch-icon" href="favicons/apple-touch-icon.png" sizes="180x180">
 <meta name="theme-color" content="#080F11">
 <meta name="description" content="Compare newrelic.addPageAction(), newrelic.recordCustomEvent() and the automatic BrowserInteraction event: trigger each one on purpose, then find your own events in a shared account.">
+<!-- Link previews (Slack, email, social). The image URL is absolute, so it works from any host. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Browser Agent Playground">
+<meta property="og:title" content="Browser Events Demo | New Relic">
+<meta property="og:description" content="Compare newrelic.addPageAction(), newrelic.recordCustomEvent() and the automatic BrowserInteraction event: trigger each one on purpose, then find your own events in a shared account.">
+<meta property="og:image" content="https://mcaronnewrelic.github.io/BrowserAgentPlayground/images/vitals-hero.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,200..900&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -185,16 +192,27 @@ el.textContent = <span class="s">'done'</span> <span class="c">// 2. then DOM ch
   <section class="step find" id="find">
     <div class="wrap">
       <div class="step-head">
-        <div class="eyebrow">Find it / Search the shared account</div>
+        <div class="eyebrow">Find it / In New Relic</div>
         <h2 class="display" style="margin-top:14px">Find your events</h2>
         <p>Data arrives in batches, usually within a minute (<a href="install.html#timing">why</a>). Everything below is already filled in with your code, <code class="js-code" style="color:var(--green)">NR-XXXX</code>.</p>
       </div>
       <div class="find-grid">
+        <div class="find-step">1 · See it in New Relic</div>
+        <div class="find-card full">
+          <h3>In the Browser UI</h3>
+          <ol>
+            <li>Go to <b>Browser</b>, open the demo app, then <b>Browser interactions</b> or <b>Page views</b> to see <code>BrowserInteraction</code> rows for real route changes across the whole app.</li>
+            <li>There's no dedicated UI page for <code>PageAction</code> or custom events. The query builder and dashboards are how you see them.</li>
+            <li>Filter any of the above by <code id="uiFilter">demoCode = NR-XXXX</code> to see only your events.</li>
+          </ol>
+        </div>
+        <div class="find-step">2 · Query it</div>
         <div class="find-card full">
           <h3>All three side by side</h3>
           <ol>
             <li>Open the query builder in New Relic and run this. If a route didn't change, no <code>BrowserInteraction</code> row shows up here at all. That's expected, not a bug.</li>
           </ol>
+          <p class="expect"><b>You should see:</b> A count for <code>PageAction</code> and your custom event type. <code>BrowserInteraction</code> appears only if you used the route-change button.</p>
           <pre id="nrqlCompare"></pre>
           <div class="actions">
             <button class="btn green small js-copy" data-copy-target="nrqlCompare" type="button">Copy NRQL</button>
@@ -204,30 +222,26 @@ el.textContent = <span class="s">'done'</span> <span class="c">// 2. then DOM ch
         <div class="find-card">
           <h3>Just your PageAction events</h3>
           <p><code>actionName</code>, <code>timeSinceLoad</code> and <code>referrerUrl</code> came free; you never set them.</p>
+          <p class="expect"><b>You should see:</b> One row per click on the PageAction button, with <code>actionName</code> "Added to cart" and the free attributes filled in.</p>
           <pre id="nrqlPageAction"></pre>
           <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlPageAction" type="button">Copy NRQL</button></div>
         </div>
         <div class="find-card">
           <h3>Just your custom events</h3>
           <p>Same shape as PageAction, but under the <code class="js-event-type">DemoAction</code> event type you chose, with no bonus attributes.</p>
+          <p class="expect"><b>You should see:</b> One row per click on the custom event button, with only the attributes you sent.</p>
           <pre id="nrqlCustom"></pre>
           <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlCustom" type="button">Copy NRQL</button></div>
         </div>
         <div class="find-card">
           <h3>Just your BrowserInteraction events</h3>
           <p>Only the "route change, then update" button produces one of these. The "AJAX only" button never does.</p>
+          <p class="expect"><b>You should see:</b> One row per route-change click, with <code>category</code> "Route change". None from the AJAX-only button.</p>
           <pre id="nrqlBrowserInteraction"></pre>
           <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlBrowserInteraction" type="button">Copy NRQL</button></div>
         </div>
-        <div class="find-card full">
-          <h3>See it in the UI</h3>
-          <ol>
-            <li>Go to <b>Browser</b>, open the demo app, then <b>Browser interactions</b> or <b>Page views</b> to see <code>BrowserInteraction</code> rows for real route changes across the whole app.</li>
-            <li>There's no dedicated UI page for <code>PageAction</code> or custom events. The query builder and dashboards are how you see them.</li>
-            <li>Filter any of the above by <code id="uiFilter">demoCode = NR-XXXX</code> to see only your events.</li>
-          </ol>
-        </div>
       </div>
+      <div class="find-step tips-head">3 · Didn't see it?</div>
       <div class="tips">
         <div class="tip"><b>Not seeing a BrowserInteraction from the AJAX-only button?</b>That's correct, not broken. It needs a route change first. The AJAX-only button deliberately never gives it one.</div>
         <div class="tip"><b>Not seeing anything at all?</b>Make sure the agent badge up top says "detected." Then give it a minute: data arrives in batches (<a href="install.html#timing">why</a>).</div>
@@ -291,7 +305,6 @@ el.textContent = <span class="s">'done'</span> <span class="c">// 2. then DOM ch
            "FROM PageAction\n" +
            "WHERE demoCode = '" + code + "'\n" +
            "SINCE 1 hour ago\n" +
-           "ORDER BY timestamp DESC\n" +
            "LIMIT 100";
   }
   function buildCustomNrql(code) {
@@ -299,7 +312,6 @@ el.textContent = <span class="s">'done'</span> <span class="c">// 2. then DOM ch
            "FROM " + CUSTOM_EVENT_TYPE + "\n" +
            "WHERE demoCode = '" + code + "'\n" +
            "SINCE 1 hour ago\n" +
-           "ORDER BY timestamp DESC\n" +
            "LIMIT 100";
   }
   function buildBrowserInteractionNrql(code) {
@@ -307,7 +319,6 @@ el.textContent = <span class="s">'done'</span> <span class="c">// 2. then DOM ch
            "FROM BrowserInteraction\n" +
            "WHERE demoCode = '" + code + "'\n" +
            "SINCE 1 hour ago\n" +
-           "ORDER BY timestamp DESC\n" +
            "LIMIT 100";
   }
 

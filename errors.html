@@ -27,6 +27,13 @@
 <link rel="apple-touch-icon" href="favicons/apple-touch-icon.png" sizes="180x180">
 <meta name="theme-color" content="#080F11">
 <meta name="description" content="Try New Relic browser error tracking: throw real JavaScript errors, report handled ones, filter and group them, then find your own errors in a shared account.">
+<!-- Link previews (Slack, email, social). The image URL is absolute, so it works from any host. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Browser Agent Playground">
+<meta property="og:title" content="Browser Errors Demo | New Relic">
+<meta property="og:description" content="Try New Relic browser error tracking: throw real JavaScript errors, report handled ones, filter and group them, then find your own errors in a shared account.">
+<meta property="og:image" content="https://mcaronnewrelic.github.io/BrowserAgentPlayground/images/vitals-hero.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,200..900&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -291,17 +298,29 @@ newrelic.<span class="k">setErrorHandler</span>(err =&gt;
   <section class="step find" id="find">
     <div class="wrap">
       <div class="step-head">
-        <div class="eyebrow">Find it / Search the shared account</div>
+        <div class="eyebrow">Find it / In New Relic</div>
         <h2 class="display" style="margin-top:14px">Find your errors</h2>
         <p>Data arrives in batches, usually within a minute (<a href="install.html#timing">why</a>). Everything below is already filled in with your code, <code class="js-code" style="color:var(--green)">NR-XXXX</code>.</p>
       </div>
       <div class="find-grid">
+        <div class="find-step">1 · See it in New Relic</div>
+        <div class="find-card full">
+          <h3>See them in Errors Inbox and Session Replay</h3>
+          <ol>
+            <li>Go to <b>Browser</b>, open the demo app, then select <b>Errors</b> (Errors Inbox).</li>
+            <li>Everyone who throws the same error lands in the same group, which is what makes <b>Users affected</b> climb. Errors you grouped show up under your custom label, such as <b class="js-group">Payment failures</b>.</li>
+            <li>Open an error group and search its profile for <code id="inboxFilter">demoCode = NR-XXXX</code> to find your own occurrences.</li>
+            <li>Open an error and look for its <b>session replay</b>. This app records replays for sessions that hit an error, so you can watch the clicks that led to it. Text is masked in replays for privacy.</li>
+          </ol>
+        </div>
+        <div class="find-step">2 · Query it</div>
         <div class="find-card">
           <h3>Your JavaScript errors</h3>
           <ol>
             <li>Open the query builder in New Relic.</li>
             <li>Run this to see each error with its class and release.</li>
           </ol>
+          <p class="expect"><b>You should see:</b> One row per error you sent, with its class (such as <code>TypeError</code> or <code>CheckoutError</code>) and the release you picked. Errors your handler ignored are missing on purpose.</p>
           <pre id="nrqlErrors"></pre>
           <div class="actions">
             <button class="btn green small js-copy" data-copy-target="nrqlErrors" type="button">Copy NRQL</button>
@@ -314,21 +333,14 @@ newrelic.<span class="k">setErrorHandler</span>(err =&gt;
             <li>Same query builder, different event type.</li>
             <li>Match <code>errorId</code> values to errors from the "Both" button.</li>
           </ol>
+          <p class="expect"><b>You should see:</b> An ERROR log for each "Both" button you clicked, with an <code>errorId</code> that matches its error.</p>
           <pre id="nrqlLogs"></pre>
           <div class="actions">
             <button class="btn green small js-copy" data-copy-target="nrqlLogs" type="button">Copy NRQL</button>
           </div>
         </div>
-        <div class="find-card full">
-          <h3>See them in Errors Inbox and Session Replay</h3>
-          <ol>
-            <li>Go to <b>Browser</b>, open the demo app, then select <b>Errors (errors inbox)</b>.</li>
-            <li>Everyone who throws the same error lands in the same group, which is what makes <b>Users affected</b> climb. Errors you grouped show up under your custom label, such as <b class="js-group">Payment failures</b>.</li>
-            <li>Open an error group and search its profile for <code id="inboxFilter">demoCode = NR-XXXX</code> to find your own occurrences.</li>
-            <li>Open an error and look for its <b>session replay</b>. This app records replays for sessions that hit an error, so you can watch the clicks that led to it. Text is masked in replays for privacy.</li>
-          </ol>
-        </div>
       </div>
+      <div class="find-step tips-head">3 · Didn't see it?</div>
       <div class="tips">
         <div class="tip"><b>An error is missing?</b>Check your error handler rules. Ignored errors never leave the browser, which is exactly what makes ignoring noise cheap.</div>
         <div class="tip"><b>Seeing errors you didn't throw?</b>Errors from browser extensions and third-party scripts show up too. That is what <code>setErrorHandler()</code> is for.</div>
@@ -407,13 +419,13 @@ newrelic.<span class="k">setErrorHandler</span>(err =&gt;
     return "SELECT timestamp, errorClass, errorMessage, releaseIds, demoUser\n" +
            "FROM JavaScriptError\n" +
            "WHERE demoCode = '" + code + "'\n" +
-           "SINCE 30 minutes ago LIMIT 100";
+           "SINCE 1 hour ago LIMIT 100";
   }
   function buildLogsNrql(code) {
     return "SELECT timestamp, level, message, errorId\n" +
            "FROM Log\n" +
            "WHERE demoCode = '" + code + "'\n" +
-           "SINCE 30 minutes ago LIMIT 100";
+           "SINCE 1 hour ago LIMIT 100";
   }
 
   root.ErrDemo = {

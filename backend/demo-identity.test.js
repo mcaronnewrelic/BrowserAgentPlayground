@@ -19,7 +19,7 @@ function loadOnPage(page, { store = {}, storageBlocked = false, search = '' } = 
   class CustomEvent { constructor(type, init) { this.type = type; this.detail = init && init.detail; } }
   const context = vm.createContext({
     window, CustomEvent, sessionStorage, JSON, URLSearchParams, Uint32Array,
-    location: { pathname: '/BrowserLogsDemo/' + page, search, replace: (url) => redirects.push(url) }
+    location: { pathname: '/BrowserAgentPlayground/' + page, search, replace: (url) => redirects.push(url) }
   });
   vm.runInContext(SOURCE, context);
   return { identity: window.DemoIdentity, redirects, store, announced };

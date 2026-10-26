@@ -1,0 +1,53 @@
+# Creates whatever is missing in New Relic: dashboards, synthetic checks and their alert email, and the
+# workload (newrelic/setup.sh). Existing items are left alone, so it is safe to run any time. To rebuild
+# something that was changed by hand, delete it in New Relic, then run this again.
+#
+# Runs on demand ("Run workflow" on the Actions tab) and when dashboards/ or newrelic/ change on main.
+# The same scripts run without GitHub too: see newrelic/README.md.
+#
+# Secret:   NEW_RELIC_API_KEY (User key, NRAK-...), the one the change-tracking workflow uses.
+# Variable: NEW_RELIC_ALERT_EMAIL (optional) for the alert email. Default: demo@newrelicuniversity.com.
+name: New Relic setup
+
+on:
+  workflow_dispatch:
+    inputs:
+      step:
+        description: What to create if missing
+        type: choice
+        options: [all, dashboards, synthetics, workload]
+        default: all
+  push:
+    branches: [main]
+    paths:
+      - "dashboards/**"
+      - "newrelic/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: newrelic-setup
+
+jobs:
+  setup:
+    name: Create missing New Relic entities
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run setup
+        env:
+          NEW_RELIC_API_KEY: ${{ secrets.NEW_RELIC_API_KEY }}
+          ALERT_EMAIL: ${{ vars.NEW_RELIC_ALERT_EMAIL }}
+          STEP: ${{ inputs.step || 'all' }}
+        run: |
+          case "$STEP" in
+            all) bash newrelic/setup.sh ;;
+            dashboards|synthetics|workload) bash "newrelic/$STEP.sh" ;;
+            *) echo "::error::Unknown step $STEP"; exit 1 ;;
+          esac 2>&1 | tee setup.log
+          { echo '### New Relic setup'; echo; echo '```'; cat setup.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

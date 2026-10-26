@@ -40,7 +40,7 @@
     '<path d="M12.708 28.7337V43.4067L20.652 47.9907V24.1467L0 12.2217V21.3957L12.708 28.7337Z"/>' +
     '</svg>';
 
-  // On GitHub Pages the home page is ".../BrowserLogsDemo/", and on the Node server it is "/".
+  // On GitHub Pages the home page is ".../BrowserAgentPlayground/", and on the Node server it is "/".
   function currentFile() { return location.pathname.split('/').pop() || 'index.html'; }
 
   // Inserts markup where the calling <script> tag sits. Only works while the page is being parsed.
@@ -98,6 +98,27 @@
         '<a class="btn green small" href="index.html#pages">Back to the path <span class="arrow" aria-hidden="true">→</span></a>';
     writeHere('<section class="up-next"><div class="wrap"><div class="up-next-card">' + body + '</div></div></section>');
   }
+
+  // Elements marked data-count="pages" or "stages" show how many there are on the learning path, in words,
+  // keeping the capitalization of the text already there. That text is the fallback without JavaScript.
+  var NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+    'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty'];
+  function pathCounts() {
+    var stages = {};
+    PAGES.forEach(function (p) { if (p.stage) stages[p.stage] = true; });
+    return { pages: PAGES.length - 1, stages: Object.keys(stages).length };  // Home isn't a stop on the path
+  }
+  function fillCounts() {
+    var counts = pathCounts();
+    Array.prototype.forEach.call(document.querySelectorAll('[data-count]'), function (el) {
+      var n = counts[el.dataset.count];
+      if (n === undefined) return;
+      var word = NUMBER_WORDS[n] || String(n);
+      var capital = /^[A-Z]/.test(el.textContent);
+      el.textContent = capital ? word.charAt(0).toUpperCase() + word.slice(1) : word;
+    });
+  }
+  document.addEventListener('DOMContentLoaded', fillCounts);
 
   // The page switcher scrolls sideways when it doesn't fit, so bring the current page's tab into view.
   function centerCurrentTab() {
@@ -191,8 +212,13 @@
   // A wrong pick is crossed out and can be retried. The right one shows the explanation and locks the question.
   function initQuiz() {
     Array.prototype.forEach.call(document.querySelectorAll('.quiz .q'), function (q) {
-      // The explanation ships hidden in the markup and is shown once the right answer is picked.
+      // The explanation ships hidden in the markup. The feedback paragraph then becomes an empty live region,
+      // so screen readers announce "Correct." or "Not quite." when it fills in.
       var attempts = 0, feedback = q.querySelector('.q-feedback'), explanation = feedback.innerHTML;
+      feedback.innerHTML = '';
+      feedback.setAttribute('role', 'status');
+      feedback.setAttribute('aria-live', 'polite');
+      feedback.hidden = false;
       Array.prototype.forEach.call(q.querySelectorAll('.q-opt'), function (option) {
         option.addEventListener('click', function () {
           attempts++;
@@ -275,7 +301,7 @@
   }
 
   window.Demo = {
-    PAGES: PAGES, header: header, whoSummary: whoSummary, identityForm: identityForm, upNext: upNext,
+    PAGES: PAGES, header: header, whoSummary: whoSummary, identityForm: identityForm, upNext: upNext, pathCounts: pathCounts,
     $: $, agent: agent, safe: safe, esc: esc, time: time, renderAgent: renderAgent,
     copyText: copyText, toast: toast, feed: feed, start: start, QUIZ_EVENT_TYPE: QUIZ_EVENT_TYPE, quizAnswer: quizAnswer
   };

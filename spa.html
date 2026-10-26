@@ -27,6 +27,13 @@
 <link rel="apple-touch-icon" href="favicons/apple-touch-icon.png" sizes="180x180">
 <meta name="theme-color" content="#080F11">
 <meta name="description" content="Take manual control of SPA tracking with newrelic.interaction(), setCurrentRouteName(), setPageViewName() and finished(): force, suppress and rename BrowserInteraction events yourself.">
+<!-- Link previews (Slack, email, social). The image URL is absolute, so it works from any host. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Browser Agent Playground">
+<meta property="og:title" content="Browser SPA API Demo | New Relic">
+<meta property="og:description" content="Take manual control of SPA tracking with newrelic.interaction(), setCurrentRouteName(), setPageViewName() and finished(): force, suppress and rename BrowserInteraction events yourself.">
+<meta property="og:image" content="https://mcaronnewrelic.github.io/BrowserAgentPlayground/images/vitals-hero.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,200..900&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -194,16 +201,27 @@ newrelic.<span class="k">finished</span>()</pre>
   <section class="step find" id="find">
     <div class="wrap">
       <div class="step-head">
-        <div class="eyebrow">Find it / Search the shared account</div>
+        <div class="eyebrow">Find it / In New Relic</div>
         <h2 class="display" style="margin-top:14px">Find your events</h2>
         <p>Data arrives in batches, usually within a minute (<a href="install.html#timing">why</a>). Everything below is already filled in with your code, <code class="js-code" style="color:var(--green)">NR-XXXX</code>.</p>
       </div>
       <div class="find-grid">
+        <div class="find-step">1 · See it in New Relic</div>
+        <div class="find-card full">
+          <h3>In the Browser UI</h3>
+          <ol>
+            <li>Go to <b>Browser</b>, open the demo app, then <b>Browser interactions</b> or <b>Page views</b> to see these rows alongside the automatic ones from the other pages.</li>
+            <li>The forced-save and route-named interactions should look like any other <code>BrowserInteraction</code> there; nothing in the UI marks them as API-created.</li>
+            <li>Filter any of the above by <code id="uiFilter">demoCode = NR-XXXX</code> to see only your events.</li>
+          </ol>
+        </div>
+        <div class="find-step">2 · Query it</div>
         <div class="find-card full">
           <h3>Your BrowserInteraction rows, forced and named</h3>
           <ol>
             <li>Open the query builder in New Relic and run this. The forced-save row and the route-named row should both be here. The suppressed one should not be here at all; that's the proof <code>.ignore()</code> worked.</li>
           </ol>
+          <p class="expect"><b>You should see:</b> Rows for your forced save and your named routes. No row for the suppressed one: that's the proof <code>.ignore()</code> worked.</p>
           <pre id="nrqlBrowserInteraction"></pre>
           <div class="actions">
             <button class="btn green small js-copy" data-copy-target="nrqlBrowserInteraction" type="button">Copy NRQL</button>
@@ -213,24 +231,19 @@ newrelic.<span class="k">finished</span>()</pre>
         <div class="find-card">
           <h3>Your renamed PageView</h3>
           <p><code>browserTransactionName</code> should show the custom name this page set automatically on load, not the raw file path.</p>
+          <p class="expect"><b>You should see:</b> <code>browserTransactionName</code> set to the name this page chose, not the file path.</p>
           <pre id="nrqlPageView"></pre>
           <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlPageView" type="button">Copy NRQL</button></div>
         </div>
         <div class="find-card">
           <h3>Your finished() call</h3>
           <p><code>finished()</code> isn't flat-queryable on its own; it fires a <code>PageAction</code> named <code>finished</code> under the hood, which this is.</p>
+          <p class="expect"><b>You should see:</b> One <code>PageAction</code> named <code>finished</code> per page load.</p>
           <pre id="nrqlFinished"></pre>
           <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlFinished" type="button">Copy NRQL</button></div>
         </div>
-        <div class="find-card full">
-          <h3>See it in the UI</h3>
-          <ol>
-            <li>Go to <b>Browser</b>, open the demo app, then <b>Browser interactions</b> or <b>Page views</b> to see these rows alongside the automatic ones from the other pages.</li>
-            <li>The forced-save and route-named interactions should look like any other <code>BrowserInteraction</code> there; nothing in the UI marks them as API-created.</li>
-            <li>Filter any of the above by <code id="uiFilter">demoCode = NR-XXXX</code> to see only your events.</li>
-          </ol>
-        </div>
       </div>
+      <div class="find-step tips-head">3 · Didn't see it?</div>
       <div class="tips">
         <div class="tip"><b>Still seeing the suppressed one?</b>Give it a minute, data arrives in batches. If it's still there after that, something's off; it shouldn't be.</div>
         <div class="tip"><b>Route name not showing on the first click?</b>That's expected. <code>previousRouteName</code> only populates starting on your second click; the first has nothing to look back to.</div>
@@ -288,22 +301,21 @@ newrelic.<span class="k">finished</span>()</pre>
            "FROM BrowserInteraction\n" +
            "WHERE demoCode = '" + code + "'\n" +
            "SINCE 1 hour ago\n" +
-           "ORDER BY timestamp DESC\n" +
-           "LIMIT 50";
+           "LIMIT 100";
   }
   function buildPageViewNrql(code) {
     return "SELECT browserTransactionName, demoCode\n" +
            "FROM PageView\n" +
            "WHERE demoCode = '" + code + "'\n" +
            "SINCE 1 hour ago\n" +
-           "LIMIT 10";
+           "LIMIT 100";
   }
   function buildFinishedNrql(code) {
     return "SELECT timestamp, actionName, demoCode\n" +
            "FROM PageAction\n" +
            "WHERE demoCode = '" + code + "' AND actionName = 'finished'\n" +
            "SINCE 1 hour ago\n" +
-           "LIMIT 10";
+           "LIMIT 100";
   }
 
   root.SpaDemo = {
