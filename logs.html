@@ -59,8 +59,6 @@
     --pill: 999px;
   }
 
-  /* Eleven pages: below 1180px the badge keeps only its dot, and the switcher scrolls if it still doesn't fit. */
-
   .agent-badge .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--gray); }
 
   /* ---------- Buttons ---------- */
@@ -242,6 +240,17 @@ newrelic.<span class="k">wrapLogger</span>(myLogger, <span class="s">'warn'</spa
           <h2 class="display" style="margin-top:14px">Make some logs</h2>
           <p class="muted">There are three ways to get browser logs into New Relic, plus a few realistic scenarios. Each button shows the log level it creates and whether that level is kept at <span class="js-verbosity">WARN</span>.</p>
         </div>
+
+      <div class="primer">
+        <div>
+          <div class="tag-row"><div class="tag">You'll learn to</div><span class="chip both">Automatic + your code</span></div>
+          <ul><li>Turn <code>console</code> calls into New Relic logs without changing code.</li><li>Send your own logs with <code>newrelic.log()</code> and <code>newrelic.wrapLogger()</code>.</li><li>Explain why some logs never reach New Relic: the log verbosity filter.</li></ul>
+        </div>
+        <div>
+          <div class="tag-row"><div class="tag">Before you start</div></div>
+          <ul class="needs"><li><span class="chip where-settings">Application settings</span><span><b>Automatically collect console logs</b>, for <code>console</code> calls.</span></li><li><span class="chip where-settings">Application settings</span><span><b>Collect logs manually</b>, for <code>log()</code> and <code>wrapLogger()</code>.</span></li><li><span class="chip where-settings">Application settings</span><span><b>Log verbosity</b>. This app keeps <span class="js-verbosity">WARN</span> and above, so INFO, DEBUG and TRACE logs are dropped.</span></li><li><span class="chip where-version">Agent version</span><span>Browser logs need v1.261.0 or later. Separate console and manual settings need v1.306.0 or later.</span></li></ul>
+        </div>
+      </div>
       </div>
 
       <div class="playground">
@@ -353,7 +362,7 @@ newrelic.<span class="k">wrapLogger</span>(appLogger, <span class="s">'error'</s
         <div>
           <div class="eyebrow">Find it / Search the shared account</div>
           <h2 class="display" style="margin-top:14px">Find your logs</h2>
-          <p>Browser logs are sent in batches, so allow up to a minute for new events to show up. Both searches below are already filled in with your code, <code class="js-code" style="color:var(--green)">NR-XXXX</code>.</p>
+          <p>Data arrives in batches, usually within a minute (<a href="install.html#timing">why</a>). Both searches below are already filled in with your code, <code class="js-code" style="color:var(--green)">NR-XXXX</code>.</p>
         </div>
       </div>
       <div class="find-grid">
@@ -389,6 +398,30 @@ newrelic.<span class="k">wrapLogger</span>(appLogger, <span class="s">'error'</s
       </div>
     </div>
   </section>
+
+  <!-- ================= CHECK ================= -->
+  <section class="step" id="check">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">Check it / Your understanding</div>
+        <h2 class="display" style="margin-top:14px">Check yourself</h2>
+        <p class="muted">Pick an answer. A wrong pick can be retried.</p>
+      </div>
+      <p class="quiz-note">Each answer is recorded as a <code>DemoQuizAnswer</code> custom event, with your session code like everything else on this site, so we can see which questions trip people up. Only the option you pick is recorded.</p>
+      <div class="quiz">
+        <div class="q" data-qid="logs-verbosity">
+          <p class="q-text">A <code>console.debug()</code> call shows up in this page's feed but never in New Relic. Why?</p>
+          <div class="q-options"><button class="q-opt" type="button" data-correct>The log verbosity setting keeps only WARN and above</button><button class="q-opt" type="button">Console calls are only collected when there is an error</button><button class="q-opt" type="button">Debug messages have to go through <code>newrelic.log()</code></button></div>
+          <p class="q-feedback" hidden>This app keeps WARN and above, so DEBUG logs are dropped. The feed marks them as filtered for that reason.</p>
+        </div>
+        <div class="q" data-qid="logs-console-switch">
+          <p class="q-text"><b>Collect logs manually</b> is on, but your <code>console.warn()</code> calls still don't arrive. What's missing?</p>
+          <div class="q-options"><button class="q-opt" type="button">WARN is below this app's verbosity setting</button><button class="q-opt" type="button">You have to call <code>wrapLogger()</code> on the console first</button><button class="q-opt" type="button" data-correct><b>Automatically collect console logs</b> is off</button></div>
+          <p class="q-feedback" hidden>Console calls have their own switch. Manual collection covers only <code>newrelic.log()</code> and <code>wrapLogger()</code>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
 
 <footer>
@@ -400,7 +433,7 @@ newrelic.<span class="k">wrapLogger</span>(appLogger, <span class="s">'error'</s
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<!-- ================= LOGIC (pure functions, unit tested) ================= -->
+<!-- ================= LOGIC (pure functions, tested by backend/page-logic.test.js) ================= -->
 <script>
 /*LOGIC-START*/
 (function (root) {

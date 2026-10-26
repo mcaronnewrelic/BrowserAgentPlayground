@@ -144,7 +144,18 @@ ws.close(<span class="k">1000</span>)      <span class="c">// closeCode, connect
       <div class="step-head">
         <div class="eyebrow">Try it / Open some sockets</div>
         <h2 class="display" style="margin-top:14px">Connect, chat, close</h2>
-        <p class="muted">Nothing is sent to New Relic while a socket is open. The event goes out after it closes, at the next harvest (about every 30 seconds). Until then, the panel below shows the agent's own running tally for your latest socket.</p>
+        <p class="muted">Nothing is sent to New Relic while a socket is open. The event goes out with the agent's next batch after it closes. Until then, the panel below shows the agent's own running tally for your latest socket.</p>
+      </div>
+
+      <div class="primer">
+        <div>
+          <div class="tag-row"><div class="tag">You'll learn to</div><span class="chip auto">Automatic, one setting</span></div>
+          <ul><li>Turn on WebSocket tracking and know what it records.</li><li>Read a <code>WebSocket</code> event: message counts, bytes and close codes.</li><li>Tie an error to the socket it happened on.</li></ul>
+        </div>
+        <div>
+          <div class="tag-row"><div class="tag">Before you start</div></div>
+          <ul class="needs"><li><span class="chip where-snippet">Snippet: NREUM.init</span><span><code>init.web_sockets.enabled: true</code>. Off by default, so this page turns it on for itself.</span></li><li><span class="chip where-backend">Backend</span><span>Optional: the demo backend's <code>/ws</code> endpoint, used automatically when the backend serves this page. Otherwise a public echo server.</span></li></ul>
+        </div>
       </div>
       <div class="identity page-setup">
         <div class="mode-box" aria-live="polite">
@@ -265,7 +276,7 @@ ws.close(<span class="k">1000</span>)      <span class="c">// closeCode, connect
       <div class="step-head">
         <div class="eyebrow">Find it / Search the shared account</div>
         <h2 class="display" style="margin-top:14px">Find your sockets</h2>
-        <p>Allow a minute or two after a socket closes. Everything below is already filled in with your code, <code class="js-code" style="color:var(--green)">NR-XXXX</code>.</p>
+        <p>A socket's event is sent after it closes, then arrives within about a minute (<a href="install.html#timing">why</a>). Everything below is already filled in with your code, <code class="js-code" style="color:var(--green)">NR-XXXX</code>.</p>
       </div>
       <div class="find-grid">
         <div class="find-card full">
@@ -293,9 +304,12 @@ ws.close(<span class="k">1000</span>)      <span class="c">// closeCode, connect
         </div>
         <div class="find-card full">
           <h3>Errors tied to a socket</h3>
-          <p>Only the error from the <code>addEventListener</code> button has a <code>socketId</code>. Match it against the <code>socketId</code> of a <code>WebSocket</code> row with <code>hasErrors</code> true.</p>
+          <p>Two queries, run one at a time. The first lists your errors from the buttons above: only the one from <code>addEventListener</code> has a <code>socketId</code>.</p>
           <pre id="nrqlErrors"></pre>
           <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlErrors" type="button">Copy NRQL</button></div>
+          <p>The second lists your sockets marked <code>hasErrors</code>. Its <code>socketId</code> matches the error's.</p>
+          <pre id="nrqlSocketErrors"></pre>
+          <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlSocketErrors" type="button">Copy NRQL</button></div>
         </div>
         <div class="find-card full" id="backendCard" hidden>
           <h3>The same sockets, seen by the server</h3>
@@ -311,6 +325,30 @@ ws.close(<span class="k">1000</span>)      <span class="c">// closeCode, connect
       </div>
     </div>
   </section>
+
+  <!-- ================= CHECK ================= -->
+  <section class="step" id="check">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">Check it / Your understanding</div>
+        <h2 class="display" style="margin-top:14px">Check yourself</h2>
+        <p class="muted">Pick an answer. A wrong pick can be retried.</p>
+      </div>
+      <p class="quiz-note">Each answer is recorded as a <code>DemoQuizAnswer</code> custom event, with your session code like everything else on this site, so we can see which questions trip people up. Only the option you pick is recorded.</p>
+      <div class="quiz">
+        <div class="q" data-qid="websockets-open">
+          <p class="q-text">A socket has been open for 10 minutes and New Relic still shows nothing for it. What's going on?</p>
+          <div class="q-options"><button class="q-opt" type="button">Tracking is broken: open sockets report every 30 seconds</button><button class="q-opt" type="button" data-correct>Nothing is wrong: the event is sent after the socket closes</button><button class="q-opt" type="button">Sockets are only reported after 100 messages</button></div>
+          <p class="q-feedback" hidden>The agent sends one <code>WebSocket</code> event per connection, after it closes.</p>
+        </div>
+        <div class="q" data-qid="websockets-onmessage">
+          <p class="q-text">An error thrown in a <code>ws.onmessage</code> handler has no <code>socketId</code>. Why?</p>
+          <div class="q-options"><button class="q-opt" type="button">Only binary messages carry a socket ID</button><button class="q-opt" type="button">Errors in socket handlers are never reported</button><button class="q-opt" type="button" data-correct>Only handlers added with <code>addEventListener</code> are wrapped</button></div>
+          <p class="q-feedback" hidden>A handler assigned to <code>onmessage</code> isn't wrapped by the agent, so its error isn't linked to the socket.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
 
 <footer>
@@ -322,7 +360,7 @@ ws.close(<span class="k">1000</span>)      <span class="c">// closeCode, connect
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<!-- ================= LOGIC (pure functions) ================= -->
+<!-- ================= LOGIC (pure functions, tested by backend/page-logic.test.js) ================= -->
 <script>
 /*LOGIC-START*/
 (function (root) {
@@ -379,8 +417,10 @@ ws.close(<span class="k">1000</span>)      <span class="c">// closeCode, connect
     return "SELECT timestamp, errorMessage, socketId\n" +
            "FROM JavaScriptError\n" +
            "WHERE demoCode = '" + code + "' AND errorMessage LIKE '%Demo: bad message%'\n" +
-           "SINCE 1 hour ago\n\n" +
-           "SELECT socketId, hasErrors, closeCode\n" +
+           "SINCE 1 hour ago";
+  }
+  function buildSocketErrorsNrql(code) {
+    return "SELECT socketId, hasErrors, closeCode\n" +
            "FROM WebSocket\n" +
            "WHERE demoCode = '" + code + "' AND hasErrors IS TRUE\n" +
            "SINCE 1 hour ago";
@@ -397,7 +437,7 @@ ws.close(<span class="k">1000</span>)      <span class="c">// closeCode, connect
     DEFAULT_SERVER: DEFAULT_SERVER, UNREACHABLE: UNREACHABLE,
     normalizeServer: normalizeServer, backendServer: backendServer, withIdentity: withIdentity, TALLY_FIELDS: TALLY_FIELDS,
     buildSocketsNrql: buildSocketsNrql, buildTrafficNrql: buildTrafficNrql,
-    buildCloseCodesNrql: buildCloseCodesNrql, buildErrorsNrql: buildErrorsNrql, buildBackendNrql: buildBackendNrql
+    buildCloseCodesNrql: buildCloseCodesNrql, buildErrorsNrql: buildErrorsNrql, buildSocketErrorsNrql: buildSocketErrorsNrql, buildBackendNrql: buildBackendNrql
   };
 })(window);
 /*LOGIC-END*/
@@ -432,6 +472,7 @@ ws.close(<span class="k">1000</span>)      <span class="c">// closeCode, connect
     $('nrqlTraffic').textContent = L.buildTrafficNrql(state.code);
     $('nrqlCloseCodes').textContent = L.buildCloseCodesNrql();
     $('nrqlErrors').textContent = L.buildErrorsNrql(state.code);
+    $('nrqlSocketErrors').textContent = L.buildSocketErrorsNrql(state.code);
     $('nrqlBackend').textContent = L.buildBackendNrql(state.code);
   }
 

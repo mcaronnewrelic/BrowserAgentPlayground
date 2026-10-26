@@ -244,6 +244,17 @@ NREUM.init.api={register:{enabled:true,duplicate_data_to_container:false}};
         <h2 class="display" style="margin-top:14px">Send some requests</h2>
         <p class="muted">Each click is a browser interaction, and each request made during it gets its own trace. The inspector on the right shows the headers the agent added, whether the backend joined the trace, and the log this page wrote for it.</p>
       </div>
+
+      <div class="primer">
+        <div>
+          <div class="tag-row"><div class="tag">You'll learn to</div><span class="chip auto">Automatic, needs a backend</span></div>
+          <ul><li>Recognize the <code>traceparent</code>, <code>tracestate</code> and <code>newrelic</code> headers the agent adds.</li><li>Follow one click from the browser into backend services in Distributed tracing.</li><li>Put browser and backend logs on the same trace.</li></ul>
+        </div>
+        <div>
+          <div class="tag-row"><div class="tag">Before you start</div></div>
+          <ul class="needs"><li><span class="chip where-snippet">Snippet: NREUM.init</span><span><code>init.distributed_tracing.enabled</code>, on for every page of this site in <code>nr-init.js</code>.</span></li><li><span class="chip where-settings">Application settings</span><span><b>Cross-origin resource sharing (CORS)</b>, listing any backend on another origin. Re-copy the snippet after changing it.</span></li><li><span class="chip where-settings">Application settings</span><span>Manual <b>log verbosity</b> of INFO or lower, to keep the INFO logs written for successful requests.</span></li><li><span class="chip where-backend">Backend</span><span>For backend spans, an API monitored by a New Relic APM agent: <code>backend/</code>, which also runs browser.nru.to. Without one, you still get browser spans.</span></li></ul>
+        </div>
+      </div>
       <div class="identity page-setup">
         <div class="mode-box" aria-live="polite">
           <span class="label">Trace mode</span>
@@ -335,7 +346,7 @@ newrelic.<span class="k">log</span>(<span class="s">'GET /api/products 200'</spa
       <div class="step-head">
         <div class="eyebrow">Find it / Search the shared account</div>
         <h2 class="display" style="margin-top:14px">Find your traces</h2>
-        <p>Allow a minute or two for traces to arrive. The first query uses the trace IDs captured from your own requests, so it matches only your traces.</p>
+        <p>Data arrives in batches, usually within a minute (<a href="install.html#timing">why</a>). The first query uses the trace IDs captured from your own requests, so it matches only your traces.</p>
       </div>
       <div class="find-grid">
         <div class="find-card full">
@@ -380,6 +391,30 @@ newrelic.<span class="k">log</span>(<span class="s">'GET /api/products 200'</spa
       </div>
     </div>
   </section>
+
+  <!-- ================= CHECK ================= -->
+  <section class="step" id="check">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">Check it / Your understanding</div>
+        <h2 class="display" style="margin-top:14px">Check yourself</h2>
+        <p class="muted">Pick an answer. A wrong pick can be retried.</p>
+      </div>
+      <p class="quiz-note">Each answer is recorded as a <code>DemoQuizAnswer</code> custom event, with your session code like everything else on this site, so we can see which questions trip people up. Only the option you pick is recorded.</p>
+      <div class="quiz">
+        <div class="q" data-qid="tracing-third-party">
+          <p class="q-text">A request to a third-party API went out with no trace headers. Why?</p>
+          <div class="q-options"><button class="q-opt" type="button" data-correct>The agent adds them only to same-origin requests and origins allowed under CORS</button><button class="q-opt" type="button">Third-party servers strip them on the way in</button><button class="q-opt" type="button">Only XHR requests get trace headers, not fetch</button></div>
+          <p class="q-feedback" hidden>Browsers block custom headers on other cross-origin requests, so you list the origins that accept them in Application settings.</p>
+        </div>
+        <div class="q" data-qid="tracing-log-link">
+          <p class="q-text">Do logs from <code>newrelic.log()</code> appear on a trace automatically?</p>
+          <div class="q-options"><button class="q-opt" type="button">Yes, every browser log carries the current trace ID</button><button class="q-opt" type="button">Only when the backend writes a log too</button><button class="q-opt" type="button" data-correct>No, you add <code>trace.id</code> to the log yourself</button></div>
+          <p class="q-feedback" hidden>The agent doesn't add a trace ID to browser logs. <code>trace.id</code> is the attribute New Relic uses to link a log to a trace.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
 
 <footer>
@@ -391,7 +426,7 @@ newrelic.<span class="k">log</span>(<span class="s">'GET /api/products 200'</spa
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<!-- ================= LOGIC (pure functions, unit tested) ================= -->
+<!-- ================= LOGIC (pure functions, tested by backend/page-logic.test.js) ================= -->
 <script>
 /*LOGIC-START*/
 (function (root) {

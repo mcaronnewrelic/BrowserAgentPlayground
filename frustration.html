@@ -106,6 +106,17 @@ newrelic.<span class="k">noticeError</span>(err)
         <p class="muted">Each card below is wired to trip exactly one signal. The agent decides what counts, and this page has no way to read its verdict back, so the activity feed on the right only shows what you did locally. Give it a minute or two, then check the queries below for what New Relic actually recorded.</p>
       </div>
 
+      <div class="primer">
+        <div>
+          <div class="tag-row"><div class="tag">You'll learn to</div><span class="chip auto">Automatic, no code</span></div>
+          <ul><li>Trigger and recognize rage clicks, dead clicks and error clicks.</li><li>Know the timing that trips each signal.</li><li>Find your clicks in <code>UserAction</code> events and the frustration views.</li></ul>
+        </div>
+        <div>
+          <div class="tag-row"><div class="tag">Before you start</div></div>
+          <ul class="needs"><li><span class="chip where-default">On by default</span><span><code>init.user_actions.enabled</code> is on by default in the Pro and Pro+SPA agent.</span></li></ul>
+        </div>
+      </div>
+
       <div class="playground">
         <div class="cards">
 
@@ -171,7 +182,7 @@ newrelic.<span class="k">noticeError</span>(err)
       <div class="step-head">
         <div class="eyebrow">Find it / Search the shared account</div>
         <h2 class="display" style="margin-top:14px">Find your clicks</h2>
-        <p>Allow a minute or two for events to arrive. Everything below is already filled in with your code, <code class="js-code" style="color:var(--green)">NR-XXXX</code>.</p>
+        <p>Data arrives in batches, usually within a minute (<a href="install.html#timing">why</a>). Everything below is already filled in with your code, <code class="js-code" style="color:var(--green)">NR-XXXX</code>.</p>
       </div>
       <div class="find-grid">
         <div class="find-card full">
@@ -217,6 +228,30 @@ newrelic.<span class="k">noticeError</span>(err)
       </div>
     </div>
   </section>
+
+  <!-- ================= CHECK ================= -->
+  <section class="step" id="check">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">Check it / Your understanding</div>
+        <h2 class="display" style="margin-top:14px">Check yourself</h2>
+        <p class="muted">Pick an answer. A wrong pick can be retried.</p>
+      </div>
+      <p class="quiz-note">Each answer is recorded as a <code>DemoQuizAnswer</code> custom event, with your session code like everything else on this site, so we can see which questions trip people up. Only the option you pick is recorded.</p>
+      <div class="quiz">
+        <div class="q" data-qid="frustration-rage">
+          <p class="q-text">You clicked a button three times quickly. Is that a rage click?</p>
+          <div class="q-options"><button class="q-opt" type="button">Yes, any repeated clicking counts</button><button class="q-opt" type="button" data-correct>No, it takes four or more clicks within one second</button><button class="q-opt" type="button">Only if the button is disabled</button></div>
+          <p class="q-feedback" hidden>Rage clicks need at least four clicks, all within one second of each other.</p>
+        </div>
+        <div class="q" data-qid="frustration-dead">
+          <p class="q-text">What makes a click a dead click?</p>
+          <div class="q-options"><button class="q-opt" type="button" data-correct>Nothing on the page changes after it</button><button class="q-opt" type="button">It lands on a disabled button</button><button class="q-opt" type="button">It throws a JavaScript error</button></div>
+          <p class="q-feedback" hidden>Any DOM change counts as something happening. A click that throws an error is an error click instead.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
 
 <footer>
@@ -228,7 +263,7 @@ newrelic.<span class="k">noticeError</span>(err)
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<!-- ================= LOGIC (pure functions, unit tested) ================= -->
+<!-- ================= LOGIC (pure functions, tested by backend/page-logic.test.js) ================= -->
 <script>
 /*LOGIC-START*/
 (function (root) {

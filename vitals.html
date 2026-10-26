@@ -27,7 +27,7 @@
 <meta name="theme-color" content="#080F11">
 <meta name="description" content="Try Core Web Vitals with New Relic: make LCP, CLS and INP good or poor on purpose, watch them live, then find them in your browser data.">
 
-<!-- ================= LOGIC (pure functions, unit tested) ================= -->
+<!-- ================= LOGIC (pure functions, tested by backend/page-logic.test.js) ================= -->
 <script>
 /*LOGIC-START*/
 (function (root) {
@@ -148,8 +148,6 @@
   html { scroll-padding-top: calc(var(--sticky-h, 170px) + 16px); }
   /* The .sticky wrapper keeps the header and scorecard in view together, so the header itself doesn't stick. */
   header.site { position: static; }
-  /* Eleven pages: below 1180px the badge keeps only its dot, and the switcher scrolls if it still doesn't fit. */
-
   .scorecard { background: var(--panel); color: var(--white); border-bottom: 1px solid rgba(253,252,240,.08); }
   .scorecard .wrap { display: grid; grid-template-columns: repeat(3, 1.2fr) repeat(2, .8fr) auto; gap: 10px; padding-top: 10px; padding-bottom: 10px; align-items: stretch; }
   .metric { background: var(--black); border-radius: 14px; padding: 8px 14px; display: flex; flex-direction: column; justify-content: center; min-width: 0; height: 62px; border-left: 4px solid var(--gray); }
@@ -382,6 +380,17 @@
         <h2 class="display" style="margin-top:14px">Feel the difference</h2>
         <p class="muted">LCP and CLS are decided while the page loads, so changing them reloads the page. Both modes are saved on your data as <code>lcpMode</code> and <code>clsMode</code>. INP depends on your clicks, so it has its own lab. The scorecard in the header updates live.</p>
       </div>
+
+      <div class="primer">
+        <div>
+          <div class="tag-row"><div class="tag">You'll learn to</div><span class="chip auto">Automatic, no code</span></div>
+          <ul><li>Explain what makes LCP, CLS and INP good or poor.</li><li>Find your vitals in <code>PageViewTiming</code> events and the Browser summary.</li><li>Judge a page the way Google does, by the 75th percentile.</li></ul>
+        </div>
+        <div>
+          <div class="tag-row"><div class="tag">Before you start</div></div>
+          <ul class="needs"><li><span class="chip where-default">On by default</span><span>Core Web Vitals are captured automatically by the Lite, Pro and Pro+SPA agent. Nothing to turn on.</span></li></ul>
+        </div>
+      </div>
       <div class="identity page-setup">
         <div class="toggles">
           <div class="toggle-row"><span class="tname">LCP</span><span class="seg" data-metric="lcp"><button type="button" class="good" data-v="good">Good</button><button type="button" class="poor" data-v="poor">Poor</button></span></div>
@@ -451,7 +460,7 @@ recalculateTotals()</pre>
         <h2 class="display" style="margin-top:14px">Find your vitals</h2>
         <p>Core Web Vitals land as <code>PageViewTiming</code> events, one per metric (<code>timingName</code> = <code>lcp</code>, <code>cls</code>, <code>inp</code>, and more). Durations are stored in seconds.</p>
       </div>
-      <div class="callout" style="margin-bottom:20px"><b>CLS and INP are sent when you leave this page view.</b> Switch tabs, reload, or use "Reload with these settings" to send them. LCP is sent after your first interaction or when you leave.</div>
+      <div class="callout" style="margin-bottom:20px"><b>CLS and INP are sent when you leave this page view.</b> Switch tabs, reload, or use "Reload with these settings" to send them. LCP is sent after your first interaction or when you leave. <a href="install.html#timing">More on timing</a>.</div>
       <div class="find-grid">
         <div class="find-card">
           <h3>Your page views</h3>
@@ -480,6 +489,30 @@ recalculateTotals()</pre>
       <div class="tips">
         <div class="tip"><b>Why do my numbers differ a little?</b>The scorecard is this page's own live measurement. New Relic uses Google's web-vitals library, which finalizes values at slightly different moments.</div>
         <div class="tip"><b>Learn more</b><a href="https://web.dev/articles/vitals" target="_blank" rel="noopener">Web Vitals</a> · <a href="https://web.dev/articles/optimize-inp" target="_blank" rel="noopener">Optimize INP</a> · <a href="https://web.dev/articles/optimize-cls" target="_blank" rel="noopener">Optimize CLS</a> · To time your own moments instead, see <a href="measures.html">marks &amp; measures</a></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CHECK ================= -->
+  <section class="step" id="check">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">Check it / Your understanding</div>
+        <h2 class="display" style="margin-top:14px">Check yourself</h2>
+        <p class="muted">Pick an answer. A wrong pick can be retried.</p>
+      </div>
+      <p class="quiz-note">Each answer is recorded as a <code>DemoQuizAnswer</code> custom event, with your session code like everything else on this site, so we can see which questions trip people up. Only the option you pick is recorded.</p>
+      <div class="quiz">
+        <div class="q" data-qid="vitals-timing">
+          <p class="q-text">You just loaded this page. Why might its CLS and INP not show up in New Relic yet?</p>
+          <div class="q-options"><button class="q-opt" type="button" data-correct>They are sent when you leave the page view</button><button class="q-opt" type="button">They need 10 page views before they are reported</button><button class="q-opt" type="button">They are only measured in poor mode</button></div>
+          <p class="q-feedback" hidden>CLS and INP are final only once you leave, so they go out when you switch tabs, reload or navigate away.</p>
+        </div>
+        <div class="q" data-qid="vitals-p75">
+          <p class="q-text">Which number does Google use to judge whether a page passes Core Web Vitals?</p>
+          <div class="q-options"><button class="q-opt" type="button">The average of all visits</button><button class="q-opt" type="button" data-correct>The 75th percentile of visits</button><button class="q-opt" type="button">The single worst visit</button></div>
+          <p class="q-feedback" hidden>That's why the "Good vs poor, everyone" query uses <code>percentile(..., 75)</code>.</p>
+        </div>
       </div>
     </div>
   </section>

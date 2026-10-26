@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- ===================================================================
+     NEW RELIC BROWSER SNIPPET
+     Same snippet as every page. This page reads back what that snippet
+     loaded (agent version, type, settings) and how it got here: the
+     copy/paste snippet on GitHub Pages, or the APM agent's header when
+     the Node server in backend/ serves the page.
+     =================================================================== -->
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="demo-identity.js"></script>
+<script src="site.js"></script>
+<script src="nr-init.js"></script>
+<!-- NR:SNIPPET -->
+<script src="nr-config.js"></script>
+<script src="nr-agent.js"></script>
+<!-- /NR:SNIPPET -->
+
+<title>Install the Browser Agent | New Relic</title>
+<link rel="icon" href="favicons/favicon.ico" sizes="48x48">
+<link rel="icon" href="favicons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicons/favicon-32x32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="favicons/favicon-16x16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="favicons/apple-touch-icon.png" sizes="180x180">
+<meta name="theme-color" content="#080F11">
+<meta name="description" content="How the New Relic browser agent gets onto a web page: the copy/paste snippet, injection by an APM agent, or the npm package. See what this page loaded, watch it send data, and learn how to read the NRQL on the other demo pages.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,200..900&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+<style>
+  .card .result { color: var(--black); font-weight: 600; }
+  .card .tag-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; }
+  .facts > div { background: var(--sys-white); border-radius: 12px; padding: 10px 14px; min-width: 0; }
+  .facts dt { font: 500 12px/1.4 var(--mono); color: var(--ink-2); }
+  .facts dd { margin: 3px 0 0; font: 600 15px/1.4 var(--body); color: var(--black); word-break: break-word; }
+  .facts dd small { display: block; font-weight: 500; font-size: 13px; color: var(--ink-2); }
+  .features { display: flex; flex-wrap: wrap; gap: 8px; }
+  .features a { text-decoration: none; }
+  .chip.on { background: var(--green-1); }
+  .chip.off { background: transparent; box-shadow: inset 0 0 0 1px var(--gray); color: var(--ink-2); }
+  .method.here { box-shadow: inset 0 0 0 2px var(--green-deep); }
+  .method .here-tag { display: none; }
+  .method.here .here-tag { display: inline-flex; background: var(--green-1); }
+  .method ul { margin: 0; padding-left: 20px; font-size: 15px; color: var(--ink-2); }
+  .method ul li { margin: 3px 0; }
+  .method .when { color: var(--black); }
+  .decide { margin: 0; padding-left: 22px; font-size: 15px; color: var(--ink-2); display: grid; gap: 8px; }
+  .decide b { color: var(--black); }
+  .anatomy { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+  .anatomy dl { margin: 0; display: grid; gap: 8px; }
+  .anatomy dt { font: 600 13px/1.4 var(--mono); color: var(--green); }
+  .anatomy dd { margin: 0 0 4px; font-size: 14.5px; color: var(--sand); }
+  .entry .line1 .path { color: var(--green); }
+  .timing-list { margin: 0; padding-left: 20px; font-size: 15px; color: var(--ink-2); display: grid; gap: 6px; }
+  .timing-list b { color: var(--black); }
+  .table-scroll { overflow-x: auto; }
+  .map { width: 100%; border-collapse: collapse; font-size: 14.5px; min-width: 640px; }
+  .map th { text-align: left; font: 600 12px/1.4 var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  .map td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-2); }
+  .map td:first-child { color: var(--black); }
+  .map a { color: var(--black); font-weight: 600; }
+  .feed-head p { margin: 8px 0 0; font-size: 13px; color: var(--sand); opacity: .8; }
+
+  @media (max-width: 900px) {
+    .facts, .anatomy { grid-template-columns: 1fr; }
+  }
+  @media (min-width: 901px) and (max-width: 1180px) {
+    .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <span>Before any demo on this site can work, the browser agent has to be on the page. Here is how it gets there.</span>
+    <a href="https://docs.newrelic.com/docs/browser/browser-monitoring/installation/install-browser-monitoring-agent/" target="_blank" rel="noopener">Read the docs</a>
+  </div>
+</div>
+
+<script>Demo.header()</script>
+
+<main>
+  <!-- ================= HERO ================= -->
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <div class="eyebrow">Install the browser agent</div>
+        <h1 class="display" style="margin-top:18px">First, get it<br>on the page.</h1>
+        <p class="lede">Everything the other pages show starts with one script that loads before anything else on the page. There are three ways to add it, and the right one depends on how your site is built.</p>
+        <div class="ctas">
+          <a class="btn" href="#try">See what this page loaded <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn secondary" href="#methods">Compare the three ways</a>
+        </div>
+        <div class="note">
+          <span class="chip" aria-hidden="true">Load it first</span>
+          <span>The agent only sees what happens after it loads. Put it as close to the top of <code>&lt;head&gt;</code> as you can, right after <code>&lt;meta charset&gt;</code>. Loaded later, it misses early errors, slow resources and the page's first paint.</span>
+        </div>
+      </div>
+      <div class="term" aria-label="Where the agent goes in a page">
+        <div class="bar"><i></i><i></i><i></i></div>
+<pre><span class="k">&lt;head&gt;</span>
+  &lt;meta charset=<span class="s">"utf-8"</span>&gt;
+  <span class="c">&lt;!-- 1. The browser agent, first --&gt;</span>
+  &lt;script&gt;
+    NREUM.init = { <span class="c">/* what to collect */</span> }
+    NREUM.info = { <span class="c">/* where to send it */</span> }
+    NREUM.loader_config = { <span class="c">/* account IDs */</span> }
+    <span class="c">/* the agent loader */</span>
+  &lt;/script&gt;
+  <span class="c">&lt;!-- 2. Everything else --&gt;</span>
+  &lt;link rel=<span class="s">"stylesheet"</span> href=<span class="s">"app.css"</span>&gt;
+  &lt;script src=<span class="s">"app.js"</span>&gt;&lt;/script&gt;
+<span class="k">&lt;/head&gt;</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= WHO ================= -->
+  <section class="who-bar">
+    <div class="wrap">
+      <details class="who" id="who">
+        <script>Demo.whoSummary()</script>
+        <div class="who-body">
+          <p class="muted">Everyone shares one New Relic account, so your page views are tagged as <code>demoUser</code> and <code>demoCode</code> custom attributes (your name is also set as your end-user ID via <code>setUserId()</code>). The query at the bottom of this page finds the page views from your own visits.</p>
+          <script>Demo.identityForm()</script>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ================= TRY IT ================= -->
+  <section class="step" id="try">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">Try it / Check the install</div>
+        <h2 class="display" style="margin-top:14px">Is it running?</h2>
+        <p class="muted">These checks work on any site, not just this one. They answer the three questions to ask after any install: did the agent load, how is it configured, and is it sending data?</p>
+      </div>
+
+      <div class="primer">
+        <div>
+          <div class="tag-row"><div class="tag">You'll learn to</div><span class="chip both">Start here</span></div>
+          <ul><li>Choose an install method that fits how your site is built.</li><li>Check that an agent is loaded, configured and sending data, on any site.</li><li>Read the NRQL queries that every other page ends with.</li></ul>
+        </div>
+        <div>
+          <div class="tag-row"><div class="tag">Before you start</div></div>
+          <ul class="needs"><li><span class="chip where-default">On by default</span><span>Nothing to turn on. Every page of this site already loads the agent.</span></li></ul>
+        </div>
+      </div>
+
+      <div class="playground">
+        <div class="cards">
+
+          <article class="card wide" aria-labelledby="loadedTitle">
+            <div class="tag">1 · Did it load?</div>
+            <h3 id="loadedTitle">What this page loaded</h3>
+            <p>Read live from the agent on this page. On your own site, open the browser's developer tools and type <code>newrelic</code> in the console: an object means the agent is there, <code>undefined</code> means it isn't.</p>
+            <dl class="facts" id="facts"></dl>
+          </article>
+
+          <article class="card wide" aria-labelledby="featuresTitle">
+            <div class="tag">2 · How is it configured?</div>
+            <h3 id="featuresTitle">Features turned on for this page</h3>
+            <p>Read from <code>NREUM.init</code>, the settings part of the snippet. Most features are on by default. Some, like marks and measures, are off until you turn them on, and a page can switch a feature on just for itself: the WebSockets page does that. Each chip links to the page that demonstrates it.</p>
+            <div class="features" id="features"></div>
+          </article>
+
+          <article class="card wide" aria-labelledby="sendingTitle">
+            <div class="tag">3 · Is it sending data?</div>
+            <h3 id="sendingTitle">Watch the requests to New Relic</h3>
+            <p>The agent collects data in the browser and sends it in batches, roughly every 30 seconds, plus once more when you leave the page. The panel on the right lists those requests as this page makes them, the same ones you would see in the developer tools' <b>Network</b> tab filtered by <code class="js-beacon">bam.nr-data.net</code>. Each path carries a different kind of data. Click the button to give it something to send.</p>
+            <div class="row">
+              <button id="sendBtn" class="btn" type="button">Record a page action</button>
+            </div>
+            <p id="sendStatus">Nothing recorded yet.</p>
+            <p>No requests at all? An ad blocker or a Content Security Policy may be blocking <code>js-agent.newrelic.com</code> (where the agent's code loads from) or <code class="js-beacon">bam.nr-data.net</code> (where data is sent).</p>
+          </article>
+
+        </div>
+
+        <aside class="feed" aria-labelledby="feedTitle">
+          <div class="feed-head">
+            <div class="top">
+              <h3 id="feedTitle">Requests to New Relic</h3>
+            </div>
+            <p>Read from the browser's resource timing, the same list the Network tab shows.</p>
+            <div class="feed-stats" aria-live="polite">
+              <span><b id="statRequests">0</b> requests</span>
+              <span><b id="statPaths">0</b> kinds</span>
+            </div>
+          </div>
+          <ul class="feed-list" id="feed">
+            <li class="feed-empty" id="feedEmpty">Waiting for the agent's first request. The first one goes out as soon as the page has loaded.</li>
+          </ul>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= METHODS ================= -->
+  <section class="step" id="methods">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">Learn it / Three ways to install</div>
+        <h2 class="display" style="margin-top:14px">Pick your method</h2>
+        <p class="muted">All three load the same agent with the same three pieces of configuration. They differ in who puts the script on the page and how it gets updated. The one this page used is outlined.</p>
+      </div>
+
+      <div class="cards">
+        <article class="card wide" aria-labelledby="decideTitle">
+          <div class="tag">Which one fits?</div>
+          <h3 id="decideTitle">Start from how your site is built</h3>
+          <ol class="decide">
+            <li><b>A server renders your HTML and already runs a New Relic APM agent</b> (for example Java, .NET, PHP, Python, Ruby, Go or Node.js): let the APM agent add it. Nothing to paste, and the browser data links to the server it came from. New Relic recommends this for apps that aren't single-page apps.</li>
+            <li><b>You build the front end with a bundler and npm</b> (React, Vue, Angular, Next.js and so on): use the npm package. The agent ships inside your own code, versioned with it.</li>
+            <li><b>Anything else</b>, like static pages, a CMS, or a site you can only edit as HTML: paste the snippet into each page's <code>&lt;head&gt;</code>.</li>
+          </ol>
+          <p>To start any of them in New Relic, go to <b>Integrations &amp; Agents</b>, then <b>Browser and mobile</b>, then <b>Browser monitoring</b>, and follow the steps. For an app that already exists, its snippet is under <b>Browser</b> &gt; your app &gt; <b>Settings</b> &gt; <b>Application settings</b>.</p>
+        </article>
+
+        <article class="card method" id="methodCopy" aria-labelledby="copyTitle">
+          <div class="tag-row"><div class="tag">Copy and paste</div><span class="chip here-tag">This page</span></div>
+          <h3 id="copyTitle">A script block in <code>&lt;head&gt;</code></h3>
+          <p class="when"><b>Use it when</b> you control the HTML but have no build step and no APM agent.</p>
+<pre class="snippet">&lt;meta charset=<span class="s">"utf-8"</span>&gt;
+&lt;script type=<span class="s">"text/javascript"</span>&gt;
+;window.NREUM||(NREUM={});
+NREUM.init={<span class="c">…</span>};
+NREUM.loader_config={accountID:<span class="s">"…"</span>, <span class="c">…</span>};
+NREUM.info={beacon:<span class="s">"bam.nr-data.net"</span>,
+  licenseKey:<span class="s">"NRJS-…"</span>, applicationID:<span class="s">"…"</span>};
+<span class="c">/* the agent loader, minified */</span>
+&lt;/script&gt;</pre>
+          <ul>
+            <li>You paste it into every page, so updates mean re-pasting. When you change <b>Application settings</b> in New Relic, re-copy the snippet: it doesn't update itself.</li>
+            <li>The <code>NRJS-</code> key is a browser key. It's meant to be public: it can only send data, not read it.</li>
+            <li><b>On this site</b>, GitHub Pages uses this method, split into three files so it's edited once: <code>nr-init.js</code> (<code>init</code>), <code>nr-config.js</code> (<code>info</code> and <code>loader_config</code>) and <code>nr-agent.js</code> (the loader).</li>
+          </ul>
+        </article>
+
+        <article class="card method" id="methodApm" aria-labelledby="apmTitle">
+          <div class="tag-row"><div class="tag">Injected by APM</div><span class="chip here-tag">This page</span></div>
+          <h3 id="apmTitle">The server adds it for you</h3>
+          <p class="when"><b>Use it when</b> your HTML comes from a server that a New Relic APM agent already monitors.</p>
+<pre class="snippet"><span class="c">// Node.js: the APM agent loads before anything else</span>
+<span class="k">const</span> newrelic = require(<span class="s">'newrelic'</span>)
+
+<span class="c">// For each page: a &lt;script&gt; tag with the agent and its settings</span>
+<span class="k">const</span> header = newrelic.<span class="k">getBrowserTimingHeader</span>()
+html = html.replace(<span class="s">'&lt;meta charset="utf-8"&gt;'</span>,
+  <span class="s">'&lt;meta charset="utf-8"&gt;'</span> + header)</pre>
+          <ul>
+            <li>The browser app is created and linked to the APM app for you, and restarting the APM agent picks up the latest browser agent.</li>
+            <li>Some APM agents insert it into HTML responses automatically. With Node.js you call <code>getBrowserTimingHeader()</code> yourself, as above.</li>
+            <li>Don't also paste the snippet into the same pages. Two agents on one page double-count everything.</li>
+            <li><b>On this site</b>, the Node server in <code>backend/</code> (and the Docker image) uses this method. <code>backend/pages.js</code> swaps the copy/paste block for the APM agent's header on every page it serves.</li>
+          </ul>
+        </article>
+
+        <article class="card method wide" id="methodNpm" aria-labelledby="npmTitle">
+          <div class="tag-row"><div class="tag">npm package</div></div>
+          <h3 id="npmTitle"><code>@newrelic/browser-agent</code> in your bundle</h3>
+          <p class="when"><b>Use it when</b> your front end is built from source with npm and a bundler.</p>
+<pre class="snippet"><span class="c">// The very first lines your app runs</span>
+<span class="k">import</span> { BrowserAgent } <span class="k">from</span> <span class="s">'@newrelic/browser-agent/loaders/browser-agent'</span>
+
+<span class="c">// Copy these from the copy/paste snippet: NREUM.init, NREUM.info, NREUM.loader_config</span>
+<span class="k">const</span> options = { init: { <span class="c">…</span> }, info: { <span class="c">…</span> }, loader_config: { <span class="c">…</span> } }
+
+<span class="k">new</span> BrowserAgent(options) <span class="c">// starts immediately</span></pre>
+          <ul>
+            <li>The agent version is pinned in your <code>package.json</code>, so it changes only when you upgrade it, and it goes through your own review and tests.</li>
+            <li>Put it first in your entry file. Imported later, or lazily, it misses everything that happens before it starts.</li>
+            <li>To keep your bundle smaller, the <code>Agent</code> loader lets you include only the features you use instead of all of them.</li>
+          </ul>
+        </article>
+
+        <article class="card wide" aria-labelledby="partsTitle">
+          <div class="tag">The same three settings, whichever method</div>
+          <h3 id="partsTitle">init, info and loader_config</h3>
+          <div class="facts">
+            <div><dt>NREUM.init</dt><dd>What to collect<small>Turns features on and off and tunes them: session replay sampling, privacy masking, distributed tracing, marks and measures. This is the part you edit most.</small></dd></div>
+            <div><dt>NREUM.info</dt><dd>Where to send it<small>The collector address (<code>beacon</code>), the browser key and the application ID. It decides which app in which account the data lands in.</small></dd></div>
+            <div><dt>NREUM.loader_config</dt><dd>Who it belongs to<small>Account and agent IDs, used to connect browser data to backend traces. Change it only by re-copying it from New Relic.</small></dd></div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= TIMING AND MAP ================= -->
+  <section class="step" id="timing">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">Learn it / How data reaches New Relic</div>
+        <h2 class="display" style="margin-top:14px">Why it takes a minute</h2>
+        <p class="muted">Every demo page says to allow a minute before you look for your data. This is why, and where each kind of data shows up when it gets there.</p>
+      </div>
+      <div class="cards">
+        <article class="card" aria-labelledby="batchTitle">
+          <div class="tag">Batches, not live</div>
+          <h3 id="batchTitle">The agent sends data in batches</h3>
+          <p>Nothing is sent the moment you click. The agent collects data in the browser and sends it in batches, most of it about every 30 seconds, and once more when you leave the page. New Relic then needs a few more seconds to process it. So a minute after you do something, it's usually there.</p>
+          <p>Some data waits for an ending, by design:</p>
+          <ul class="timing-list">
+            <li><b>Core Web Vitals</b>: CLS and INP are final only when you leave the page view, so that's when they're sent.</li>
+            <li><b>WebSockets</b>: one event per connection, sent after it closes.</li>
+            <li><b>Session replay</b>: sent on its own schedule, separate from everything else.</li>
+          </ul>
+        </article>
+        <article class="card" aria-labelledby="missingTitle">
+          <div class="tag">Still nothing after a minute?</div>
+          <h3 id="missingTitle">Check in this order</h3>
+          <ol class="timing-list">
+            <li><b>Is the agent on the page?</b> The badge at the top of each page says "Browser agent detected" when it is.</li>
+            <li><b>Is it sending?</b> The requests panel above should list requests to New Relic. If not, look for an ad blocker or a Content Security Policy.</li>
+            <li><b>Is the feature on?</b> Each page's <b>Before you start</b> box lists what it needs, and where that setting lives.</li>
+            <li><b>Are you looking at the right data?</b> Check the session code in the query, and that the time window (<code>SINCE</code>) covers when you clicked.</li>
+          </ol>
+        </article>
+        <article class="card wide" aria-labelledby="mapTitle">
+          <div class="tag">The map</div>
+          <h3 id="mapTitle">Where each kind of data lands</h3>
+          <p>Each feature writes its own event type, the name you put after <code>FROM</code> in a query. Some also have their own place in the New Relic UI, under <b>Browser</b> and your app unless noted. The rest you see by querying, or by adding a query to a dashboard. Menu names change from time to time, so treat these as signposts.</p>
+          <div class="table-scroll">
+            <table class="map">
+              <thead><tr><th>What happened</th><th>Event type</th><th>Where to see it in New Relic</th><th>Demo</th></tr></thead>
+              <tbody>
+                <tr><td>A page loaded</td><td><code>PageView</code></td><td><b>Summary</b>, <b>Page views</b></td><td><a href="install.html">Install</a></td></tr>
+                <tr><td>Core Web Vitals and other page timings</td><td><code>PageViewTiming</code></td><td><b>Summary</b> (Core Web Vitals), <b>Page views</b></td><td><a href="vitals.html">Vitals</a></td></tr>
+                <tr><td>A console call or <code>newrelic.log()</code></td><td><code>Log</code></td><td><b>Logs</b> (top level), and on the trace it belongs to</td><td><a href="logs.html">Logs</a></td></tr>
+                <tr><td>A JavaScript error</td><td><code>JavaScriptError</code></td><td><b>Errors</b> (Errors Inbox)</td><td><a href="errors.html">Errors</a></td></tr>
+                <tr><td>A fetch or XHR request</td><td><code>AjaxRequest</code></td><td>Query it; its trace is in <b>Distributed tracing</b></td><td><a href="tracing.html">Tracing</a></td></tr>
+                <tr><td>A request followed into the backend</td><td><code>Span</code> (plus the backend's <code>Transaction</code>)</td><td><b>Distributed tracing</b></td><td><a href="tracing.html">Tracing</a></td></tr>
+                <tr><td>A WebSocket connection closed</td><td><code>WebSocket</code></td><td>Query it, or add it to a dashboard</td><td><a href="websockets.html">WebSockets</a></td></tr>
+                <tr><td>A mark or measure</td><td><code>BrowserPerformance</code></td><td>Query it, or add it to a dashboard</td><td><a href="measures.html">Measures</a></td></tr>
+                <tr><td>A click, including rage, dead and error clicks</td><td><code>UserAction</code></td><td>The frustration views under <b>User impact</b></td><td><a href="frustration.html">Frustration</a></td></tr>
+                <tr><td><code>addPageAction()</code></td><td><code>PageAction</code></td><td>Query it, or add it to a dashboard</td><td><a href="events.html">Events</a></td></tr>
+                <tr><td><code>recordCustomEvent()</code></td><td>The type you name</td><td>Query it, or add it to a dashboard</td><td><a href="events.html">Events</a></td></tr>
+                <tr><td>A route change in a single-page app</td><td><code>BrowserInteraction</code></td><td><b>Browser interactions</b></td><td><a href="events.html">Events</a>, <a href="spa.html">SPA</a></td></tr>
+                <tr><td>A <b>Check yourself</b> answer on any page</td><td><code>DemoQuizAnswer</code> (a custom event)</td><td>Query it, or the knowledge check dashboard</td><td>Every page</td></tr>
+                <tr><td>A session recording</td><td>None you can query</td><td><b>Session replay</b>, or from an error in Errors Inbox</td><td><a href="replay.html">Replay</a></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FIND IT ================= -->
+  <section class="step find" id="find">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">Find it / In New Relic</div>
+        <h2 class="display" style="margin-top:14px">Find your page views</h2>
+        <p>Every page load becomes a <code>PageView</code> event, so a page view is the first thing to look for after an install. It arrives within about a minute (<a href="#timing">why</a>).</p>
+      </div>
+      <div class="find-grid">
+        <div class="find-card">
+          <h3>In the Browser UI</h3>
+          <ol>
+            <li>In New Relic, open <b>Browser</b> and select the app. Its <b>Summary</b> shows page views and load times as soon as the first ones arrive.</li>
+            <li>Open <b>Page views</b> to see each page of the site, including this one, <code>install.html</code>.</li>
+            <li>An app that has never sent data doesn't show up yet. If yours is missing, check the steps above before anything else.</li>
+          </ol>
+        </div>
+        <div class="find-card">
+          <h3>With a query</h3>
+          <p>Your own page views on this site, by page. Run it in <b>Query your data</b>.</p>
+          <pre id="nrqlPageViews"></pre>
+          <div class="actions">
+            <button class="btn green small js-copy" data-copy-target="nrqlPageViews" type="button">Copy NRQL</button>
+            <a class="btn ghost-dark small" href="https://one.newrelic.com" target="_blank" rel="noopener">Open New Relic <span class="arrow" aria-hidden="true">→</span></a>
+          </div>
+        </div>
+        <div class="find-card full" id="reading">
+          <h3>Reading the queries on these pages</h3>
+          <p>Every demo page ends with queries like the one above, written in NRQL, New Relic's query language. They all follow the same shape, so once you can read one, you can read them all.</p>
+          <div class="anatomy">
+<pre>SELECT timestamp, actionName
+FROM PageAction
+WHERE demoCode = '<span class="js-code">NR-XXXX</span>'
+SINCE 1 hour ago
+LIMIT 100</pre>
+            <dl>
+              <dt>FROM PageAction</dt><dd>The event type: which kind of record to look in. Each feature writes its own, such as <code>PageView</code>, <code>JavaScriptError</code> or <code>Log</code>.</dd>
+              <dt>SELECT timestamp, actionName</dt><dd>The attributes (columns) to show. <code>SELECT *</code> shows every attribute, which is a good way to explore an event type you haven't seen before. <code>SELECT count(*)</code> counts rows instead of listing them.</dd>
+              <dt>WHERE demoCode = '…'</dt><dd>Keeps only the rows you made. Every page tags your data with your session code, because everyone shares this account.</dd>
+              <dt>SINCE 1 hour ago</dt><dd>The time window. With no <code>SINCE</code>, a query looks at the last hour.</dd>
+              <dt>FACET … / LIMIT 100</dt><dd><code>FACET</code> groups rows by an attribute, like a pivot table. <code>LIMIT</code> caps how many rows come back.</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+      <div class="tips">
+        <div class="tip"><b>Agent loaded but no data?</b>The browser key or application ID in <code>NREUM.info</code> may belong to another app or account. Re-copy the snippet from <b>Application settings</b>.</div>
+        <div class="tip"><b>Everything counted twice?</b>Two agents are on the page, usually a pasted snippet plus an APM-injected one. Keep one.</div>
+        <div class="tip"><b>Learn more</b><a href="https://docs.newrelic.com/docs/browser/browser-monitoring/installation/install-browser-monitoring-agent/" target="_blank" rel="noopener">Install the browser agent</a> · <a href="https://github.com/newrelic/newrelic-browser-agent" target="_blank" rel="noopener">npm package and source</a> · <a href="https://docs.newrelic.com/docs/nrql/get-started/introduction-nrql-new-relics-query-language/" target="_blank" rel="noopener">Introduction to NRQL</a></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CHECK ================= -->
+  <section class="step" id="check">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">Check it / Your understanding</div>
+        <h2 class="display" style="margin-top:14px">Check yourself</h2>
+        <p class="muted">Pick an answer. A wrong pick can be retried.</p>
+      </div>
+      <p class="quiz-note">Each answer is recorded as a <code>DemoQuizAnswer</code> custom event, with your session code like everything else on this site, so we can see which questions trip people up. Only the option you pick is recorded.</p>
+      <div class="quiz">
+        <div class="q" data-qid="install-method">
+          <p class="q-text">Your front end is a React app built with npm and a bundler. Which install method fits best?</p>
+          <div class="q-options"><button class="q-opt" type="button">Paste the copy/paste snippet into your HTML template</button><button class="q-opt" type="button" data-correct>The npm package, imported in the first lines of your entry file</button><button class="q-opt" type="button">Let an APM agent inject it</button></div>
+          <p class="q-feedback" hidden>The npm package, <code>@newrelic/browser-agent</code>, ships and is versioned with your own code. APM injection suits pages a monitored server renders.</p>
+        </div>
+        <div class="q" data-qid="install-double-count">
+          <p class="q-text">After adding the agent, every page view is counted twice. What is the most likely cause?</p>
+          <div class="q-options"><button class="q-opt" type="button">The agent sends each batch twice by design</button><button class="q-opt" type="button">Session replay counts its own page views</button><button class="q-opt" type="button" data-correct>Two agents are on the page</button></div>
+          <p class="q-feedback" hidden>Usually a pasted snippet plus one injected by an APM agent. Keep one of them.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>A sample page for installing and checking the New Relic browser agent.</span>
+    <span>Avoid typing anything sensitive. Data is visible to everyone in the shared account.</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- ================= LOGIC (pure functions, tested by backend/page-logic.test.js) ================= -->
+<script>
+/*LOGIC-START*/
+(function (root) {
+  var LOADER_TYPES = { spa: 'Pro+SPA', pro: 'Pro', lite: 'Lite' };
+
+  // The settings in NREUM.init that each demo page is about, and whether this page has them on.
+  // Features without their own switch (like AJAX) aren't listed.
+  var FEATURES = [
+    { label: 'Logs', page: 'logs.html', on: function (i) { return i.logging ? i.logging.enabled !== false : true; } },
+    { label: 'Errors', page: 'errors.html', on: function (i) { return i.jserrors ? i.jserrors.enabled !== false : true; } },
+    { label: 'Distributed tracing', page: 'tracing.html', on: function (i) { return !!(i.distributed_tracing && i.distributed_tracing.enabled); } },
+    { label: 'WebSockets', page: 'websockets.html', on: function (i) { return !!(i.web_sockets && i.web_sockets.enabled) || (i.feature_flags || []).indexOf('websockets') > -1; } },
+    { label: 'Core Web Vitals', page: 'vitals.html', on: function (i) { return i.page_view_timing ? i.page_view_timing.enabled !== false : true; } },
+    { label: 'Marks & measures', page: 'measures.html', on: function (i) { return !!(i.performance && (i.performance.capture_marks || i.performance.capture_measures)); } },
+    { label: 'Frustration signals', page: 'frustration.html', on: function (i) { return i.user_actions ? i.user_actions.enabled !== false : true; } },
+    { label: 'Page actions', page: 'events.html', on: function (i) { return i.page_action ? i.page_action.enabled !== false : true; } },
+    { label: 'Session replay', page: 'replay.html', on: function (i) { return !!(i.session_replay && i.session_replay.enabled); } },
+    { label: 'SPA route changes', page: 'spa.html', on: function (i) { return i.spa ? i.spa.enabled !== false : true; } }
+  ];
+
+  // How the agent got onto this page: the Node server marks the pages it serves (backend/pages.js).
+  function installMethod(doc) {
+    if (doc.querySelector('meta[name="demo-backend"]')) return 'apm';
+    if (doc.querySelector('script[src$="nr-agent.js"]')) return 'copy';
+    return 'unknown';
+  }
+
+  // The path of a request to the collector, without its keys and query string.
+  function beaconPath(url) {
+    try {
+      var path = new URL(url).pathname.split('/').filter(Boolean);
+      // Drop the browser key or app ID segment (/1/NRJS-..., /events/1/NRJS-...).
+      return '/' + path.filter(function (seg) { return !/^NRJS-|^[0-9a-f]{20,}$/i.test(seg); }).join('/');
+    } catch (e) { return url; }
+  }
+
+  function buildPageViewsNrql(code) {
+    return "SELECT count(*)\n" +
+           "FROM PageView\n" +
+           "WHERE demoCode = '" + code + "'\n" +
+           "FACET pageUrl\n" +
+           "SINCE 1 hour ago";
+  }
+
+  root.InstallDemo = {
+    LOADER_TYPES: LOADER_TYPES, FEATURES: FEATURES, installMethod: installMethod, beaconPath: beaconPath,
+    buildPageViewsNrql: buildPageViewsNrql
+  };
+})(window);
+/*LOGIC-END*/
+</script>
+
+<!-- ================= UI ================= -->
+<script>
+(function () {
+  'use strict';
+
+  var L = window.InstallDemo;
+  var $ = Demo.$, esc = Demo.esc, safe = Demo.safe, toast = Demo.toast;
+  var state = { requests: 0, paths: {} };
+
+  // ---- 1. What this page loaded -------------------------------------------
+  function firstAgent() {
+    var all = (window.NREUM && window.NREUM.initializedAgents) || {};
+    var ids = Object.keys(all);
+    return ids.length ? all[ids[0]] : null;
+  }
+  function renderFacts() {
+    var method = L.installMethod(document), a = firstAgent(), rt = (a && a.runtime) || {};
+    var info = (window.NREUM && window.NREUM.info) || {};
+    var rows = [
+      ['Installed by', method === 'apm' ? 'The APM agent' : method === 'copy' ? 'Copy/paste snippet' : 'Unknown',
+        method === 'apm' ? 'The Node server added it with getBrowserTimingHeader()' : method === 'copy' ? 'Split into nr-init.js, nr-config.js and nr-agent.js' : ''],
+      ['Agent version', rt.version || (window.newrelic ? 'Not reported' : 'Not loaded'), rt.distMethod ? 'Loaded from the ' + rt.distMethod : ''],
+      ['Agent type', L.LOADER_TYPES[rt.loaderType] || rt.loaderType || 'Not reported', rt.loaderType === 'spa' ? 'Everything, including SPA route changes' : ''],
+      ['Application ID', info.applicationID || 'Not set', 'Which browser app the data lands in'],
+      ['Sends data to', info.beacon || 'Not set', 'The collector the agent reports to'],
+      ['newrelic in the console', window.newrelic ? 'An object' : 'undefined', window.newrelic ? 'The agent is running' : 'The agent is not on this page']
+    ];
+    $('facts').innerHTML = rows.map(function (r) {
+      return '<div><dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + (r[2] ? '<small>' + esc(r[2]) + '</small>' : '') + '</dd></div>';
+    }).join('');
+    ['methodCopy', 'methodApm'].forEach(function (id) {
+      $(id).classList.toggle('here', (id === 'methodApm') === (method === 'apm') && method !== 'unknown');
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.js-beacon'), function (el) { el.textContent = info.beacon || 'bam.nr-data.net'; });
+  }
+
+  // ---- 2. Features --------------------------------------------------------
+  function renderFeatures() {
+    var a = firstAgent();
+    var init = (a && a.init) || (window.NREUM && window.NREUM.init) || {};
+    $('features').innerHTML = L.FEATURES.map(function (f) {
+      var on = false;
+      safe(function () { on = f.on(init); });
+      return '<a href="' + f.page + '"><span class="chip ' + (on ? 'on' : 'off') + '">' + esc(f.label) + (on ? ' · on' : ' · off') + '</span></a>';
+    }).join('');
+  }
+
+  // ---- 3. Requests to New Relic ---------------------------------------------
+  function beaconHost() { return ((window.NREUM && window.NREUM.info) || {}).beacon || 'bam.nr-data.net'; }
+  function onResource(entry) {
+    if (entry.name.indexOf(beaconHost()) < 0) return;
+    var path = L.beaconPath(entry.name);
+    state.requests++;
+    var first = !state.paths[path];
+    state.paths[path] = (state.paths[path] || 0) + 1;
+    Demo.feed.add('<div class="line1"><span>' + Demo.time() + '</span><span class="path">' + esc(path) + '</span></div>' +
+      '<div class="msg">' + (first ? 'First request of this kind' : 'Request ' + state.paths[path] + ' of this kind') +
+      (entry.transferSize ? ' · ' + entry.transferSize + ' bytes' : '') + '</div>');
+    $('statRequests').textContent = state.requests;
+    $('statPaths').textContent = Object.keys(state.paths).length;
+  }
+  function watchRequests() {
+    if (typeof PerformanceObserver !== 'function') return;
+    safe(function () {
+      new PerformanceObserver(function (list) { list.getEntries().forEach(onResource); }).observe({ type: 'resource', buffered: true });
+    });
+  }
+
+  function onSendClick() {
+    var nr = Demo.agent();
+    if (!nr || typeof nr.addPageAction !== 'function') { $('sendStatus').textContent = 'No agent detected, so there is nothing to send.'; return; }
+    safe(function () { nr.addPageAction('Install page check', { step: 'is it sending data' }); });
+    $('sendStatus').textContent = 'Recorded a page action. It goes out with the next batch of events, within about 30 seconds. Watch the panel for a new request.';
+    toast('Page action recorded');
+  }
+
+  // ---- Init ----------------------------------------------------------------
+  // Runs after every name or code change (Demo.start sets the custom attributes): refreshes the query.
+  function onIdentity() { $('nrqlPageViews').textContent = L.buildPageViewsNrql(state.code); }
+  // The agent can finish starting after this script runs, so read it again when it has.
+  function onAgent() { renderFacts(); renderFeatures(); }
+  function init() {
+    $('sendBtn').addEventListener('click', onSendClick);
+    Demo.start({ state: state, onIdentity: onIdentity, onAgent: onAgent });
+    renderFacts();
+    renderFeatures();
+    watchRequests();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>

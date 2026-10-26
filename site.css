@@ -54,8 +54,8 @@ header.site .wrap { display: flex; align-items: center; justify-content: space-b
 .switch a { text-decoration: none; color: var(--sand); font-size: 14px; font-weight: 600; padding: 7px 10px; border-radius: var(--pill); white-space: nowrap; }
 .switch a:hover { color: var(--white); }
 .switch a[aria-current="page"] { background: var(--sys-white); color: var(--black); }
-/* Eleven pages: below 1180px the badge keeps only its dot, and the switcher scrolls if it still doesn't fit. */
-@media (max-width: 1180px) { .agent-badge { padding: 9px; } .agent-badge #agentText { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
+/* Below 1440px the badge keeps only its dot, and the page switcher scrolls if it still doesn't fit. */
+@media (max-width: 1440px) { .agent-badge { padding: 9px; } .agent-badge #agentText { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
 .agent-badge {
   display: inline-flex; align-items: center; gap: 10px; padding: 9px 16px; border-radius: var(--pill);
   background: var(--panel-2); color: var(--sand); font-size: 14px; font-weight: 600; white-space: nowrap;
@@ -161,6 +161,48 @@ section.step { padding: 64px 0; border-top: 1px solid var(--line); }
 .scenario .meta { margin-top: auto; display: flex; gap: 6px; flex-wrap: wrap; }
 .scenario.running { box-shadow: inset 0 0 0 2px var(--green); }
 
+/* What a feature costs you: nothing, some code of your own, or both. */
+.chip.auto { background: var(--green-1); }
+.chip.manual { background: var(--blue-1); }
+.chip.both { background: var(--sand); box-shadow: inset 0 0 0 1px var(--gray); }
+
+/* ---------- Primer: what you'll learn, and what the page needs ---------- */
+.primer { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 20px; margin-bottom: 28px; }
+.primer > div { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 22px 26px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.primer .tag-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.primer .tag { font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2); }
+.primer h3 { font-size: 19px; }
+.primer ul { margin: 0; padding-left: 20px; font-size: 15px; color: var(--ink-2); }
+.primer li { margin: 4px 0; }
+.needs { list-style: none; margin: 0; padding: 0 !important; display: grid; gap: 10px; }
+.needs li { display: flex; flex-direction: column; gap: 4px; margin: 0; }
+.needs .chip { align-self: flex-start; }
+/* Where a setting lives. */
+.chip.where-default { background: var(--green-1); }
+.chip.where-snippet { background: var(--blue-1); }
+.chip.where-settings { background: var(--ember-1); }
+.chip.where-version { background: var(--sand); }
+.chip.where-backend { background: var(--magenta-1); }
+
+/* ---------- Check your understanding ---------- */
+.quiz { display: grid; gap: 14px; max-width: 900px; }
+.q { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 18px 20px; display: grid; gap: 12px; }
+.q-text { margin: 0; font-weight: 700; font-size: 16px; }
+.q-options { display: grid; gap: 8px; }
+.q-opt {
+  appearance: none; cursor: pointer; text-align: left; border: 1px solid var(--line); background: var(--sys-white); color: var(--black);
+  border-radius: 14px; padding: 11px 14px; font: 500 15px/1.4 var(--body); letter-spacing: -0.2px;
+  transition: border-color .15s, background .15s;
+}
+.q-opt:hover:not(:disabled) { border-color: var(--black); background: #fff; }
+.q-opt:disabled { cursor: default; }
+.q-opt.right { border-color: var(--green-deep); background: var(--green-1); }
+.q-opt.wrong { border-color: var(--magenta-2); background: rgba(236,170,211,.35); text-decoration: line-through; }
+.q-opt:disabled:not(.right):not(.wrong) { opacity: .55; }
+.q-feedback { margin: 0; font-size: 15px; color: var(--ink-2); }
+.q-feedback b { color: var(--black); }
+.quiz-note { margin: 0 0 18px; max-width: 72ch; font-size: 14px; color: var(--ink-2); }
+
 /* ---------- Feed ---------- */
 .feed {
   position: sticky; top: 100px; background: var(--black); color: var(--white); border-radius: var(--radius-lg);
@@ -221,7 +263,7 @@ footer .wrap { display: flex; justify-content: space-between; gap: 16px; padding
   .identity { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 900px) {
-  .hero .wrap, .find-grid, .tips, .cards { grid-template-columns: 1fr; }
+  .hero .wrap, .find-grid, .tips, .cards, .primer { grid-template-columns: 1fr; }
   .identity { grid-template-columns: 1fr; }
   .brand-row .divider { display: none; }
 }

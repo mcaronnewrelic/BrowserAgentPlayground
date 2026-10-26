@@ -57,8 +57,6 @@
     --pill: 999px;
   }
 
-  /* Eleven pages: below 1180px the badge keeps only its dot, and the switcher scrolls if it still doesn't fit. */
-
   .agent-badge .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--gray); }
 
   /* ---------- Buttons ---------- */
@@ -108,9 +106,6 @@
 
   /* ---------- Playground ---------- */
   .card .tag-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .chip.auto { background: var(--green-1); }
-  .chip.manual { background: var(--blue-1); }
-  .chip.both { background: var(--sand); box-shadow: inset 0 0 0 1px var(--gray); }
   .subcards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
   .card.inner { background: var(--sys-white); }
   .card .when { color: var(--black); }
@@ -154,7 +149,7 @@
 
 <div class="topbar">
   <div class="wrap">
-    <span>Ten small pages, one shared account. Click around and watch your own data show up.</span>
+    <span>Eleven small pages, one shared account. Click around and watch your own data show up.</span>
     <a href="https://docs.newrelic.com/docs/browser/" target="_blank" rel="noopener">Read the docs</a>
   </div>
 </div>
@@ -168,7 +163,7 @@
       <div>
         <div class="eyebrow">New Relic browser agent</div>
         <h1 class="display" style="margin-top:18px">Click it.<br>Then find it.</h1>
-        <p class="lede">Ten small demo pages, one shared New Relic account. Each page triggers a specific browser agent feature on purpose, then shows you exactly where to find the data it produced.</p>
+        <p class="lede">Eleven small demo pages, one shared New Relic account. Each page triggers a specific browser agent feature on purpose, then shows you exactly where to find the data it produced.</p>
         <form class="start-form" id="startForm" novalidate>
           <div>
             <label for="userName">Your name or handle</label>
@@ -207,11 +202,18 @@
   <section class="step" id="pages">
     <div class="wrap">
       <div class="step-head">
-        <div class="eyebrow">Ten pages</div>
+        <div class="eyebrow">Eleven pages</div>
         <h2 class="display" style="margin-top:14px">What you'll learn where</h2>
         <p class="muted">Every page stands on its own. Start anywhere, you don't need to go in order.</p>
       </div>
       <div class="cards">
+
+        <article class="card wide" aria-labelledby="pInstall">
+          <div class="tag-row"><div class="tag">Install</div><span class="chip both">Start here</span></div>
+          <h3 id="pInstall">How the agent gets on the page</h3>
+          <p>Copy/paste snippet, injection by an APM agent, or the npm package: which to use when, how to check an install is working, and how to read the NRQL queries every other page ends with.</p>
+          <a class="btn secondary small" href="install.html">Go to Install <span class="arrow" aria-hidden="true">→</span></a>
+        </article>
 
         <article class="card" aria-labelledby="pLogs">
           <div class="tag-row"><div class="tag">Logs</div><span class="chip both">Automatic + your code</span></div>

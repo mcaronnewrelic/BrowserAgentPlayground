@@ -45,7 +45,26 @@ The pages are plain HTML with no build step, so GitHub Pages and the Node server
 - `site.js`: the header with the page switcher (the list of pages is `PAGES` at the top), the "Your data is tagged as" panel, and the helpers every demo uses. A page calls `Demo.header()`, `Demo.whoSummary()` and `Demo.identityForm()` from small inline `<script>` tags where that markup belongs. They write it while the page loads, so nothing shifts afterward. The page's own script then calls `Demo.start({ state, onIdentity, onAgent })`, which wires up the name and code fields, the copy buttons and the agent badge, sets the `demoUser` and `demoCode` custom attributes, and calls `onIdentity(nr)` whenever they change so the page can refresh its queries.
 - `demo-identity.js`: keeps the name and session code in `sessionStorage` (see below).
 
-To add a page: copy a demo page such as `events.html`, change its content, page-specific styles and script, then add it to `PAGES` in `site.js` and add a card for it to `index.html`.
+Every demo page follows the same learning shape:
+
+1. A **primer** at the top of "Try it": what you'll learn, whether the feature is automatic or needs your code, and a **Before you start** list of what the page needs, each tagged with where that setting lives (on by default, the snippet's `NREUM.init`, Application settings, agent version or backend).
+2. The hands-on cards and activity feed.
+3. **Find it**: where the data shows up in New Relic, and NRQL to query it.
+4. **Check yourself**: two questions with answers hidden until opened.
+
+### Knowledge check answers and dashboard
+
+Each **Check yourself** question is multiple choice. Every pick is recorded with `newrelic.recordCustomEvent()` as a `DemoQuizAnswer` event (`site.js`), carrying `questionId`, `question`, `answer`, `outcome` (`correct` or `incorrect`), `attempt` (1 for a first try; a wrong pick can be retried) and `demoPage`, plus the usual `demoCode` and `demoUser`. Only the option picked is recorded, never free text. Question IDs (`data-qid`) are meant to stay the same when a question is reworded, so its history carries over.
+
+`dashboards/knowledge-checks.json` is a ready-made dashboard: first-try accuracy overall, by page and by question (hardest first), the most-picked wrong answers, and tries needed to get each question right. To add it, open **Dashboards** in New Relic, choose **Import dashboard**, and paste the file's contents. Its queries use account `6932347`, the one in `nr-config.js`. If your data goes to another account (for example the Docker image with your own license key), change `accountIds` first.
+
+```sql
+SELECT percentage(count(*), WHERE outcome = 'correct') FROM DemoQuizAnswer WHERE attempt = 1 FACET question SINCE 1 week ago
+```
+
+Timing ("why does it take a minute?") and the map of which feature writes which event type, and where it appears in the UI, live once on `install.html` (`#timing`). Other pages link there instead of repeating it.
+
+To add a page: copy a demo page such as `events.html`, change its content, page-specific styles and script, then add it to `PAGES` in `site.js` and add a card for it to `index.html`. Keep its pure functions between `/*LOGIC-START*/` and `/*LOGIC-END*/`: `backend/page-logic.test.js` loads them from the page and checks every `build…Nrql` function automatically.
 
 All pages share one browser snippet, split into three files so you edit it once:
 

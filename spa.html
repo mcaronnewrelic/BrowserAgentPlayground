@@ -106,6 +106,17 @@ newrelic.<span class="k">finished</span>()</pre>
         <p class="muted">Four buttons, four overrides, plus one that already ran before you clicked anything. The agent decides what actually gets saved, and this page has no way to read that verdict back. The activity feed on the right only shows what you did locally. Give it a minute or two, then check the queries below for what New Relic actually recorded.</p>
       </div>
 
+      <div class="primer">
+        <div>
+          <div class="tag-row"><div class="tag">You'll learn to</div><span class="chip manual">You add the code</span></div>
+          <ul><li>Force or suppress a <code>BrowserInteraction</code> with the <code>interaction()</code> handle.</li><li>Name routes and page views yourself.</li><li>Tell the handle's methods apart from the separate top-level calls.</li></ul>
+        </div>
+        <div>
+          <div class="tag-row"><div class="tag">Before you start</div></div>
+          <ul class="needs"><li><span class="chip where-version">Agent version</span><span>The Pro+SPA agent, the only one that records <code>BrowserInteraction</code> events. This site uses it.</span></li></ul>
+        </div>
+      </div>
+
       <div class="playground">
         <div class="cards">
 
@@ -185,7 +196,7 @@ newrelic.<span class="k">finished</span>()</pre>
       <div class="step-head">
         <div class="eyebrow">Find it / Search the shared account</div>
         <h2 class="display" style="margin-top:14px">Find your events</h2>
-        <p>Allow a minute or two for events to arrive. Everything below is already filled in with your code, <code class="js-code" style="color:var(--green)">NR-XXXX</code>.</p>
+        <p>Data arrives in batches, usually within a minute (<a href="install.html#timing">why</a>). Everything below is already filled in with your code, <code class="js-code" style="color:var(--green)">NR-XXXX</code>.</p>
       </div>
       <div class="find-grid">
         <div class="find-card full">
@@ -221,9 +232,33 @@ newrelic.<span class="k">finished</span>()</pre>
         </div>
       </div>
       <div class="tips">
-        <div class="tip"><b>Still seeing the suppressed one?</b>Give it a minute, harvesting lags a little. If it's still there after that, something's off; it shouldn't be.</div>
+        <div class="tip"><b>Still seeing the suppressed one?</b>Give it a minute, data arrives in batches. If it's still there after that, something's off; it shouldn't be.</div>
         <div class="tip"><b>Route name not showing on the first click?</b>That's expected. <code>previousRouteName</code> only populates starting on your second click; the first has nothing to look back to.</div>
         <div class="tip"><b>Learn more</b><a href="https://docs.newrelic.com/docs/browser/new-relic-browser/browser-apis/interaction/" target="_blank" rel="noopener">interaction()</a> · <a href="https://docs.newrelic.com/docs/browser/new-relic-browser/browser-apis/setcurrentroutename/" target="_blank" rel="noopener">setCurrentRouteName()</a> · <a href="https://docs.newrelic.com/docs/browser/new-relic-browser/browser-apis/setpageviewname/" target="_blank" rel="noopener">setPageViewName()</a></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CHECK ================= -->
+  <section class="step" id="check">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">Check it / Your understanding</div>
+        <h2 class="display" style="margin-top:14px">Check yourself</h2>
+        <p class="muted">Pick an answer. A wrong pick can be retried.</p>
+      </div>
+      <p class="quiz-note">Each answer is recorded as a <code>DemoQuizAnswer</code> custom event, with your session code like everything else on this site, so we can see which questions trip people up. Only the option you pick is recorded.</p>
+      <div class="quiz">
+        <div class="q" data-qid="spa-ignore-proof">
+          <p class="q-text">How do you prove that <code>.ignore()</code> worked?</p>
+          <div class="q-options"><button class="q-opt" type="button">Its <code>BrowserInteraction</code> has <code>ignored = true</code></button><button class="q-opt" type="button" data-correct>It is missing from the <code>BrowserInteraction</code> query</button><button class="q-opt" type="button">A <code>PageAction</code> named <code>ignored</code> appears</button></div>
+          <p class="q-feedback" hidden>An ignored interaction is never reported, so the proof is its absence.</p>
+        </div>
+        <div class="q" data-qid="spa-previous-route">
+          <p class="q-text">Why is <code>previousRouteName</code> empty after your first click?</p>
+          <div class="q-options"><button class="q-opt" type="button" data-correct>There is no earlier route to look back to yet</button><button class="q-opt" type="button"><code>setCurrentRouteName()</code> has to be called twice</button><button class="q-opt" type="button">It is only filled in for hash-based routes</button></div>
+          <p class="q-feedback" hidden>It fills in from your second click.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -238,7 +273,7 @@ newrelic.<span class="k">finished</span>()</pre>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<!-- ================= LOGIC (pure functions, unit tested) ================= -->
+<!-- ================= LOGIC (pure functions, tested by backend/page-logic.test.js) ================= -->
 <script>
 /*LOGIC-START*/
 (function (root) {

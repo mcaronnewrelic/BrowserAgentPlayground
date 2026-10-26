@@ -9,6 +9,7 @@
   // The page switcher. Add a page here and it shows up in every header.
   var PAGES = [
     { file: 'index.html', label: 'Home' },
+    { file: 'install.html', label: 'Install' },
     { file: 'logs.html', label: 'Logs' },
     { file: 'errors.html', label: 'Errors' },
     { file: 'tracing.html', label: 'Tracing' },
@@ -152,6 +153,47 @@
     }
   };
 
+  // ---- Check yourself -------------------------------------------------------------
+  // Every answer is recorded as a custom event, so a dashboard can show which questions people get right.
+  var QUIZ_EVENT_TYPE = 'DemoQuizAnswer';
+  // Custom event attribute values are capped, so long question text is cut short.
+  function clip(text) { text = String(text).replace(/\s+/g, ' ').trim(); return text.length > 250 ? text.slice(0, 249) + '…' : text; }
+
+  // The attributes of one answer. The agent adds demoCode, demoUser and the rest of the page's custom attributes.
+  function quizAnswer(q, option, attempt) {
+    return {
+      questionId: q.dataset.qid,
+      question: clip(q.querySelector('.q-text').textContent),
+      answer: clip(option.textContent),
+      outcome: option.hasAttribute('data-correct') ? 'correct' : 'incorrect',
+      attempt: attempt,
+      demoPage: currentFile()
+    };
+  }
+
+  // A wrong pick is crossed out and can be retried. The right one shows the explanation and locks the question.
+  function initQuiz() {
+    Array.prototype.forEach.call(document.querySelectorAll('.quiz .q'), function (q) {
+      // The explanation ships hidden in the markup and is shown once the right answer is picked.
+      var attempts = 0, feedback = q.querySelector('.q-feedback'), explanation = feedback.innerHTML;
+      Array.prototype.forEach.call(q.querySelectorAll('.q-opt'), function (option) {
+        option.addEventListener('click', function () {
+          attempts++;
+          var answer = quizAnswer(q, option, attempts), nr = agent();
+          if (nr && typeof nr.recordCustomEvent === 'function') safe(function () { nr.recordCustomEvent(QUIZ_EVENT_TYPE, answer); });
+          var correct = answer.outcome === 'correct';
+          option.classList.add(correct ? 'right' : 'wrong');
+          option.disabled = true;
+          if (correct) Array.prototype.forEach.call(q.querySelectorAll('.q-opt'), function (o) { o.disabled = true; });
+          feedback.innerHTML = correct
+            ? '<b>' + (attempts === 1 ? 'Correct.' : 'That\'s it.') + '</b> ' + explanation
+            : '<b>Not quite.</b> Try another answer.';
+          feedback.hidden = false;
+        });
+      });
+    });
+  }
+
   // Wires up the name and session code fields, the copy buttons and the agent badge, and keeps the agent's
   // custom attributes in step with them. `state` is the page's own state object: start() reads and updates
   // its name and code. onIdentity(nr) runs after every change (nr is null without an agent), so the page
@@ -201,6 +243,7 @@
       });
     });
 
+    initQuiz();
     renderAgent();
     apply();
     // The agent can finish loading after the page's own script runs.
@@ -217,6 +260,6 @@
   window.Demo = {
     PAGES: PAGES, header: header, whoSummary: whoSummary, identityForm: identityForm,
     $: $, agent: agent, safe: safe, esc: esc, time: time, renderAgent: renderAgent,
-    copyText: copyText, toast: toast, feed: feed, start: start
+    copyText: copyText, toast: toast, feed: feed, start: start, QUIZ_EVENT_TYPE: QUIZ_EVENT_TYPE, quizAnswer: quizAnswer
   };
 })();

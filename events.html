@@ -104,6 +104,17 @@ el.textContent = <span class="s">'done'</span> <span class="c">// 2. then DOM ch
         <p class="muted">Four buttons, four outcomes. The agent decides what actually gets saved, and this page has no way to read that verdict back. The activity feed on the right only shows what you did locally. Give it a minute or two, then check the queries below for what New Relic actually recorded.</p>
       </div>
 
+      <div class="primer">
+        <div>
+          <div class="tag-row"><div class="tag">You'll learn to</div><span class="chip manual">You add the code</span></div>
+          <ul><li>Choose between <code>addPageAction()</code> and <code>recordCustomEvent()</code>.</li><li>Explain when the agent records a <code>BrowserInteraction</code>, and when it doesn't.</li><li>Find events that have no page of their own in the New Relic UI.</li></ul>
+        </div>
+        <div>
+          <div class="tag-row"><div class="tag">Before you start</div></div>
+          <ul class="needs"><li><span class="chip where-default">On by default</span><span><code>addPageAction()</code>: <code>init.page_action.enabled</code> is on by default.</span></li><li><span class="chip where-version">Agent version</span><span><code>recordCustomEvent()</code> needs agent v1.277.0 or later.</span></li><li><span class="chip where-version">Agent version</span><span><code>BrowserInteraction</code> needs the Pro+SPA agent, which this site uses.</span></li></ul>
+        </div>
+      </div>
+
       <div class="playground">
         <div class="cards">
 
@@ -176,7 +187,7 @@ el.textContent = <span class="s">'done'</span> <span class="c">// 2. then DOM ch
       <div class="step-head">
         <div class="eyebrow">Find it / Search the shared account</div>
         <h2 class="display" style="margin-top:14px">Find your events</h2>
-        <p>Allow a minute or two for events to arrive. Everything below is already filled in with your code, <code class="js-code" style="color:var(--green)">NR-XXXX</code>.</p>
+        <p>Data arrives in batches, usually within a minute (<a href="install.html#timing">why</a>). Everything below is already filled in with your code, <code class="js-code" style="color:var(--green)">NR-XXXX</code>.</p>
       </div>
       <div class="find-grid">
         <div class="find-card full">
@@ -219,8 +230,32 @@ el.textContent = <span class="s">'done'</span> <span class="c">// 2. then DOM ch
       </div>
       <div class="tips">
         <div class="tip"><b>Not seeing a BrowserInteraction from the AJAX-only button?</b>That's correct, not broken. It needs a route change first. The AJAX-only button deliberately never gives it one.</div>
-        <div class="tip"><b>Not seeing anything at all?</b>Make sure the agent badge up top says "detected." Then give it a minute or two. Events harvest roughly every 30 seconds.</div>
+        <div class="tip"><b>Not seeing anything at all?</b>Make sure the agent badge up top says "detected." Then give it a minute: data arrives in batches (<a href="install.html#timing">why</a>).</div>
         <div class="tip"><b>Learn more</b><a href="https://docs.newrelic.com/docs/browser/new-relic-browser/browser-apis/addpageaction/" target="_blank" rel="noopener">addPageAction()</a> · <a href="https://docs.newrelic.com/docs/browser/new-relic-browser/browser-apis/recordCustomEvent/" target="_blank" rel="noopener">recordCustomEvent()</a> · <a href="https://docs.newrelic.com/docs/browser/new-relic-browser/browser-apis/interaction/" target="_blank" rel="noopener">interaction()</a></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CHECK ================= -->
+  <section class="step" id="check">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">Check it / Your understanding</div>
+        <h2 class="display" style="margin-top:14px">Check yourself</h2>
+        <p class="muted">Pick an answer. A wrong pick can be retried.</p>
+      </div>
+      <p class="quiz-note">Each answer is recorded as a <code>DemoQuizAnswer</code> custom event, with your session code like everything else on this site, so we can see which questions trip people up. Only the option you pick is recorded.</p>
+      <div class="quiz">
+        <div class="q" data-qid="events-ajax-only">
+          <p class="q-text">You click the AJAX-only button ten times. How many <code>BrowserInteraction</code> events of its own does that create?</p>
+          <div class="q-options"><button class="q-opt" type="button">Ten, one per click</button><button class="q-opt" type="button">One, for the first click</button><button class="q-opt" type="button" data-correct>None</button></div>
+          <p class="q-feedback" hidden>The agent needs a route (URL) change followed by a DOM update. An AJAX call alone never qualifies.</p>
+        </div>
+        <div class="q" data-qid="events-custom-type">
+          <p class="q-text">When would you pick <code>recordCustomEvent()</code> over <code>addPageAction()</code>?</p>
+          <div class="q-options"><button class="q-opt" type="button" data-correct>When you want your own event type instead of <code>PageAction</code></button><button class="q-opt" type="button">When you want free attributes like <code>timeSinceLoad</code></button><button class="q-opt" type="button">When you want a separate event type for every action</button></div>
+          <p class="q-feedback" hidden>New Relic's guidance is to keep it to roughly five custom event types per account, not one per action.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -235,7 +270,7 @@ el.textContent = <span class="s">'done'</span> <span class="c">// 2. then DOM ch
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<!-- ================= LOGIC (pure functions, unit tested) ================= -->
+<!-- ================= LOGIC (pure functions, tested by backend/page-logic.test.js) ================= -->
 <script>
 /*LOGIC-START*/
 (function (root) {

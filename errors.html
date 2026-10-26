@@ -150,6 +150,17 @@ newrelic.<span class="k">setErrorHandler</span>(err =&gt;
         <h2 class="display" style="margin-top:14px">Break something</h2>
         <p class="muted">These are real errors. Your browser console will show red text, and that is the point. The page keeps working, and the feed on the right shows what New Relic receives.</p>
       </div>
+
+      <div class="primer">
+        <div>
+          <div class="tag-row"><div class="tag">You'll learn to</div><span class="chip both">Automatic + your code</span></div>
+          <ul><li>Tell uncaught errors apart from the ones you report with <code>noticeError()</code>.</li><li>Ignore noise and group related errors with <code>setErrorHandler()</code>.</li><li>Tag errors with a release using <code>addRelease()</code>, and find them in Errors Inbox.</li></ul>
+        </div>
+        <div>
+          <div class="tag-row"><div class="tag">Before you start</div></div>
+          <ul class="needs"><li><span class="chip where-default">On by default</span><span>JavaScript error collection (<code>init.jserrors</code>) is on by default.</span></li><li><span class="chip where-snippet">Snippet: NREUM.init</span><span><code>init.session_replay</code> records every session that hits an error on this site (<code>error_sampling_rate: 100</code>), so errors come with a replay.</span></li></ul>
+        </div>
+      </div>
       <div class="identity page-setup">
         <div class="field">
           <label for="release">App version (addRelease)</label>
@@ -282,7 +293,7 @@ newrelic.<span class="k">setErrorHandler</span>(err =&gt;
       <div class="step-head">
         <div class="eyebrow">Find it / Search the shared account</div>
         <h2 class="display" style="margin-top:14px">Find your errors</h2>
-        <p>Errors are sent in batches, so allow up to a minute. Everything below is already filled in with your code, <code class="js-code" style="color:var(--green)">NR-XXXX</code>.</p>
+        <p>Data arrives in batches, usually within a minute (<a href="install.html#timing">why</a>). Everything below is already filled in with your code, <code class="js-code" style="color:var(--green)">NR-XXXX</code>.</p>
       </div>
       <div class="find-grid">
         <div class="find-card">
@@ -325,6 +336,30 @@ newrelic.<span class="k">setErrorHandler</span>(err =&gt;
       </div>
     </div>
   </section>
+
+  <!-- ================= CHECK ================= -->
+  <section class="step" id="check">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">Check it / Your understanding</div>
+        <h2 class="display" style="margin-top:14px">Check yourself</h2>
+        <p class="muted">Pick an answer. A wrong pick can be retried.</p>
+      </div>
+      <p class="quiz-note">Each answer is recorded as a <code>DemoQuizAnswer</code> custom event, with your session code like everything else on this site, so we can see which questions trip people up. Only the option you pick is recorded.</p>
+      <div class="quiz">
+        <div class="q" data-qid="errors-ignored">
+          <p class="q-text">Your error handler ignores an error. Does New Relic still receive it?</p>
+          <div class="q-options"><button class="q-opt" type="button">Yes, marked as ignored in Errors Inbox</button><button class="q-opt" type="button" data-correct>No, it never leaves the browser</button><button class="q-opt" type="button">Only as an ERROR log</button></div>
+          <p class="q-feedback" hidden>Ignored errors are dropped in the browser, which is what makes ignoring noise cheap.</p>
+        </div>
+        <div class="q" data-qid="errors-users-affected">
+          <p class="q-text">Two visitors hit the same error. What lets Errors Inbox count them as two users affected?</p>
+          <div class="q-options"><button class="q-opt" type="button">The <code>demoCode</code> custom attribute</button><button class="q-opt" type="button"><code>addRelease()</code></button><button class="q-opt" type="button" data-correct><code>setUserId()</code>, which every page calls with your name</button></div>
+          <p class="q-feedback" hidden>Identical errors from every visitor group together, and <b>Users affected</b> counts the distinct end users in the group.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
 
 <footer>
@@ -336,7 +371,7 @@ newrelic.<span class="k">setErrorHandler</span>(err =&gt;
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<!-- ================= LOGIC (pure functions, unit tested) ================= -->
+<!-- ================= LOGIC (pure functions, tested by backend/page-logic.test.js) ================= -->
 <script>
 /*LOGIC-START*/
 (function (root) {

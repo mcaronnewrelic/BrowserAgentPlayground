@@ -45,6 +45,10 @@
   @media (max-width: 560px) {
     .btn-grid, .btn-grid.three { grid-template-columns: 1fr 1fr; }
   }
+  /* "Pause recording" doesn't fit in half of the narrowest phones. */
+  @media (max-width: 420px) {
+    .btn-grid, .btn-grid.three { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -112,6 +116,17 @@
         <div class="eyebrow">Try it / See the contrast</div>
         <h2 class="display" style="margin-top:14px">Force it, then look at it</h2>
         <p class="muted">This page can't read back whether a replay actually started or what it looks like. Only New Relic's own player can show you that. The activity feed on the right only narrates what was called locally. Click Start recording first, work through the rest, then check the queries below.</p>
+      </div>
+
+      <div class="primer">
+        <div>
+          <div class="tag-row"><div class="tag">You'll learn to</div><span class="chip both">Automatic + your code</span></div>
+          <ul><li>Explain what session replay masks by default.</li><li>Force a replay with <code>recordReplay()</code> and stop it with <code>pauseReplay()</code>.</li><li>Reveal, block or skip specific elements with <code>nr-unmask</code>, <code>nr-block</code> and <code>nr-ignore</code>.</li></ul>
+        </div>
+        <div>
+          <div class="tag-row"><div class="tag">Before you start</div></div>
+          <ul class="needs"><li><span class="chip where-snippet">Snippet: NREUM.init</span><span><code>init.session_replay</code>. This site records 10% of sessions (<code>sampling_rate: 10</code>) plus every session with an error, and masks all text and inputs.</span></li><li><span class="chip where-version">Agent version</span><span><code>recordReplay()</code> needs agent v1.240.0 or later.</span></li></ul>
+        </div>
       </div>
 
       <div class="playground">
@@ -219,8 +234,32 @@
       </div>
       <div class="tips">
         <div class="tip"><b>Not finding your session?</b>Make sure you clicked "Start recording" first. Without it, this session only had a 10% chance of recording anything at all.</div>
-        <div class="tip"><b>Replay looks empty?</b>Give it a minute or two. Replay data harvests on its own cycle, separate from other events.</div>
+        <div class="tip"><b>Replay looks empty?</b>Give it a minute or two. Replay data is sent on its own schedule, separate from other events (<a href="install.html#timing">why</a>).</div>
         <div class="tip"><b>Learn more</b><a href="https://docs.newrelic.com/docs/browser/new-relic-browser/browser-apis/recordReplay/" target="_blank" rel="noopener">recordReplay()</a> · <a href="https://docs.newrelic.com/docs/browser/browser-monitoring/browser-pro-features/session-replay/configuration/customize-privacy-settings/" target="_blank" rel="noopener">privacy settings</a></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CHECK ================= -->
+  <section class="step" id="check">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">Check it / Your understanding</div>
+        <h2 class="display" style="margin-top:14px">Check yourself</h2>
+        <p class="muted">Pick an answer. A wrong pick can be retried.</p>
+      </div>
+      <p class="quiz-note">Each answer is recorded as a <code>DemoQuizAnswer</code> custom event, with your session code like everything else on this site, so we can see which questions trip people up. Only the option you pick is recorded.</p>
+      <div class="quiz">
+        <div class="q" data-qid="replay-default-text">
+          <p class="q-text">With this site's settings, what does the text of a page look like in a replay?</p>
+          <div class="q-options"><button class="q-opt" type="button">Readable, exactly as on screen</button><button class="q-opt" type="button" data-correct>Asterisks, unless you unmask it</button><button class="q-opt" type="button">It isn't recorded at all, only clicks are</button></div>
+          <p class="q-feedback" hidden>All text and inputs are masked before anything leaves the browser. <code>nr-unmask</code> makes specific text readable.</p>
+        </div>
+        <div class="q" data-qid="replay-block-vs-ignore">
+          <p class="q-text">What's the difference between <code>nr-block</code> and <code>nr-ignore</code>?</p>
+          <div class="q-options"><button class="q-opt" type="button">None: <code>nr-ignore</code> is the older name</button><button class="q-opt" type="button"><code>nr-block</code> masks text; <code>nr-ignore</code> removes the element</button><button class="q-opt" type="button" data-correct><code>nr-block</code> leaves the element out; <code>nr-ignore</code> keeps an input but not what you type</button></div>
+          <p class="q-feedback" hidden>A blocked element is an empty box in the replay. An ignored input stays visible, but your typing is never recorded.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -234,7 +273,7 @@
 </footer>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<!-- ================= LOGIC (pure functions, unit tested) ================= -->
+<!-- ================= LOGIC (pure functions, tested by backend/page-logic.test.js) ================= -->
 <script>
 /*LOGIC-START*/
 (function (root) {

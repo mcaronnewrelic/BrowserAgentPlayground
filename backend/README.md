@@ -69,6 +69,6 @@ If the page shows **"Agent added no trace headers"** for backend requests, step 
 npm test
 ```
 
-This runs `server.test.js`, `websocket.test.js` and `demo-identity.test.js`, and needs no install.
+This runs `server.test.js`, `websocket.test.js`, `demo-identity.test.js` and `page-logic.test.js`, and needs no install. `page-logic.test.js` loads each demo page's `LOGIC` block straight from the HTML, so it tests the code the pages run. Among other things, it checks that every NRQL query a page offers is a single statement that filters to the learner's session code.
 
 A reverse proxy in front of the server must pass WebSocket upgrades through. Caddy's `reverse_proxy` does this by default. With nginx, add `proxy_http_version 1.1;` and set the `Upgrade` and `Connection` headers for `/ws`.
