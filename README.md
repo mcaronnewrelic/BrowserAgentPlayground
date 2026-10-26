@@ -23,13 +23,13 @@ Self-serve demo pages for the New Relic browser agent (Pro+SPA). Each visitor ge
 
 ## Change tracking
 
-`.github/workflows/change-tracking.yml` sends New Relic [change tracking events](https://docs.newrelic.com/docs/change-tracking/overview/) to the browser app, so markers show up on its charts:
+`.github/workflows/change-tracking.yml` sends New Relic [change tracking events](https://docs.newrelic.com/docs/change-tracking/overview/) to the APM app behind browser.nru.to. The browser app is related to that APM app, so it shows them as related changes:
 
 - **Deployment** events every time GitHub Pages publishes `main` (version = short commit SHA, with the commit message and a link to the commit).
 - **One demo event a day**, sent around 9 AM Pacific (GitHub may start it hours late), rotating by weekday through Feature Flag, Business Event, Operational and Deployment, so every kind of marker appears. The rotation lives in `.github/scripts/daily-change-event.sh` (tests: `bash .github/scripts/daily-change-event.test.sh`).
 - **Run workflow** on the Actions tab sends today's daily event immediately.
 
-It uses the repository secrets `NEW_RELIC_API_KEY` (a User key, `NRAK-...`) and `NEW_RELIC_DEPLOYMENT_ENTITY_GUID`. To see the events, open the browser app in New Relic and look for the markers on its charts or the **Change tracking** view, or run:
+It uses the repository secrets `NEW_RELIC_API_KEY` (a User key, `NRAK-...`) and `NEW_RELIC_DEPLOYMENT_ENTITY_GUID`, which holds the APM app's entity GUID. To see the events, open the APM app (or the browser app's related changes) in New Relic and look for the markers on its charts or the **Change tracking** view, or run:
 
 ```sql
 SELECT timestamp, category, type, shortDescription, user FROM ChangeTrackingEvent SINCE 1 week ago
