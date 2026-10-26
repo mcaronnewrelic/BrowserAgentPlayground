@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- ===================================================================
+     NEW RELIC BROWSER SNIPPET
+     Same snippet as index.html. The agent ignores performance marks and
+     measures unless init.performance.capture_marks / capture_measures
+     are on; nr-init.js turns both on for every page of this site.
+     newrelic.measure() is an API call and works either way.
+     =================================================================== -->
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="demo-identity.js"></script>
+<script src="site.js"></script>
+<script>
+// Made before the agent loads. The agent watches marks with buffered: true, so it still picks this one up.
+try { performance.mark('demo:head-parsed', { detail: { demoCode: window.DemoIdentity.current().code } }); } catch (e) { /* older browsers */ }
+</script>
+<script src="nr-init.js"></script>
+<!-- NR:SNIPPET -->
+<script src="nr-config.js"></script>
+<script src="nr-agent.js"></script>
+<!-- /NR:SNIPPET -->
+
+<title>Browser Marks &amp; Measures Demo | New Relic</title>
+<link rel="icon" href="favicons/favicon.ico" sizes="48x48">
+<link rel="icon" href="favicons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicons/favicon-32x32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="favicons/favicon-16x16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="favicons/apple-touch-icon.png" sizes="180x180">
+<meta name="theme-color" content="#080F11">
+<meta name="description" content="Time your own moments with performance.mark(), performance.measure() and newrelic.measure(), then find the BrowserPerformance events they create in a shared New Relic account.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,200..900&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+<style>
+  /* ---------- Buttons ---------- */
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+
+  /* ---------- Playground ---------- */
+  .card .field label { color: var(--black); }
+  .card .result { color: var(--black); font-weight: 600; }
+  .row > .btn { flex: none; }
+  .explain { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .explain > div { background: var(--sys-white); border-radius: 18px; padding: 14px 16px; font-size: 14px; color: var(--ink-2); }
+  .explain b { display: block; color: var(--black); margin-bottom: 4px; font-size: 15px; }
+  .entries { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font: 500 13px/1.45 var(--mono); }
+  .entries li { background: var(--sys-white); border-radius: 12px; padding: 8px 12px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: space-between; }
+  .entries .none { color: var(--ink-2); font-family: var(--body); }
+
+  .chip.mark { background: var(--ember-1); }
+  .chip.measure { background: var(--blue-1); }
+  .chip.api { background: var(--green-1); }
+
+  /* ---------- Feed ---------- */
+  .feed-head p { margin: 8px 0 0; font-size: 13px; color: var(--sand); opacity: .8; }
+
+  /* ---------- Responsive ---------- */
+
+  @media (max-width: 900px) {
+    .hero .wrap, .find-grid, .tips, .cards, .explain { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <span>Marks and measures time the moments only you know matter, and land as BrowserPerformance events.</span>
+    <a href="https://docs.newrelic.com/docs/browser/new-relic-browser/browser-apis/measure/" target="_blank" rel="noopener">Read the docs</a>
+  </div>
+</div>
+
+<script>Demo.header()</script>
+
+<main>
+  <!-- ================= HERO ================= -->
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <div class="eyebrow">New Relic marks &amp; measures</div>
+        <h1 class="display" style="margin-top:18px">Time your<br>own moments.</h1>
+        <p class="lede">Core Web Vitals time the page. Marks and measures time what only you know matters: a search, a checkout step, a widget becoming usable. The agent turns each one into a <code>BrowserPerformance</code> event.</p>
+        <div class="ctas">
+          <a class="btn" href="#try">Start timing <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn secondary" href="#find">Jump to the query</a>
+        </div>
+        <div class="note">
+          <span class="chip" aria-hidden="true">Off by default</span>
+          <span>The agent ignores <code>performance.mark()</code> and <code>performance.measure()</code> until you turn on <code>init.performance.capture_marks</code> and <code>capture_measures</code>. This site turns both on in <code>nr-init.js</code>. <code>newrelic.measure()</code> works with or without them.</span>
+        </div>
+      </div>
+      <div class="term" aria-label="Three ways to time something">
+        <div class="bar"><i></i><i></i><i></i></div>
+<pre><span class="c">// A mark is a point in time (duration 0)</span>
+performance.<span class="k">mark</span>(<span class="s">'search:start'</span>)
+<span class="c">// ...the work you care about...</span>
+performance.<span class="k">mark</span>(<span class="s">'search:end'</span>)
+
+<span class="c">// A measure is the time between two points</span>
+performance.<span class="k">measure</span>(<span class="s">'search'</span>, <span class="s">'search:start'</span>, <span class="s">'search:end'</span>)
+<span class="c">// -&gt; BrowserPerformance, entryType 'mark' / 'measure'</span>
+
+<span class="c">// Or skip the marks and ask the agent directly</span>
+newrelic.<span class="k">measure</span>(<span class="s">'checkout'</span>, { start: t0 })
+<span class="c">// -&gt; BrowserPerformance, entryType 'measure'</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= WHO ================= -->
+  <section class="who-bar">
+    <div class="wrap">
+      <details class="who" id="who">
+        <script>Demo.whoSummary()</script>
+        <div class="who-body">
+          <p class="muted">Everyone shares one New Relic account, so your clicks are tagged as <code>demoUser</code> and <code>demoCode</code> custom attributes (your name is also set as your end-user ID via <code>setUserId()</code>). The agent copies them onto every <code>BrowserPerformance</code> event you create below.</p>
+          <script>Demo.identityForm()</script>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ================= TRY IT ================= -->
+  <section class="step" id="try">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">Try it / Time something</div>
+        <h2 class="display" style="margin-top:14px">Make some timings</h2>
+        <p class="muted">Each button times something a different way. The panel on the right is the browser's own performance timeline, which is exactly what the agent watches. Events harvest about every 30 seconds, then show up in the queries below.</p>
+      </div>
+
+      <div class="playground">
+        <div class="cards">
+
+          <article class="card wide" aria-labelledby="howTitle">
+            <div class="tag">What becomes what</div>
+            <h3 id="howTitle">Three calls, one event type</h3>
+            <div class="explain">
+              <div><b>performance.mark()</b>A browser API, not New Relic's. Becomes a <code>BrowserPerformance</code> event with <code>entryType</code> <code>mark</code> and an <code>entryDuration</code> of 0. Anything in <code>detail</code> becomes <code>entryDetail.*</code> attributes.</div>
+              <div><b>performance.measure()</b>Also a browser API. The time between two marks (or a start and an end you give it). Becomes <code>entryType</code> <code>measure</code>, with its length in <code>entryDuration</code> (milliseconds).</div>
+              <div><b>newrelic.measure()</b>The agent's own call. Also lands as a <code>measure</code>, but makes no entry in the browser's timeline. Its <code>customAttributes</code> become top-level attributes, not <code>entryDetail.*</code>.</div>
+            </div>
+          </article>
+
+          <article class="card" aria-labelledby="markTitle">
+            <div class="tag">1 · Mark a moment</div>
+            <h3 id="markTitle">performance.mark()</h3>
+            <p>Records the instant you click. Useful as a "this happened here" pin, and as the start or end of a measure.</p>
+<pre class="snippet">performance.<span class="k">mark</span>(<span class="s">'demo:button-clicked'</span>, {
+  detail: { button: <span class="s">'mark'</span>, clicks: <span id="markClicksSnippet">1</span> }
+})</pre>
+            <button id="markBtn" class="btn" type="button">Drop a mark</button>
+            <p id="markStatus">No mark yet.</p>
+          </article>
+
+          <article class="card" aria-labelledby="searchTitle">
+            <div class="tag">2 · Measure between marks</div>
+            <h3 id="searchTitle">performance.measure()</h3>
+            <p>Marks the start, loads <code>data/products.json</code>, waits as long as you pick, marks the end, then measures between the two marks. One click, three events.</p>
+            <div class="row">
+              <div class="field">
+                <label for="searchSpeed">Search speed</label>
+                <select id="searchSpeed" class="input">
+                  <option value="fast">Fast, 150 ms</option>
+                  <option value="slow" selected>Slow, 900 ms</option>
+                  <option value="very-slow">Very slow, 2.5 s</option>
+                </select>
+              </div>
+              <button id="searchBtn" class="btn" type="button">Run a search</button>
+            </div>
+            <p id="searchStatus">No search yet.</p>
+          </article>
+
+          <article class="card" aria-labelledby="apiTitle">
+            <div class="tag">3 · Ask the agent directly</div>
+            <h3 id="apiTitle">newrelic.measure()</h3>
+            <p>Saves the start time with <code>performance.now()</code>, runs a fake checkout, then hands the start to the agent. No marks needed. The end defaults to now.</p>
+<pre class="snippet"><span class="k">const</span> t0 = performance.now()
+<span class="c">// ...checkout runs...</span>
+newrelic.<span class="k">measure</span>(<span class="s">'demo:checkout'</span>, {
+  start: t0,
+  customAttributes: { step: <span class="s">'payment'</span>, cartItems: 3 }
+})</pre>
+            <button id="checkoutBtn" class="btn" type="button">Finish checkout</button>
+            <p id="checkoutStatus">No checkout yet.</p>
+          </article>
+
+          <article class="card" aria-labelledby="loadTitle">
+            <div class="tag">4 · Since the page loaded</div>
+            <h3 id="loadTitle">newrelic.measure(name)</h3>
+            <p>With no options, <code>start</code> defaults to 0, the moment this page started loading, and <code>end</code> to now. A quick way to time "how long until people do X".</p>
+<pre class="snippet">newrelic.<span class="k">measure</span>(<span class="s">'demo:time-to-click'</span>)
+<span class="c">// returns { start: 0, end, duration, customAttributes }</span></pre>
+            <button id="sinceLoadBtn" class="btn" type="button">Measure from page load</button>
+            <p id="sinceLoadStatus">Not measured yet.</p>
+          </article>
+
+          <article class="card wide" aria-labelledby="otherTitle">
+            <div class="tag">5 · Marks you didn't make</div>
+            <h3 id="otherTitle">The agent takes every mark on the page</h3>
+            <p>It doesn't filter by name. Marks made before the agent loaded still count (it reads the buffered timeline), and so do marks from frameworks, libraries and third-party scripts. This page made <code>demo:head-parsed</code> in its <code>&lt;head&gt;</code>, before the agent's script tag. Anything not starting with <code>demo:</code> came from somewhere else:</p>
+            <ul class="entries" id="otherEntries"><li class="none">Checking the timeline…</li></ul>
+          </article>
+
+        </div>
+
+        <aside class="feed" aria-labelledby="feedTitle">
+          <div class="feed-head">
+            <div class="top">
+              <h3 id="feedTitle">Performance timeline</h3>
+              <button id="clearFeed" class="btn ghost-dark small" type="button">Clear</button>
+            </div>
+            <p>Read live from the browser with a <code>PerformanceObserver</code>, the same way the agent reads it.</p>
+            <div class="feed-stats" aria-live="polite">
+              <span><b id="statMark">0</b> marks</span>
+              <span><b id="statMeasure">0</b> measures</span>
+              <span><b id="statApi">0</b> newrelic.measure()</span>
+            </div>
+          </div>
+          <ul class="feed-list" id="feed">
+            <li class="feed-empty" id="feedEmpty">Nothing yet. Click one of the buttons to the left.</li>
+          </ul>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FIND IT ================= -->
+  <section class="step find" id="find">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">Find it / Search the shared account</div>
+        <h2 class="display" style="margin-top:14px">Find your timings</h2>
+        <p>Allow a minute or two for events to arrive. Everything below is already filled in with your code, <code class="js-code" style="color:var(--green)">NR-XXXX</code>.</p>
+      </div>
+      <div class="find-grid">
+        <div class="find-card full">
+          <h3>Every timing you made</h3>
+          <ol>
+            <li>Open the query builder in New Relic and run this. Marks show an <code>entryDuration</code> of 0. <code>entryDetail.*</code> holds what you passed as <code>detail</code>, and <code>step</code> comes from <code>newrelic.measure()</code>'s custom attributes.</li>
+          </ol>
+          <pre id="nrqlAll"></pre>
+          <div class="actions">
+            <button class="btn green small js-copy" data-copy-target="nrqlAll" type="button">Copy NRQL</button>
+            <a class="btn ghost-dark small" href="https://one.newrelic.com" target="_blank" rel="noopener">Open New Relic <span class="arrow" aria-hidden="true">→</span></a>
+          </div>
+        </div>
+        <div class="find-card">
+          <h3>How long things take, for everyone</h3>
+          <p>Not filtered by your code: every visitor's measures together. This is the chart you would put on a dashboard.</p>
+          <pre id="nrqlChart"></pre>
+          <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlChart" type="button">Copy NRQL</button></div>
+        </div>
+        <div class="find-card">
+          <h3>Split by what you put in detail</h3>
+          <p>The search speed you picked rode along in <code>detail</code>, so you can facet on <code>entryDetail.speed</code>.</p>
+          <pre id="nrqlDetail"></pre>
+          <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlDetail" type="button">Copy NRQL</button></div>
+        </div>
+        <div class="find-card full">
+          <h3>Marks and measures from somewhere else</h3>
+          <p>Everything this app captured that this demo didn't name. On a real site, this is how you find timings your framework or a third-party script is already sending (and paying for).</p>
+          <pre id="nrqlOther"></pre>
+          <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlOther" type="button">Copy NRQL</button></div>
+        </div>
+      </div>
+      <div class="tips">
+        <div class="tip"><b>Not seeing marks, only newrelic.measure()?</b>Then <code>capture_marks</code> and <code>capture_measures</code> are off for this app. They live in the snippet's <code>init.performance</code>, not in the New Relic UI.</div>
+        <div class="tip"><b>Name things on purpose.</b>Pick a prefix like <code>demo:</code> so you can tell your timings apart from everything else on the page, and keep the number of different names small so charts stay readable.</div>
+        <div class="tip"><b>Learn more</b><a href="https://docs.newrelic.com/docs/browser/new-relic-browser/browser-apis/measure/" target="_blank" rel="noopener">newrelic.measure()</a> · <a href="https://developer.mozilla.org/en-US/docs/Web/API/Performance/mark" target="_blank" rel="noopener">performance.mark()</a> · <a href="https://developer.mozilla.org/en-US/docs/Web/API/Performance/measure" target="_blank" rel="noopener">performance.measure()</a></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>A sample page for timing your own moments with marks and measures.</span>
+    <span>Avoid typing anything sensitive. Data is visible to everyone in the shared account.</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- ================= LOGIC (pure functions) ================= -->
+<script>
+/*LOGIC-START*/
+(function (root) {
+  // Every name this page creates starts with this, so its timings are easy to tell apart.
+  var PREFIX = 'demo:';
+  var SEARCH_DELAYS = { fast: 150, slow: 900, 'very-slow': 2500 };
+
+  function isOurs(name) { return String(name).indexOf(PREFIX) === 0; }
+
+  // The head mark carries the code in detail too, in case it is captured before demoCode is set.
+  function whereYours(code) { return "WHERE demoCode = '" + code + "' OR entryDetail.demoCode = '" + code + "'\n"; }
+
+  function buildAllNrql(code) {
+    return "SELECT entryType, entryName, entryDuration, entryDetail.speed, entryDetail.results, step\n" +
+           "FROM BrowserPerformance\n" +
+           whereYours(code) +
+           "SINCE 1 hour ago\n" +
+           "ORDER BY timestamp DESC\n" +
+           "LIMIT 100";
+  }
+  function buildChartNrql() {
+    return "SELECT average(entryDuration), percentile(entryDuration, 95)\n" +
+           "FROM BrowserPerformance\n" +
+           "WHERE entryType = 'measure' AND entryName LIKE '" + PREFIX + "%'\n" +
+           "FACET entryName\n" +
+           "SINCE 1 day ago";
+  }
+  function buildDetailNrql(code) {
+    return "SELECT count(*), average(entryDuration)\n" +
+           "FROM BrowserPerformance\n" +
+           "WHERE entryName = '" + PREFIX + "search' AND entryType = 'measure'\n" +
+           "AND demoCode = '" + code + "'\n" +
+           "FACET entryDetail.speed\n" +
+           "SINCE 1 hour ago";
+  }
+  function buildOtherNrql() {
+    return "SELECT count(*)\n" +
+           "FROM BrowserPerformance\n" +
+           "WHERE entryType IN ('mark', 'measure') AND entryName NOT LIKE '" + PREFIX + "%'\n" +
+           "FACET entryType, entryName, pageUrl\n" +
+           "SINCE 1 day ago";
+  }
+  function ms(n) { return (Math.round(n * 10) / 10) + ' ms'; }
+
+  root.MeasuresDemo = {
+    PREFIX: PREFIX, SEARCH_DELAYS: SEARCH_DELAYS, isOurs: isOurs,
+    buildAllNrql: buildAllNrql, buildChartNrql: buildChartNrql, buildDetailNrql: buildDetailNrql, buildOtherNrql: buildOtherNrql, ms: ms
+  };
+})(window);
+/*LOGIC-END*/
+</script>
+
+<!-- ================= UI ================= -->
+<script>
+(function () {
+  'use strict';
+
+  var L = window.MeasuresDemo;
+  var $ = function (id) { return document.getElementById(id); };
+  var ID = window.DemoIdentity.current();
+  var state = { name: ID.name, code: ID.code, markClicks: 0, stats: { mark: 0, measure: 0, api: 0 } };
+
+  var agent = Demo.agent, safe = Demo.safe, esc = Demo.esc, toast = Demo.toast;
+  function userName() { return state.name || 'anonymous'; }
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  // ---- Agent + identity ------------------------------------------------
+  // Runs after every name or code change (Demo.start sets the custom attributes): refreshes this page's queries.
+  function onIdentity() {
+    $('nrqlAll').textContent = L.buildAllNrql(state.code);
+    $('nrqlChart').textContent = L.buildChartNrql();
+    $('nrqlDetail').textContent = L.buildDetailNrql(state.code);
+    $('nrqlOther').textContent = L.buildOtherNrql();
+  }
+
+  // ---- Feed: the browser's performance timeline ---------------------------
+  function addEntry(kind, name, line, attrs) {
+    var t = Demo.time();
+    Demo.feed.add('<div class="line1"><span>' + t + '</span><span class="chip ' + kind + '">' + esc(kind === 'api' ? 'newrelic.measure' : kind) + '</span></div>' +
+      '<div class="msg">' + esc(name) + ' · ' + esc(line) + '</div>' +
+      (attrs ? '<div class="attrs">' + esc(attrs) + '</div>' : ''));
+    state.stats[kind]++;
+    renderStats();
+  }
+  function renderStats() {
+    $('statMark').textContent = state.stats.mark;
+    $('statMeasure').textContent = state.stats.measure;
+    $('statApi').textContent = state.stats.api;
+  }
+  function clearFeed() {
+    state.stats = { mark: 0, measure: 0, api: 0 };
+    Demo.feed.clear();
+    renderStats();
+  }
+  function onTimelineEntry(entry) {
+    var line = entry.entryType === 'mark' ? 'at ' + L.ms(entry.startTime) : L.ms(entry.duration);
+    addEntry(entry.entryType, entry.name, line, entry.detail ? 'detail ' + JSON.stringify(entry.detail) : '');
+    renderOthers();
+  }
+  function watchTimeline() {
+    if (typeof PerformanceObserver !== 'function') return;
+    var po = new PerformanceObserver(function (list) { list.getEntries().forEach(onTimelineEntry); });
+    ['mark', 'measure'].forEach(function (type) { safe(function () { po.observe({ type: type, buffered: true }); }); });
+  }
+
+  // The agent takes every mark and measure on the page, not only the ones this demo makes.
+  function renderOthers() {
+    var entries = [];
+    safe(function () { entries = performance.getEntriesByType('mark').concat(performance.getEntriesByType('measure')); });
+    var others = entries.filter(function (e) { return !L.isOurs(e.name); });
+    var head = entries.filter(function (e) { return e.name === L.PREFIX + 'head-parsed'; })[0];
+    var items = [];
+    if (head) items.push('<li><span><span class="chip mark">mark</span> ' + esc(head.name) + '</span><span>at ' + esc(L.ms(head.startTime)) + ', before the agent loaded</span></li>');
+    others.forEach(function (e) {
+      items.push('<li><span><span class="chip ' + e.entryType + '">' + e.entryType + '</span> ' + esc(e.name) + '</span><span>not made by this demo</span></li>');
+    });
+    if (!others.length) items.push('<li class="none">No marks or measures from anyone else on this page right now. On a real site, frameworks like Next.js and React, and plenty of third-party scripts, add their own.</li>');
+    $('otherEntries').innerHTML = items.join('');
+  }
+
+
+  // ---- 1. performance.mark() ----------------------------------------------
+  function onMarkClick() {
+    state.markClicks++;
+    $('markClicksSnippet').textContent = state.markClicks;
+    var mark = null;
+    safe(function () { mark = performance.mark(L.PREFIX + 'button-clicked', { detail: { demoCode: state.code, button: 'mark', clicks: state.markClicks } }); });
+    $('markStatus').textContent = mark ? 'Marked at ' + L.ms(mark.startTime) + ' after the page started loading. Its entryDuration is 0.' : 'This browser could not create a mark.';
+    toast('Mark dropped');
+  }
+
+  // ---- 2. performance.measure() between two marks ---------------------------
+  function onSearchClick() {
+    var speed = $('searchSpeed').value, btn = $('searchBtn');
+    var start = L.PREFIX + 'search:start', end = L.PREFIX + 'search:end';
+    btn.disabled = true;
+    $('searchStatus').textContent = 'Searching…';
+    safe(function () { performance.mark(start, { detail: { demoCode: state.code, speed: speed } }); });
+    var results = 0;
+    fetch('data/products.json', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) { results = (data && data.data && data.data.products) ? data.data.products.length : 0; })
+      .catch(function () { /* the timing still counts */ })
+      .then(function () { return wait(L.SEARCH_DELAYS[speed]); })
+      .then(function () {
+        var measure = null;
+        safe(function () {
+          performance.mark(end, { detail: { demoCode: state.code, speed: speed } });
+          measure = performance.measure(L.PREFIX + 'search', { start: start, end: end, detail: { demoCode: state.code, speed: speed, results: results } });
+        });
+        $('searchStatus').textContent = measure
+          ? 'Measured ' + L.ms(measure.duration) + ' between the two marks (' + results + ' results). Three events: two marks and one measure.'
+          : 'This browser could not create the measure.';
+        toast(measure ? 'Search took ' + L.ms(measure.duration) : 'Measure failed');
+      })
+      .then(function () { btn.disabled = false; });
+  }
+
+  // ---- 3. newrelic.measure() with a start time -----------------------------
+  function onCheckoutClick() {
+    var nr = agent(), btn = $('checkoutBtn');
+    if (!nr || typeof nr.measure !== 'function') {
+      $('checkoutStatus').textContent = 'No agent with newrelic.measure() detected (it needs agent v1.291 or later). Nothing was sent.';
+      return;
+    }
+    btn.disabled = true;
+    $('checkoutStatus').textContent = 'Checking out…';
+    var t0 = performance.now();
+    wait(300 + Math.round(Math.random() * 600)).then(function () {
+      var result = null;
+      safe(function () { result = nr.measure(L.PREFIX + 'checkout', { start: t0, customAttributes: { step: 'payment', cartItems: 3 } }); });
+      if (result) {
+        $('checkoutStatus').textContent = 'newrelic.measure() returned { start: ' + L.ms(result.start) + ', end: ' + L.ms(result.end) + ', duration: ' + L.ms(result.duration) + ' }.';
+        addEntry('api', L.PREFIX + 'checkout', L.ms(result.duration), 'customAttributes {"step":"payment","cartItems":3} · not in the browser timeline');
+      } else {
+        $('checkoutStatus').textContent = 'newrelic.measure() returned nothing, so the agent rejected the call.';
+      }
+      btn.disabled = false;
+      toast(result ? 'Checkout took ' + L.ms(result.duration) : 'Measure rejected');
+    });
+  }
+
+  // ---- 4. newrelic.measure() from page load --------------------------------
+  function onSinceLoadClick() {
+    var nr = agent();
+    if (!nr || typeof nr.measure !== 'function') {
+      $('sinceLoadStatus').textContent = 'No agent with newrelic.measure() detected. Nothing was sent.';
+      return;
+    }
+    var result = null;
+    safe(function () { result = nr.measure(L.PREFIX + 'time-to-click'); });
+    if (!result) { $('sinceLoadStatus').textContent = 'newrelic.measure() returned nothing, so the agent rejected the call.'; return; }
+    $('sinceLoadStatus').textContent = 'You clicked ' + L.ms(result.duration) + ' after this page started loading (start ' + L.ms(result.start) + ', end ' + L.ms(result.end) + ').';
+    addEntry('api', L.PREFIX + 'time-to-click', L.ms(result.duration), 'start defaulted to 0 · not in the browser timeline');
+    toast('Measured ' + L.ms(result.duration) + ' since load');
+  }
+
+  // ---- Init ----------------------------------------------------------------
+  function init() {
+    Demo.start({ state: state, onIdentity: onIdentity });
+    $('markBtn').addEventListener('click', onMarkClick);
+    $('searchBtn').addEventListener('click', onSearchClick);
+    $('checkoutBtn').addEventListener('click', onCheckoutClick);
+    $('sinceLoadBtn').addEventListener('click', onSinceLoadClick);
+    $('clearFeed').addEventListener('click', clearFeed);
+
+    renderStats();
+    watchTimeline();
+    renderOthers();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>

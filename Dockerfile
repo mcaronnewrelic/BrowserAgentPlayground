@@ -1,12 +1,12 @@
 # Build from the repo root: docker build -t browser-agent-playground .
 # Serves the demo pages and the tracing API from one origin, and injects the browser
 # agent through the APM agent. Needs NEW_RELIC_LICENSE_KEY at run time.
-FROM node:22-alpine
+FROM node:24-alpine
 WORKDIR /app
 COPY backend/package*.json ./
 RUN npm install --omit=dev && npm cache clean --force
-COPY backend/server.js backend/pages.js backend/newrelic.js ./
-COPY *.html nr-*.js demo-*.js demo-*.css site/
+COPY backend/server.js backend/pages.js backend/websocket.js backend/newrelic.js ./
+COPY *.html *.js *.css site/
 COPY images site/images
 COPY favicons site/favicons
 COPY data site/data

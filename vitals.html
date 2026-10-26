@@ -11,7 +11,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="demo-identity.js"></script>
-<link rel="stylesheet" href="demo-identity.css">
+<script src="site.js"></script>
 <script src="nr-init.js"></script>
 <!-- NR:SNIPPET -->
 <script src="nr-config.js"></script>
@@ -31,15 +31,6 @@
 <script>
 /*LOGIC-START*/
 (function (root) {
-  var ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  function randomIndex(n) {
-    var c = (typeof crypto !== 'undefined' && crypto.getRandomValues) ? crypto : null;
-    if (c) { var a = new Uint32Array(1); c.getRandomValues(a); return a[0] % n; }
-    return Math.floor(Math.random() * n);
-  }
-  function makeCode() { var s = 'NR-'; for (var i = 0; i < 4; i++) s += ALPHABET[randomIndex(ALPHABET.length)]; return s; }
-  function sanitizeCode(code) { return String(code || '').toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 16); }
-
   // Google's thresholds: [good upper bound, poor lower bound]. ms except CLS.
   var THRESHOLDS = { lcp: [2500, 4000], cls: [0.1, 0.25], inp: [200, 500], fcp: [1800, 3000], ttfb: [800, 1800] };
   function rate(metric, value) {
@@ -77,7 +68,7 @@
   function parseModes(search) {
     var p = new URLSearchParams(search || '');
     var pick = function (v) { return String(v || '').toLowerCase() === 'good' ? 'good' : 'poor'; };
-    var code = sanitizeCode(p.get('code'));
+    var code = window.DemoIdentity.sanitizeCode(p.get('code'));
     return { lcp: pick(p.get('lcp')), cls: pick(p.get('cls')), code: code || null };
   }
   function buildModeQuery(m) {
@@ -111,7 +102,7 @@
   }
 
   root.VitalsDemo = {
-    makeCode: makeCode, sanitizeCode: sanitizeCode, THRESHOLDS: THRESHOLDS, rate: rate,
+    THRESHOLDS: THRESHOLDS, rate: rate,
     computeCLS: computeCLS, computeINP: computeINP, parseModes: parseModes, buildModeQuery: buildModeQuery,
     formatValue: formatValue, busyWait: busyWait, buildMineNrql: buildMineNrql, buildCompareNrql: buildCompareNrql
   };
@@ -137,6 +128,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,200..900&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
 <style>
   :root {
     color-scheme: light;
@@ -150,36 +142,13 @@
     --mono: "Geist Mono", "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
     --radius-lg: 28px; --radius-md: 18px; --pill: 999px;
   }
-  * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
-  body { margin: 0; background: var(--sys-white); color: var(--black); font: 500 17px/1.5 var(--body); letter-spacing: -0.3px; -webkit-font-smoothing: antialiased; }
-  a { color: inherit; }
-  code, .mono { font-family: var(--mono); letter-spacing: 0; }
-  :focus-visible { outline: 3px solid var(--green-deep); outline-offset: 3px; border-radius: 6px; }
-  .wrap { max-width: 1320px; margin: 0 auto; padding: 0 32px; }
-  .js-code { white-space: nowrap; }
 
   /* ---------- Header + scorecard (sticky together) ---------- */
-  .topbar { background: var(--black); color: var(--sand); font-size: 15px; }
-  .topbar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 10px; padding-bottom: 10px; }
-  .topbar a { color: var(--green); text-decoration: none; font-weight: 600; }
-  .topbar a:hover { text-decoration: underline; }
   .sticky { position: sticky; top: 0; z-index: 20; }
   html { scroll-padding-top: calc(var(--sticky-h, 170px) + 16px); }
-  header.site { background: var(--black); color: var(--white); border-bottom: 1px solid rgba(253,252,240,.08); }
-  header.site .wrap { display: flex; align-items: center; justify-content: space-between; height: 76px; gap: 24px; }
-  .brand-row { display: flex; align-items: center; gap: 18px; min-width: 0; }
-  .brand { display: flex; align-items: center; text-decoration: none; }
-  .brand svg { height: 28px; width: auto; display: block; }
-  .brand-row .divider { width: 1px; height: 28px; background: rgba(253,252,240,.25); }
-  .switch { display: flex; gap: 4px; background: var(--panel-2); padding: 4px; border-radius: var(--pill); }
-  .switch a { text-decoration: none; color: var(--sand); font-size: 14px; font-weight: 600; padding: 7px 16px; border-radius: var(--pill); white-space: nowrap; }
-  .switch a:hover { color: var(--white); }
-  .switch a[aria-current="page"] { background: var(--sys-white); color: var(--black); }
-  .agent-badge { display: inline-flex; align-items: center; gap: 10px; padding: 9px 16px; border-radius: var(--pill); background: var(--panel-2); color: var(--sand); font-size: 14px; font-weight: 600; white-space: nowrap; }
-  .agent-badge .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--gray); flex: none; }
-  .agent-badge.on .dot { background: var(--green); box-shadow: 0 0 0 4px rgba(28,231,131,.18); }
-  .agent-badge.off .dot { background: var(--magenta-2); }
+  /* The .sticky wrapper keeps the header and scorecard in view together, so the header itself doesn't stick. */
+  header.site { position: static; }
+  /* Eleven pages: below 1180px the badge keeps only its dot, and the switcher scrolls if it still doesn't fit. */
 
   .scorecard { background: var(--panel); color: var(--white); border-bottom: 1px solid rgba(253,252,240,.08); }
   .scorecard .wrap { display: grid; grid-template-columns: repeat(3, 1.2fr) repeat(2, .8fr) auto; gap: 10px; padding-top: 10px; padding-bottom: 10px; align-items: stretch; }
@@ -226,42 +195,22 @@
   .hero-band .copy { position: relative; z-index: 2; color: var(--white); padding-top: 56px; }
   .hero-band .eyebrow { color: var(--sand); }
   .hero-band h1 { font-family: var(--display); font-weight: 860; font-stretch: 75%; text-transform: uppercase; letter-spacing: -0.02em; line-height: .86; margin: 16px 0 0; font-size: clamp(56px, 8vw, 116px); }
-  .hero-band .lede { margin: 20px 0 0; max-width: 40ch; font-size: clamp(17px, 1.6vw, 21px); line-height: 1.35; color: var(--sand); }
+  .hero-band .lede { margin: 20px 0 0; max-width: 40ch; font-size: clamp(17px, 1.6vw, 21px); line-height: 1.35; letter-spacing: -0.3px; color: var(--sand); }
   .hero-band .lcp-chip { position: absolute; right: 24px; bottom: 20px; z-index: 2; }
   .hero-band .loading { position: absolute; right: 24px; top: 20px; z-index: 2; font: 500 12px/1.3 var(--mono); color: var(--gray); }
 
-  /* ---------- Type ---------- */
-  .display { font-family: var(--display); font-weight: 860; font-stretch: 75%; text-transform: uppercase; letter-spacing: -0.02em; line-height: .86; margin: 0; }
-  h2.display { font-size: clamp(40px, 5.2vw, 72px); }
-  h3 { font-size: 22px; line-height: 1.2; margin: 0; letter-spacing: -0.6px; font-weight: 700; }
-  .eyebrow { font-family: var(--mono); font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2); }
-  .muted { color: var(--ink-2); }
-
   /* ---------- Buttons ---------- */
   .btn { appearance: none; border: 0; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 10px; font: 600 16px/1 var(--body); letter-spacing: -0.3px; white-space: nowrap; padding: 16px 26px; border-radius: var(--pill); background: var(--black); color: var(--sys-white); transition: background .15s ease; }
-  .btn:hover { background: #1f272d; }
-  .btn.green { background: var(--green); color: var(--black); }
-  .btn.green:hover { background: #3ff09a; }
-  .btn.small { padding: 11px 16px; font-size: 14px; }
-  .btn.ghost-dark { background: rgba(253,252,240,.08); color: var(--white); }
-  .btn.ghost-dark:hover { background: rgba(253,252,240,.16); }
-  .btn.secondary { background: rgba(8,15,17,.06); color: var(--black); }
-  .btn.secondary:hover { background: rgba(8,15,17,.11); }
 
   /* ---------- Sections ---------- */
-  section.step { padding: 64px 0; border-top: 1px solid var(--line); }
   .step-head { margin-bottom: 32px; }
   .step-head p { margin: 14px 0 0; max-width: 66ch; }
-  .step-num { color: var(--green-deep); }
 
   /* ---------- Setup ---------- */
   .identity { background: var(--black); color: var(--white); border-radius: var(--radius-lg); padding: 32px; display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 24px; align-items: end; }
   .field label, .field .label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--sand); }
   .input { width: 100%; font: 500 16px/1.3 var(--body); letter-spacing: -0.2px; padding: 14px 16px; border-radius: 14px; border: 1px solid rgba(253,252,240,.12); background: var(--panel-2); color: var(--white); }
-  .input:focus { outline: none; border-color: var(--green-deep); box-shadow: 0 0 0 3px rgba(28,231,131,.3); }
   .input::placeholder { color: var(--gray); }
-  .code-row { display: flex; gap: 10px; }
-  .code-row .input { font-family: var(--mono); font-size: 22px; font-weight: 600; color: var(--green); letter-spacing: .04em; }
   .toggles { display: grid; gap: 10px; }
   .toggle-row { display: grid; grid-template-columns: 54px 1fr; align-items: center; gap: 12px; }
   .toggle-row .tname { font: 600 13px/1 var(--mono); color: var(--sand); }
@@ -278,7 +227,6 @@
   .labs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
   .card { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 26px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
   .card .tag { font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2); display: flex; justify-content: space-between; gap: 8px; }
-  .card p { margin: 0; font-size: 15px; color: var(--ink-2); }
   .card .mode-now { font: 600 11px/1.4 var(--mono); padding: 2px 8px; border-radius: var(--pill); }
   .mode-now.poor { background: var(--magenta-1); } .mode-now.good { background: var(--green); }
   .facts { background: var(--black); color: var(--sand); border-radius: 16px; padding: 14px 16px; font: 500 12.5px/1.6 var(--mono); display: grid; gap: 4px; }
@@ -301,32 +249,13 @@
   .feedlist .item { background: var(--sys-white); border-radius: 12px; padding: 10px 12px; font-size: 14px; }
 
   /* ---------- Find ---------- */
-  section.find { background: var(--black); color: var(--white); border-top: 0; }
-  section.find .eyebrow { color: var(--sand); }
-  section.find .step-head p { color: var(--sand); }
-  .find-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  .find-card { background: var(--panel); border-radius: var(--radius-lg); padding: 26px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-  .find-card.full { grid-column: 1 / -1; }
-  .find-card p { margin: 0; color: var(--sand); font-size: 15px; }
-  .find-card ol { margin: 0; padding-left: 20px; color: var(--sand); font-size: 15px; }
-  .find-card ol li { margin: 4px 0; }
-  .find-card pre { margin: 0; background: var(--black); border: 1px solid rgba(253,252,240,.1); border-radius: 14px; padding: 16px; font: 500 14px/1.65 var(--mono); color: var(--green); white-space: pre-wrap; word-break: break-word; }
-  .find-card .actions { display: flex; gap: 10px; flex-wrap: wrap; }
   .callout { background: rgba(247,211,84,.12); border: 1px solid rgba(247,211,84,.4); color: var(--white); border-radius: 18px; padding: 16px 18px; font-size: 15px; }
   .callout b { color: var(--ember-1); }
-  .tips { margin-top: 28px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-  .tip { border-top: 1px solid rgba(253,252,240,.15); padding-top: 16px; font-size: 15px; color: var(--sand); }
-  .tip b { color: var(--white); display: block; margin-bottom: 4px; }
-  .tip a { color: var(--green); }
-
-  footer { background: var(--black); color: var(--gray); font-size: 14px; border-top: 1px solid rgba(253,252,240,.08); }
-  footer .wrap { display: flex; justify-content: space-between; gap: 16px; padding-top: 28px; padding-bottom: 28px; flex-wrap: wrap; }
 
   /* ---------- Responsive ---------- */
   @media (max-width: 1180px) {
     .labs { grid-template-columns: 1fr 1fr; }
     .labs .card:last-child { grid-column: 1 / -1; }
-    .identity { grid-template-columns: 1fr 1fr; }
     .identity .toggles { grid-column: 1 / -1; }
     .scorecard .wrap { grid-template-columns: repeat(5, minmax(0, 1fr)); }
     .modes-pill { display: none; }
@@ -336,23 +265,14 @@
   @media (max-width: 900px) {
     .labs, .find-grid, .tips, .identity { grid-template-columns: 1fr; }
     .labs .card:last-child { grid-column: auto; }
-    .brand-row .divider { display: none; }
     .hero-band { height: max(380px, 58vh); }
     .recs .wrap { grid-template-columns: repeat(2, 1fr); height: 150px; }
     .recs .rec:nth-child(n+4) { display: none; }
   }
   @media (max-width: 560px) {
     .wrap { padding: 0 14px; }
-    .topbar { display: none; }
     /* Phones: logo + badge on the first row, page switcher full width on the second. */
-    header.site .wrap { height: auto; flex-wrap: wrap; row-gap: 10px; padding-top: 12px; padding-bottom: 10px; }
-    .brand-row { display: contents; }
-    .brand { order: 1; }
     .agent-badge { order: 2; padding: 9px; }
-    .switch { order: 3; flex: 1 1 100%; }
-    .switch a { flex: 1; text-align: center; padding: 7px 4px; font-size: 13px; }
-    .brand svg { height: 24px; }
-    .agent-badge #agentText { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
     .scorecard .wrap { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding-top: 6px; padding-bottom: 6px; }
     .metric { height: 52px; padding: 6px 9px; }
     .metric.small { display: none; }
@@ -364,7 +284,6 @@
     .hero-band { height: max(340px, 55vh); }
     .identity, .card, .find-card { padding: 20px; }
   }
-  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
 </style>
 </head>
 <body>
@@ -377,42 +296,7 @@
 </div>
 
 <div class="sticky">
-<header class="site">
-  <div class="wrap">
-    <div class="brand-row">
-      <a class="brand" href="https://newrelic.com" target="_blank" rel="noopener" aria-label="New Relic">
-        <svg viewBox="0 0 246 48" fill="#FDFCF0" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M69.6509 12.1885C65.2049 12.1885 63.0989 14.9965 63.0989 14.9965H62.8649L62.3969 12.6565H57.0149V36.5245H62.8649V22.7185C62.8649 19.6765 64.9709 17.5705 68.0129 17.5705C71.0549 17.5705 73.1609 19.6765 73.1609 22.7185V36.5245H79.0109V22.2505C79.0109 16.1665 75.0329 12.1885 69.6509 12.1885Z"/>
-          <path d="M132.741 28.3342H132.405L128.427 12.6562H122.475L118.497 28.3342H118.164L114.183 12.6562H108.099L114.183 36.5242H121.305L125.283 21.0802H125.619L129.597 36.5242H136.719L142.803 12.6562H136.719L132.741 28.3342Z"/>
-          <path d="M160.716 14.7622H160.482L160.014 12.6562H155.1V36.5242H160.95V22.7183C160.95 19.6763 162.354 18.2723 165.396 18.2723H168.408V12.6562H164.928C162.12 12.6562 160.716 14.7622 160.716 14.7622Z"/>
-          <path d="M181.341 12.1885C174.321 12.1885 169.173 17.3365 169.173 24.5905C169.173 31.8445 174.03 36.9925 181.341 36.9925C187.26 36.9925 190.821 33.5095 192.306 30.9475L186.936 29.0335C186.405 30.0055 184.263 31.8745 181.338 31.8745C177.927 31.8745 175.488 29.7385 175.02 26.4625H192.804C192.804 26.4625 193.038 25.5265 193.038 24.1225C193.038 17.3365 187.89 12.1885 181.338 12.1885H181.341ZM175.023 22.4845C175.725 19.4425 177.831 17.1025 181.341 17.1025C184.617 17.1025 186.723 19.4425 187.191 22.4845H175.023Z"/>
-          <path d="M94.92 12.1885C87.9 12.1885 82.752 17.3365 82.752 24.5905C82.752 31.8445 87.609 36.9925 94.92 36.9925C100.839 36.9925 104.4 33.5095 105.885 30.9475L100.515 29.0335C99.9839 30.0055 97.842 31.8745 94.917 31.8745C91.506 31.8745 89.0669 29.7385 88.5989 26.4625H106.383C106.383 26.4625 106.617 25.5265 106.617 24.1225C106.617 17.3365 101.469 12.1885 94.917 12.1885H94.92ZM88.602 22.4845C89.304 19.4425 91.41 17.1025 94.92 17.1025C98.196 17.1025 100.302 19.4425 100.77 22.4845H88.602Z"/>
-          <path d="M213.492 3.2334H207.642V9.0834H213.492V3.2334Z"/>
-          <path d="M229.635 31.6105C226.125 31.6105 223.317 28.8025 223.317 24.5905C223.317 20.3785 226.125 17.5705 229.635 17.5705C233.145 17.5705 234.549 19.9105 235.017 21.3145L240.315 19.4305C239.034 16.0975 235.884 12.1885 229.638 12.1885C222.618 12.1885 217.47 17.3365 217.47 24.5905C217.47 31.8445 222.618 36.9925 229.638 36.9925C235.935 36.9925 239.088 33.0205 240.348 29.5285L235.02 27.6325C234.552 29.2705 233.148 31.6105 229.638 31.6105H229.635Z"/>
-          <path d="M193.689 8.4324H197.01V36.5244H202.86V3.2334H193.689V8.4324Z"/>
-          <path d="M213.492 12.6562H207.642V36.5242H213.492V12.6562Z"/>
-          <path d="M243.477 31.9346C242.193 31.9346 241.254 32.9066 241.254 34.1906C241.254 35.4746 242.193 36.4466 243.477 36.4466C244.761 36.4466 245.7 35.4746 245.7 34.1906C245.7 32.9066 244.761 31.9346 243.477 31.9346ZM243.477 36.1016C242.379 36.1016 241.596 35.2856 241.596 34.1906C241.596 33.0956 242.379 32.2796 243.477 32.2796C244.575 32.2796 245.358 33.0956 245.358 34.1906C245.358 35.2856 244.575 36.1016 243.477 36.1016Z"/>
-          <path d="M244.446 33.782C244.446 33.344 244.101 32.999 243.6 32.999H242.598V35.348H242.943V34.532H243.255L244.071 35.348H244.509L243.693 34.532C244.131 34.502 244.446 34.187 244.446 33.779V33.782ZM242.943 34.19V33.344H243.6C243.912 33.344 244.101 33.533 244.101 33.782C244.101 34.031 243.945 34.19 243.6 34.19H242.943Z"/>
-          <path d="M20.652 0.299805L2.41504 10.8268L10.359 15.4138L20.652 9.4738L33.357 16.8088V31.4818L23.067 37.4248V46.5988L41.304 36.0688V12.2218L20.652 0.299805Z"/>
-          <path d="M12.708 28.7337V43.4067L20.652 47.9907V24.1467L0 12.2217V21.3957L12.708 28.7337Z"/>
-        </svg>
-      </a>
-      <span class="divider" aria-hidden="true"></span>
-      <nav class="switch" aria-label="Demo pages">
-        <a href="index.html">Home</a>
-        <a href="logs.html">Logs</a>
-        <a href="errors.html">Errors</a>
-        <a href="tracing.html">Tracing</a>
-        <a href="vitals.html" aria-current="page">Vitals</a>
-        <a href="frustration.html">Frustration</a>
-        <a href="events.html">Events</a>
-        <a href="replay.html">Replay</a>
-        <a href="spa.html">SPA</a>
-      </nav>
-    </div>
-    <span id="agentBadge" class="agent-badge" role="status" aria-live="polite"><span class="dot"></span><span id="agentText">Checking for browser agent…</span></span>
-  </div>
-</header>
+<script>Demo.header()</script>
 <div class="scorecard" aria-label="Live Core Web Vitals for this page view">
   <div class="wrap">
     <div class="metric" id="m-lcp"><span class="name"><span>LCP</span><span class="state" id="s-lcp">waiting</span></span><span class="val" id="v-lcp">–</span></div>
@@ -481,27 +365,10 @@
   <section class="who-bar">
     <div class="wrap">
       <details class="who" id="who">
-        <summary>
-          <span class="who-label">Your data is tagged as</span>
-          <b class="who-name">…</b>
-          <code class="who-code">NR-XXXX</code>
-          <span class="who-change">Change</span>
-        </summary>
+        <script>Demo.whoSummary()</script>
         <div class="who-body">
           <p class="muted">Everyone shares one New Relic account, so your name and session code are attached to your data as <code>demoUser</code> and <code>demoCode</code> (your name also becomes your end-user ID via <code>setUserId()</code>). Use the code to filter the queries below down to just your own data.</p>
-          <div class="identity">
-
-        <div class="field">
-          <label for="userName">Your name or handle</label>
-          <input id="userName" class="input" type="text" maxlength="40" required autocomplete="nickname" placeholder="e.g. Ada from Platform">
-        </div>
-        <div class="field">
-          <label for="sessionCode">Your session code</label>
-          <div class="code-row">
-            <input id="sessionCode" class="input" type="text" maxlength="16" spellcheck="false">
-          </div>
-        </div>
-          </div>
+          <script>Demo.identityForm()</script>
         </div>
       </details>
     </div>
@@ -612,7 +479,7 @@ recalculateTotals()</pre>
       </div>
       <div class="tips">
         <div class="tip"><b>Why do my numbers differ a little?</b>The scorecard is this page's own live measurement. New Relic uses Google's web-vitals library, which finalizes values at slightly different moments.</div>
-        <div class="tip"><b>Learn more</b><a href="https://web.dev/articles/vitals" target="_blank" rel="noopener">Web Vitals</a> · <a href="https://web.dev/articles/optimize-inp" target="_blank" rel="noopener">Optimize INP</a> · <a href="https://web.dev/articles/optimize-cls" target="_blank" rel="noopener">Optimize CLS</a></div>
+        <div class="tip"><b>Learn more</b><a href="https://web.dev/articles/vitals" target="_blank" rel="noopener">Web Vitals</a> · <a href="https://web.dev/articles/optimize-inp" target="_blank" rel="noopener">Optimize INP</a> · <a href="https://web.dev/articles/optimize-cls" target="_blank" rel="noopener">Optimize CLS</a> · To time your own moments instead, see <a href="measures.html">marks &amp; measures</a></div>
       </div>
     </div>
   </section>
@@ -643,32 +510,17 @@ recalculateTotals()</pre>
     lcp: undefined, lcpFinal: false, lcpEl: null, shifts: [], events: [], inp: undefined
   };
 
-  function agent() { var nr = window.newrelic; return (nr && typeof nr.setCustomAttribute === 'function') ? nr : null; }
-  function safe(fn) { try { fn(); } catch (e) { /* never break the demo */ } }
-  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-
-  // Keep the code in the address bar so reloads keep it (without adding history entries).
-  if (!M.code) { try { history.replaceState(null, '', location.pathname + L.buildModeQuery({ lcp: M.lcp, cls: M.cls, code: state.code }) + location.hash); } catch (e) {} }
+  var safe = Demo.safe, esc = Demo.esc;
 
   // ---- Agent + identity ---------------------------------------------------
-  function renderAgent() {
-    var on = !!agent(), b = $('agentBadge');
-    b.classList.toggle('on', on); b.classList.toggle('off', !on);
-    $('agentText').textContent = on ? 'Browser agent detected' : 'Browser agent not detected';
-    b.title = $('agentText').textContent;
-    return on;
-  }
-  function applyIdentity() {
-    window.DemoIdentity.save({ name: state.name, code: state.code });
-    var nr = agent();
+  // Runs after every name or code change (Demo.start sets demoUser and demoCode). Tags this view's
+  // modes, and keeps the code in the address bar so the mode reloads below keep it too.
+  function onIdentity(nr) {
     if (nr) {
-      safe(function () { nr.setCustomAttribute('demoCode', state.code); });
-      safe(function () { nr.setCustomAttribute('demoUser', state.name || 'anonymous'); });
       safe(function () { nr.setCustomAttribute('lcpMode', M.lcp); });
       safe(function () { nr.setCustomAttribute('clsMode', M.cls); });
-      if (typeof nr.setUserId === 'function') safe(function () { nr.setUserId(state.name || null); });
     }
-    Array.prototype.forEach.call(document.querySelectorAll('.js-code'), function (el) { el.textContent = state.code; });
+    try { history.replaceState(null, '', location.pathname + L.buildModeQuery({ lcp: M.lcp, cls: M.cls, code: state.code }) + location.hash); } catch (e) {}
     $('nrqlMine').textContent = L.buildMineNrql(state.code);
   }
 
@@ -819,7 +671,7 @@ recalculateTotals()</pre>
     });
   }
   function reloadWith(modes) {
-    var code = L.sanitizeCode($('sessionCode').value) || state.code;
+    var code = window.DemoIdentity.sanitizeCode($('sessionCode').value) || state.code;
     location.href = location.pathname + L.buildModeQuery({ lcp: modes.lcp, cls: modes.cls, code: code });
   }
   Array.prototype.forEach.call(document.querySelectorAll('.seg button'), function (b) {
@@ -829,41 +681,15 @@ recalculateTotals()</pre>
   $('allGood').addEventListener('click', function () { reloadWith({ lcp: 'good', cls: 'good' }); });
   $('allPoor').addEventListener('click', function () { reloadWith({ lcp: 'poor', cls: 'poor' }); });
 
-  function copyText(text, btn) {
-    var done = function () { var orig = btn.dataset.label || btn.textContent; btn.dataset.label = orig; btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = orig; }, 1400); };
-    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); done(); });
-    else { fallbackCopy(text); done(); }
-  }
-  function fallbackCopy(text) {
-    var ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
-    document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) {} ta.remove();
-  }
-
   // ---- Init ------------------------------------------------------------------
   ['lcp', 'cls'].forEach(function (m) {
     $('pill-' + m).textContent = M[m]; $('pill-' + m).className = M[m];
     $(m + 'ModeTag').textContent = M[m]; $(m + 'ModeTag').className = 'mode-now ' + M[m];
   });
-  $('sessionCode').value = state.code;
-  $('userName').value = state.name;
-  $('userName').addEventListener('input', function (e) {
-    state.name = e.target.value.trim();
-    applyIdentity();
-  });
-  $('sessionCode').addEventListener('change', function (e) {
-    state.code = L.sanitizeCode(e.target.value) || state.code; e.target.value = state.code;
-    try { history.replaceState(null, '', location.pathname + L.buildModeQuery({ lcp: M.lcp, cls: M.cls, code: state.code })); } catch (err) {}
-    applyIdentity();
-  });
   $('nrqlCompare').textContent = L.buildCompareNrql();
-  Array.prototype.forEach.call(document.querySelectorAll('.js-copy'), function (btn) {
-    btn.addEventListener('click', function () { copyText($(btn.dataset.copyTarget).textContent, btn); });
-  });
   renderToggles();
-  renderAgent();
-  applyIdentity();
+  Demo.start({ state: state, onIdentity: onIdentity });
   renderLcpFacts();
-  [1000, 3000, 6000].forEach(function (ms) { setTimeout(function () { if (renderAgent()) applyIdentity(); }, ms); });
 })();
 </script>
 </body>

@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- ===================================================================
+     NEW RELIC BROWSER SNIPPET + WEBSOCKET TRACKING
+     Same snippet as index.html, plus one setting: WebSocket tracking is
+     off by default. With init.web_sockets.enabled the agent wraps
+     window.WebSocket when it loads, so sockets must be created after
+     the snippet. Each connection becomes one WebSocket event when it
+     closes.
+     =================================================================== -->
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="demo-identity.js"></script>
+<script src="site.js"></script>
+<script src="nr-init.js"></script>
+<script>
+// WebSockets page extra on top of nr-init.js.
+NREUM.init.web_sockets={enabled:true};
+</script>
+<!-- NR:SNIPPET -->
+<script src="nr-config.js"></script>
+<script src="nr-agent.js"></script>
+<!-- /NR:SNIPPET -->
+
+<title>Browser WebSockets Demo | New Relic</title>
+<link rel="icon" href="favicons/favicon.ico" sizes="48x48">
+<link rel="icon" href="favicons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicons/favicon-32x32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="favicons/favicon-16x16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="favicons/apple-touch-icon.png" sizes="180x180">
+<meta name="theme-color" content="#080F11">
+<meta name="description" content="Open, use and close WebSocket connections on purpose, see the browser agent's running tally for each one, then find the WebSocket events in a shared New Relic account.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,200..900&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+<style>
+  [hidden] { display: none !important; }
+
+  /* ---------- Buttons ---------- */
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+
+  /* ---------- Identity ---------- */
+  .mode-box { background: var(--panel-2); border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .mode-box .label { font-size: 14px; font-weight: 600; color: var(--sand); }
+  .mode-box .mode-line { font: 600 15px/1.4 var(--mono); color: var(--green); word-break: break-all; }
+  .mode-box .mode-sub { font-size: 13.5px; color: var(--sand); opacity: .85; }
+  .mode-box .mode-sub code { color: var(--green); }
+
+  /* ---------- Playground ---------- */
+  .card .field label { color: var(--black); }
+  .card > .btn, .card > .btn-row { margin-top: auto; }
+  .row > .field { flex: 1 1 200px; min-width: 0; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .conn-state { display: inline-flex; align-items: center; gap: 8px; font: 600 13px/1.4 var(--mono); }
+  .conn-state .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--gray); }
+  .conn-state.open .dot { background: var(--green-deep); box-shadow: 0 0 0 4px rgba(28,231,131,.18); }
+  .conn-state.connecting .dot { background: var(--ember-1); }
+  .tally { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; }
+  .tally > div { background: var(--sys-white); border-radius: 12px; padding: 8px 12px; min-width: 0; }
+  .tally dt { font: 500 11.5px/1.4 var(--mono); color: var(--ink-2); }
+  .tally dd { margin: 2px 0 0; font: 600 14px/1.4 var(--mono); color: var(--black); word-break: break-all; }
+  .tally dd.unset { color: var(--gray); font-weight: 500; }
+  .tally-note { font-size: 14px; color: var(--ink-2); }
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .compare > div { background: var(--sys-white); border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .compare b { font-size: 15px; }
+  .compare small { font-size: 13.5px; color: var(--ink-2); }
+
+  .chip.open { background: var(--green-1); }
+  .chip.send { background: var(--blue-1); }
+  .chip.message { background: var(--sand); }
+  .chip.close { background: var(--ember-1); }
+  .chip.error { background: var(--magenta-1); }
+
+  /* ---------- Responsive ---------- */
+
+  @media (max-width: 900px) {
+    .hero .wrap, .find-grid, .tips, .cards, .compare { grid-template-columns: 1fr; }
+    .tally { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <span>A WebSocket can stay open for an hour. The agent sums it up in one WebSocket event when it closes.</span>
+    <a href="https://docs.newrelic.com/docs/browser/" target="_blank" rel="noopener">Read the docs</a>
+  </div>
+</div>
+
+<script>Demo.header()</script>
+
+<main>
+  <!-- ================= HERO ================= -->
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <div class="eyebrow">New Relic browser WebSockets</div>
+        <h1 class="display" style="margin-top:18px">One socket.<br>One event.</h1>
+        <p class="lede">Every AJAX call gets its own event. A WebSocket can stay open for an hour and carry thousands of messages, so the agent keeps a running tally and sends a single <code>WebSocket</code> event when the connection closes.</p>
+        <div class="ctas">
+          <a class="btn" href="#try">Open a socket <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn secondary" href="#find">Jump to the query</a>
+        </div>
+        <div class="note">
+          <span class="chip" aria-hidden="true">Off by default</span>
+          <span>WebSocket tracking is opt-in. This page turns it on with <code>init.web_sockets.enabled</code> before the agent loads, and the agent then wraps <code>window.WebSocket</code>. Sockets made before that, or on pages without the setting, are never counted.</span>
+        </div>
+      </div>
+      <div class="term" aria-label="What the agent counts">
+        <div class="bar"><i></i><i></i><i></i></div>
+<pre><span class="c">// Turn it on before the agent loads</span>
+NREUM.init.web_sockets = { <span class="k">enabled</span>: <span class="k">true</span> }
+
+<span class="k">const</span> ws = <span class="k">new</span> WebSocket(<span class="s">'wss://echo.websocket.org'</span>)
+ws.send(<span class="s">'hello'</span>)     <span class="c">// sendCount, sendBytes</span>
+<span class="c">// messages arrive  // messageCount, messageBytes</span>
+ws.close(<span class="k">1000</span>)      <span class="c">// closeCode, connectedDuration</span>
+<span class="c">// -&gt; one WebSocket event for the whole connection</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= WHO ================= -->
+  <section class="who-bar">
+    <div class="wrap">
+      <details class="who" id="who">
+        <script>Demo.whoSummary()</script>
+        <div class="who-body">
+          <p class="muted">Everyone shares one New Relic account, so your clicks are tagged as <code>demoUser</code> and <code>demoCode</code> custom attributes (your name is also set as your end-user ID via <code>setUserId()</code>). The agent copies them onto every <code>WebSocket</code> and <code>JavaScriptError</code> event you cause below.</p>
+          <script>Demo.identityForm()</script>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ================= TRY IT ================= -->
+  <section class="step" id="try">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">Try it / Open some sockets</div>
+        <h2 class="display" style="margin-top:14px">Connect, chat, close</h2>
+        <p class="muted">Nothing is sent to New Relic while a socket is open. The event goes out after it closes, at the next harvest (about every 30 seconds). Until then, the panel below shows the agent's own running tally for your latest socket.</p>
+      </div>
+      <div class="identity page-setup">
+        <div class="mode-box" aria-live="polite">
+          <span class="label">Socket server</span>
+          <span class="mode-line" id="serverUrl">wss://echo.websocket.org</span>
+          <span class="mode-sub" id="serverSub">A public echo server: everything you send comes straight back, after one greeting message of its own. To try your own server, add <code>?ws=wss://your-server</code> to this page's address.</span>
+        </div>
+      </div>
+
+      <div class="playground">
+        <div class="cards">
+
+          <article class="card wide" aria-labelledby="liveTitle">
+            <div class="tag">1 · A connection you drive</div>
+            <h3 id="liveTitle">Open it, use it, close it</h3>
+            <p>Connect, send as much or as little as you like, then close it. Each send comes back as a message, so it adds to both sides of the tally. Text counts as <code>string</code> both ways. Binary goes out as <code>ArrayBuffer</code> but comes back as <code>Blob</code>, because a socket's <code>binaryType</code> is <code>blob</code> unless you change it.</p>
+            <div class="row">
+              <div class="field">
+                <label for="messageText">Message</label>
+                <input id="messageText" class="input" type="text" maxlength="200" value="hello from the demo">
+              </div>
+              <div class="btn-row">
+                <button id="connectBtn" class="btn" type="button">Connect</button>
+                <button id="sendTextBtn" class="btn secondary" type="button" disabled>Send text</button>
+                <button id="sendBinaryBtn" class="btn secondary" type="button" disabled>Send 1 KB binary</button>
+                <button id="burstBtn" class="btn secondary" type="button" disabled>Send 20 at once</button>
+                <button id="closeBtn" class="btn secondary" type="button" disabled>Close (1000)</button>
+              </div>
+            </div>
+            <span class="conn-state" id="liveState"><span class="dot"></span><span id="liveStateText">Not connected</span></span>
+          </article>
+
+          <article class="card wide" aria-labelledby="tallyTitle">
+            <div class="tag">What the agent will send</div>
+            <h3 id="tallyTitle">The agent's tally for your latest socket</h3>
+            <p>Read live from <code>socket.nrData</code>, the record the agent keeps on every socket it wraps. It is internal, so don't build on it, but it's a good look at exactly what lands in the <code>WebSocket</code> event.</p>
+            <p class="tally-note" id="tallyNote">Open a socket with any button on this page to see its tally.</p>
+            <dl class="tally" id="tally"></dl>
+          </article>
+
+          <article class="card" aria-labelledby="codeTitle">
+            <div class="tag">2 · Close with your own code</div>
+            <h3 id="codeTitle">close(4000, reason)</h3>
+            <p>Apps can close with 1000 or anything from 3000 to 4999, so a code you choose can tell you <i>why</i> sockets end. The agent records what the close event reports, which comes from the server's reply: the code always comes back, but the reason only if the server repeats it. Otherwise <code>closeReason</code> stays <code>unknown</code>.</p>
+<pre class="snippet">ws.<span class="k">close</span>(<span class="k">4000</span>, <span class="s">'Demo: user signed out'</span>)
+<span class="c">// closeCode 4000, closeWasClean true</span></pre>
+            <button id="customCloseBtn" class="btn" type="button">Open, send, close with 4000</button>
+            <p id="customCloseStatus">Not run yet.</p>
+          </article>
+
+          <article class="card" aria-labelledby="failTitle">
+            <div class="tag">3 · A connection that never opens</div>
+            <h3 id="failTitle">Still one event</h3>
+            <p>Points a socket at a host that doesn't exist. It never opens, but the agent still sends a <code>WebSocket</code> event when it closes, with close code 1006 and no <code>openedAt</code>.</p>
+<pre class="snippet"><span class="k">new</span> WebSocket(<span class="s">'wss://nr-demo-unreachable.invalid/'</span>)
+<span class="c">// error, then close: closeCode 1006</span></pre>
+            <button id="failBtn" class="btn" type="button">Try to connect</button>
+            <p id="failStatus">Not run yet.</p>
+          </article>
+
+          <article class="card wide" aria-labelledby="errTitle">
+            <div class="tag">4 · An error in a message handler</div>
+            <h3 id="errTitle">Only addEventListener is watched</h3>
+            <p>Both buttons open a socket whose message handler throws. The agent wraps handlers you add with <code>addEventListener</code>: when one throws, it marks the socket <code>hasErrors</code> and tags the <code>JavaScriptError</code> with the socket's <code>socketId</code>. A handler assigned to <code>ws.onmessage</code> isn't wrapped, so its error arrives with no link to the socket.</p>
+            <div class="compare">
+              <div>
+<pre class="snippet">ws.<span class="k">addEventListener</span>(<span class="s">'message'</span>, () =&gt; {
+  <span class="k">throw new</span> Error(<span class="s">'Demo: bad message'</span>)
+})</pre>
+                <small>WebSocket: <code>hasErrors</code> true. JavaScriptError: has <code>socketId</code>.</small>
+                <button id="throwListenerBtn" class="btn" type="button">Throw in addEventListener</button>
+              </div>
+              <div>
+<pre class="snippet">ws.<span class="k">onmessage</span> = () =&gt; {
+  <span class="k">throw new</span> Error(<span class="s">'Demo: bad message'</span>)
+}</pre>
+                <small>WebSocket: no <code>hasErrors</code>. JavaScriptError: no <code>socketId</code>.</small>
+                <button id="throwOnmessageBtn" class="btn secondary" type="button">Throw in onmessage</button>
+              </div>
+            </div>
+            <p id="errStatus">Not run yet.</p>
+          </article>
+
+          <article class="card wide" aria-labelledby="leaveTitle">
+            <div class="tag">5 · Walk away with it open</div>
+            <h3 id="leaveTitle">The page closes it for you</h3>
+            <p>Lots of sockets are never closed by the app: people just leave. When the page unloads, the agent records every socket that's still open with close code 1001, reason <code>Page navigating away</code> and <code>closeWasClean</code> false. This button opens a socket, sends one message, then reloads the page.</p>
+            <button id="leaveBtn" class="btn" type="button">Open a socket, then reload</button>
+            <p id="leaveStatus">Not run yet.</p>
+          </article>
+
+        </div>
+
+        <aside class="feed" aria-labelledby="feedTitle">
+          <div class="feed-head">
+            <div class="top">
+              <h3 id="feedTitle">Socket activity</h3>
+              <button id="clearFeed" class="btn ghost-dark small" type="button">Clear</button>
+            </div>
+            <div class="feed-stats" aria-live="polite">
+              <span><b id="statOpened">0</b> opened</span>
+              <span><b id="statSent">0</b> sent</span>
+              <span><b id="statReceived">0</b> received</span>
+              <span><b id="statClosed">0</b> closed</span>
+            </div>
+          </div>
+          <ul class="feed-list" id="feed">
+            <li class="feed-empty" id="feedEmpty">Nothing yet. Open a socket with one of the buttons to the left.</li>
+          </ul>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FIND IT ================= -->
+  <section class="step find" id="find">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">Find it / Search the shared account</div>
+        <h2 class="display" style="margin-top:14px">Find your sockets</h2>
+        <p>Allow a minute or two after a socket closes. Everything below is already filled in with your code, <code class="js-code" style="color:var(--green)">NR-XXXX</code>.</p>
+      </div>
+      <div class="find-grid">
+        <div class="find-card full">
+          <h3>Every socket you opened</h3>
+          <ol>
+            <li>Open the query builder in New Relic and run this. One row per connection, however many messages it carried. A socket that is still open has no row yet.</li>
+          </ol>
+          <pre id="nrqlSockets"></pre>
+          <div class="actions">
+            <button class="btn green small js-copy" data-copy-target="nrqlSockets" type="button">Copy NRQL</button>
+            <a class="btn ghost-dark small" href="https://one.newrelic.com" target="_blank" rel="noopener">Open New Relic <span class="arrow" aria-hidden="true">→</span></a>
+          </div>
+        </div>
+        <div class="find-card">
+          <h3>Traffic per server</h3>
+          <p>Bytes each way and how long connections stay open, per URL your sockets connected to.</p>
+          <pre id="nrqlTraffic"></pre>
+          <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlTraffic" type="button">Copy NRQL</button></div>
+        </div>
+        <div class="find-card">
+          <h3>How sockets end, for everyone</h3>
+          <p>Not filtered by your code. 1000 is a normal close, 1001 means the page went away, 1006 means the connection dropped or never opened.</p>
+          <pre id="nrqlCloseCodes"></pre>
+          <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlCloseCodes" type="button">Copy NRQL</button></div>
+        </div>
+        <div class="find-card full">
+          <h3>Errors tied to a socket</h3>
+          <p>Only the error from the <code>addEventListener</code> button has a <code>socketId</code>. Match it against the <code>socketId</code> of a <code>WebSocket</code> row with <code>hasErrors</code> true.</p>
+          <pre id="nrqlErrors"></pre>
+          <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlErrors" type="button">Copy NRQL</button></div>
+        </div>
+        <div class="find-card full" id="backendCard" hidden>
+          <h3>The same sockets, seen by the server</h3>
+          <p>The demo backend writes one log per connection when it ends, with what it counted from its side. The page adds your code to the socket's URL (<code>/ws?demoCode=…</code>) so the log can carry it. These logs belong to the backend's APM entity and have no <code>trace.id</code>: a WebSocket upgrade isn't an APM transaction, so it isn't part of a distributed trace.</p>
+          <pre id="nrqlBackend"></pre>
+          <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlBackend" type="button">Copy NRQL</button></div>
+        </div>
+      </div>
+      <div class="tips">
+        <div class="tip"><b>No WebSocket rows at all?</b>Check that the socket closed (an open one sends nothing yet), and that the agent badge up top says "detected". Then give it a minute.</div>
+        <div class="tip"><b>Not the same as AJAX.</b>WebSockets don't create <code>AjaxRequest</code> events, don't get distributed tracing headers, and don't count toward a <code>BrowserInteraction</code>.</div>
+        <div class="tip"><b>Learn more</b><a href="https://developer.mozilla.org/en-US/docs/Web/API/WebSocket" target="_blank" rel="noopener">WebSocket API</a> · <a href="https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code" target="_blank" rel="noopener">Close codes</a> · <a href="https://docs.newrelic.com/docs/browser/" target="_blank" rel="noopener">Browser docs</a></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>A sample page for WebSocket tracking with the browser agent.</span>
+    <span>Avoid typing anything sensitive. Messages go to an echo server, and data is visible to everyone in the shared account.</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- ================= LOGIC (pure functions) ================= -->
+<script>
+/*LOGIC-START*/
+(function (root) {
+  var DEFAULT_SERVER = 'wss://echo.websocket.org';
+  var UNREACHABLE = 'wss://nr-demo-unreachable.invalid/';
+
+  // Only ws: and wss: URLs are accepted from ?ws=, anything else falls back to the echo server.
+  function normalizeServer(url) {
+    var s = String(url || '').trim();
+    return /^wss?:\/\/[^\s/]+/i.test(s) ? s : DEFAULT_SERVER;
+  }
+
+  // The demo backend (backend/websocket.js) answers on /ws of the origin that serves the page.
+  function backendServer(loc) {
+    return (loc.protocol === 'https:' ? 'wss://' : 'ws://') + loc.host + '/ws';
+  }
+
+  // The backend logs one line per connection, tagged with the code from the query string.
+  function withIdentity(url, code, user) {
+    return url + (url.indexOf('?') > -1 ? '&' : '?') + 'demoCode=' + encodeURIComponent(code) + '&demoUser=' + encodeURIComponent(user);
+  }
+
+  // Fields of the agent's per-socket record, in the order the tally shows them.
+  var TALLY_FIELDS = [
+    'socketId', 'requestedUrl', 'protocol', 'messageCount', 'messageBytes', 'messageTypes',
+    'sendCount', 'sendBytes', 'sendTypes', 'messageBytesMin', 'messageBytesMax', 'sendBytesMax',
+    'closeCode', 'closeReason', 'closeWasClean', 'connectedDuration', 'hasErrors', 'binaryType'
+  ];
+
+  function buildSocketsNrql(code) {
+    return "SELECT socketId, requestedUrl, closeCode, closeReason, closeWasClean,\n" +
+           "  connectedDuration, sendCount, messageCount, hasErrors\n" +
+           "FROM WebSocket\n" +
+           "WHERE demoCode = '" + code + "'\n" +
+           "SINCE 1 hour ago\n" +
+           "ORDER BY timestamp DESC\n" +
+           "LIMIT 100";
+  }
+  function buildTrafficNrql(code) {
+    return "SELECT count(*) AS sockets, sum(sendBytes), sum(messageBytes),\n" +
+           "  average(connectedDuration)\n" +
+           "FROM WebSocket\n" +
+           "WHERE demoCode = '" + code + "'\n" +
+           "FACET requestedUrl\n" +
+           "SINCE 1 hour ago";
+  }
+  function buildCloseCodesNrql() {
+    return "SELECT count(*)\n" +
+           "FROM WebSocket\n" +
+           "FACET closeCode, closeReason\n" +
+           "SINCE 1 day ago";
+  }
+  function buildErrorsNrql(code) {
+    return "SELECT timestamp, errorMessage, socketId\n" +
+           "FROM JavaScriptError\n" +
+           "WHERE demoCode = '" + code + "' AND errorMessage LIKE '%Demo: bad message%'\n" +
+           "SINCE 1 hour ago\n\n" +
+           "SELECT socketId, hasErrors, closeCode\n" +
+           "FROM WebSocket\n" +
+           "WHERE demoCode = '" + code + "' AND hasErrors IS TRUE\n" +
+           "SINCE 1 hour ago";
+  }
+  function buildBackendNrql(code) {
+    return "SELECT timestamp, message, closeCode, closeReason, closedBy,\n" +
+           "  durationMs, messagesIn, bytesIn\n" +
+           "FROM Log\n" +
+           "WHERE route = 'ws' AND demoCode = '" + code + "'\n" +
+           "SINCE 1 hour ago";
+  }
+
+  root.SocketsDemo = {
+    DEFAULT_SERVER: DEFAULT_SERVER, UNREACHABLE: UNREACHABLE,
+    normalizeServer: normalizeServer, backendServer: backendServer, withIdentity: withIdentity, TALLY_FIELDS: TALLY_FIELDS,
+    buildSocketsNrql: buildSocketsNrql, buildTrafficNrql: buildTrafficNrql,
+    buildCloseCodesNrql: buildCloseCodesNrql, buildErrorsNrql: buildErrorsNrql, buildBackendNrql: buildBackendNrql
+  };
+})(window);
+/*LOGIC-END*/
+</script>
+
+<!-- ================= UI ================= -->
+<script>
+(function () {
+  'use strict';
+
+  var L = window.SocketsDemo;
+  var $ = function (id) { return document.getElementById(id); };
+  var ID = window.DemoIdentity.current();
+  var LEFT_OPEN_KEY = 'nrDemoSocketLeftOpen';
+  var wsParam = new URLSearchParams(location.search).get('ws');
+  // Served by backend/server.js? Then its own /ws endpoint is used, unless ?ws= picks another server.
+  var onBackend = !wsParam && !!document.querySelector('meta[name="demo-backend"]');
+  var state = {
+    name: ID.name, code: ID.code, onBackend: onBackend,
+    server: onBackend ? L.backendServer(location) : L.normalizeServer(wsParam),
+    live: null, latest: null, stats: { opened: 0, sent: 0, received: 0, closed: 0 }
+  };
+
+  var esc = Demo.esc, toast = Demo.toast;
+  function userName() { return state.name || 'anonymous'; }
+  function shorten(s, n) { s = String(s); return s.length > n ? s.slice(0, n) + '…' : s; }
+
+  // ---- Agent + identity ------------------------------------------------
+  // Runs after every name or code change (Demo.start sets the custom attributes): refreshes this page's queries.
+  function onIdentity() {
+    $('nrqlSockets').textContent = L.buildSocketsNrql(state.code);
+    $('nrqlTraffic').textContent = L.buildTrafficNrql(state.code);
+    $('nrqlCloseCodes').textContent = L.buildCloseCodesNrql();
+    $('nrqlErrors').textContent = L.buildErrorsNrql(state.code);
+    $('nrqlBackend').textContent = L.buildBackendNrql(state.code);
+  }
+
+  // ---- Feed --------------------------------------------------------------
+  function record(kind, label, detail) {
+    var t = Demo.time();
+    Demo.feed.add('<div class="line1"><span>' + t + '</span><span class="chip ' + kind + '">' + esc(kind) + '</span><span>' + esc(label) + '</span></div>' +
+      '<div class="msg">' + esc(detail) + '</div>', 150);
+    renderStats();
+  }
+  function renderStats() {
+    var s = state.stats;
+    $('statOpened').textContent = s.opened; $('statSent').textContent = s.sent;
+    $('statReceived').textContent = s.received; $('statClosed').textContent = s.closed;
+  }
+  function clearFeed() {
+    state.stats = { opened: 0, sent: 0, received: 0, closed: 0 };
+    Demo.feed.clear();
+    renderStats();
+  }
+
+  // ---- The agent's tally ----------------------------------------------------
+  function renderTally() {
+    var ws = state.latest;
+    if (!ws) return;
+    var data = ws.nrData;
+    if (!data) {
+      $('tallyNote').textContent = 'This socket has no agent tally. Either the agent did not load, or WebSocket tracking is off, so no WebSocket event will be sent for it.';
+      $('tally').innerHTML = '';
+      return;
+    }
+    $('tallyNote').textContent = ws.readyState === WebSocket.CLOSED
+      ? 'Closed. This is the WebSocket event the agent sends at its next harvest.'
+      : 'Still ' + (ws.readyState === WebSocket.CONNECTING ? 'connecting' : 'open') + '. The close fields fill in when it closes, and nothing is sent until then.';
+    var closed = ws.readyState === WebSocket.CLOSED;
+    $('tally').innerHTML = L.TALLY_FIELDS.map(function (key) {
+      var v = (key === 'connectedDuration' && !closed) ? undefined : data[key];
+      var unset = v === undefined || v === null || (typeof v === 'number' && isNaN(v));
+      var shown = unset ? (key === 'connectedDuration' && !closed ? 'set on close' : 'not set') :(key === 'connectedDuration' ? Math.round(v) + ' ms' : String(v));
+      return '<div><dt>' + esc(key) + '</dt><dd' + (unset ? ' class="unset"' : '') + '>' + esc(shorten(shown, 60)) + '</dd></div>';
+    }).join('');
+  }
+  setInterval(function () { if (state.latest && state.latest.readyState !== WebSocket.CLOSED) renderTally(); }, 500);
+
+  // ---- Opening sockets --------------------------------------------------------
+  // Logs every socket the same way. All listeners here use addEventListener, so the agent wraps them.
+  function openSocket(label, url) {
+    var ws;
+    if (!url) url = state.onBackend ? L.withIdentity(state.server, state.code, userName()) : state.server;
+    try { ws = new WebSocket(url); } catch (e) {
+      record('error', label, 'new WebSocket() threw: ' + e.message);
+      return null;
+    }
+    state.latest = ws;
+    ws.addEventListener('open', function () {
+      state.stats.opened++;
+      record('open', label, 'Connected to ' + shorten(ws.url, 60) + (ws.nrData ? ' · socketId ' + ws.nrData.socketId : ''));
+      renderTally();
+    });
+    ws.addEventListener('message', function (e) {
+      state.stats.received++;
+      var text = typeof e.data === 'string' ? '"' + shorten(e.data, 80) + '"' : 'binary message';
+      record('message', label, text);
+      if (state.latest === ws) renderTally();
+    });
+    ws.addEventListener('error', function () { record('error', label, 'The socket reported an error event.'); });
+    ws.addEventListener('close', function (e) {
+      state.stats.closed++;
+      record('close', label, 'code ' + e.code + (e.reason ? ' "' + e.reason + '"' : '') + ' · ' + (e.wasClean ? 'clean' : 'not clean'));
+      if (state.latest === ws) renderTally();
+    });
+    renderTally();
+    return ws;
+  }
+  function send(ws, label, data, description) {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    ws.send(data);
+    state.stats.sent++;
+    record('send', label, description);
+    if (state.latest === ws) renderTally();
+  }
+
+  // ---- 1. A connection you drive -------------------------------------------
+  function renderLive() {
+    var ws = state.live, open = !!ws && ws.readyState === WebSocket.OPEN, connecting = !!ws && ws.readyState === WebSocket.CONNECTING;
+    $('connectBtn').disabled = open || connecting;
+    ['sendTextBtn', 'sendBinaryBtn', 'burstBtn', 'closeBtn'].forEach(function (id) { $(id).disabled = !open; });
+    var el = $('liveState');
+    el.classList.toggle('open', open); el.classList.toggle('connecting', connecting);
+    $('liveStateText').textContent = open ? 'Open' : connecting ? 'Connecting…' : (ws ? 'Closed' : 'Not connected');
+  }
+  function onConnect() {
+    var ws = openSocket('Live socket');
+    state.live = ws;
+    if (!ws) return;
+    ['open', 'close'].forEach(function (type) { ws.addEventListener(type, renderLive); });
+    renderLive();
+    toast('Connecting…');
+  }
+  function onSendText() {
+    var text = $('messageText').value || 'hello';
+    send(state.live, 'Live socket', text, '"' + shorten(text, 80) + '" (string)');
+  }
+  function onSendBinary() {
+    var buf = new Uint8Array(1024);
+    for (var i = 0; i < buf.length; i++) buf[i] = i % 256;
+    send(state.live, 'Live socket', buf.buffer, '1024 bytes (ArrayBuffer)');
+  }
+  function onBurst() {
+    for (var i = 1; i <= 20; i++) send(state.live, 'Live socket', 'burst ' + i + ' of 20', '"burst ' + i + ' of 20"');
+    toast('Sent 20 messages');
+  }
+  function onClose() {
+    if (state.live) state.live.close(1000, 'Demo: closed from the page');
+    toast('Closed with 1000');
+  }
+
+  // ---- 2. Close with your own code -------------------------------------------
+  function onCustomClose() {
+    var btn = $('customCloseBtn');
+    btn.disabled = true;
+    $('customCloseStatus').textContent = 'Connecting…';
+    var ws = openSocket('Custom close');
+    if (!ws) { btn.disabled = false; return; }
+    ws.addEventListener('open', function () {
+      send(ws, 'Custom close', 'goodbye', '"goodbye" (string)');
+      setTimeout(function () { ws.close(4000, 'Demo: user signed out'); }, 800);
+    });
+    ws.addEventListener('close', function (e) {
+      $('customCloseStatus').textContent = 'Closed with code ' + e.code + ', clean: ' + e.wasClean + '. ' +
+        (e.reason ? 'The server repeated the reason "' + e.reason + '", so that becomes closeReason.' : 'The server sent no reason back, so closeReason stays "unknown".');
+      btn.disabled = false;
+      toast('Closed with ' + e.code);
+    });
+  }
+
+  // ---- 3. A connection that never opens ------------------------------------
+  function onFail() {
+    var btn = $('failBtn');
+    btn.disabled = true;
+    $('failStatus').textContent = 'Trying…';
+    var ws = openSocket('Unreachable', L.UNREACHABLE);
+    if (!ws) { btn.disabled = false; return; }
+    ws.addEventListener('close', function (e) {
+      $('failStatus').textContent = 'Never opened. Closed with code ' + e.code + ', clean: ' + e.wasClean + '. The agent still records it.';
+      btn.disabled = false;
+      toast('Failed with ' + e.code);
+    });
+  }
+
+  // ---- 4. An error in a message handler ---------------------------------------
+  // The throw is real and uncaught on purpose, so the agent reports a JavaScriptError.
+  function onThrow(viaListener) {
+    var label = viaListener ? 'addEventListener throws' : 'onmessage throws';
+    $('errStatus').textContent = 'Connecting…';
+    var ws = openSocket(label);
+    if (!ws) return;
+    var thrown = false;
+    var boom = function () {
+      if (thrown) return;
+      thrown = true;
+      setTimeout(function () { ws.close(1000, 'Demo: done'); }, 800);
+      throw new Error('Demo: bad message [' + state.code + '] via ' + (viaListener ? 'addEventListener' : 'onmessage'));
+    };
+    if (viaListener) ws.addEventListener('message', boom);
+    else ws.onmessage = boom;
+    ws.addEventListener('open', function () { send(ws, label, 'boom', '"boom" (string)'); });
+    ws.addEventListener('close', function () {
+      var flagged = ws.nrData && ws.nrData.hasErrors;
+      $('errStatus').textContent = 'Thrown from ' + (viaListener ? 'addEventListener' : 'onmessage') + '. The agent ' +
+        (flagged ? 'marked this socket hasErrors and tagged the error with socketId ' + ws.nrData.socketId + '.' : 'did not connect the error to this socket.');
+    });
+    toast('Throwing on the next message');
+  }
+
+  // ---- 5. Walk away with it open ------------------------------------------------
+  function onLeave() {
+    var btn = $('leaveBtn');
+    btn.disabled = true;
+    $('leaveStatus').textContent = 'Connecting…';
+    var ws = openSocket('Left open');
+    if (!ws) { btn.disabled = false; return; }
+    ws.addEventListener('open', function () {
+      send(ws, 'Left open', 'still here', '"still here" (string)');
+      try { sessionStorage.setItem(LEFT_OPEN_KEY, ws.nrData ? ws.nrData.socketId : 'unknown'); } catch (e) { /* no storage, no note */ }
+      $('leaveStatus').textContent = 'Open. Reloading the page without closing it…';
+      setTimeout(function () { location.reload(); }, 600);
+    });
+  }
+  function showLeftOpenNote() {
+    var id = null;
+    try { id = sessionStorage.getItem(LEFT_OPEN_KEY); sessionStorage.removeItem(LEFT_OPEN_KEY); } catch (e) { /* ignore */ }
+    if (!id) return;
+    $('leaveStatus').textContent = 'You left socket ' + id + ' open and reloaded. Look for it in the first query below with closeCode 1001 and closeReason "Page navigating away".';
+    record('close', 'Left open', 'Previous page unloaded with socket ' + id + ' still open. The agent closed its record with code 1001.');
+  }
+
+  // ---- Init ----------------------------------------------------------------
+  function init() {
+    Demo.start({ state: state, onIdentity: onIdentity });
+    $('serverUrl').textContent = state.server;
+    if (state.onBackend) {
+      $('serverSub').textContent = 'This site\'s own backend (backend/websocket.js). It echoes everything back, repeats your close code and reason, and writes one log per connection to New Relic. Add ?ws=wss://your-server to the address to use another server.';
+      $('backendCard').hidden = false;
+    } else if (state.server !== L.DEFAULT_SERVER) {
+      $('serverSub').textContent = 'Your own server, from ?ws= in the address. Remove it to go back to the ' + (document.querySelector('meta[name="demo-backend"]') ? 'demo backend.' : 'public echo server.');
+    }
+    $('connectBtn').addEventListener('click', onConnect);
+    $('sendTextBtn').addEventListener('click', onSendText);
+    $('sendBinaryBtn').addEventListener('click', onSendBinary);
+    $('burstBtn').addEventListener('click', onBurst);
+    $('closeBtn').addEventListener('click', onClose);
+    $('customCloseBtn').addEventListener('click', onCustomClose);
+    $('failBtn').addEventListener('click', onFail);
+    $('throwListenerBtn').addEventListener('click', function () { onThrow(true); });
+    $('throwOnmessageBtn').addEventListener('click', function () { onThrow(false); });
+    $('leaveBtn').addEventListener('click', onLeave);
+    $('clearFeed').addEventListener('click', clearFeed);
+
+    renderStats();
+    showLeftOpenNote();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>

@@ -1,11 +1,13 @@
 'use strict';
-// Demo backend for tracing.html. Zero dependencies apart from the New Relic agent,
+// Demo backend for tracing.html, plus the /ws echo endpoint for websockets.html.
+// Zero dependencies apart from the New Relic agent,
 // which loads only when NEW_RELIC_LICENSE_KEY is set. It must be required before
 // anything else so it can instrument the http module.
 const nr = process.env.NEW_RELIC_LICENSE_KEY ? require('newrelic') : null;
 
 const http = require('node:http');
 const { createPages } = require('./pages.js');
+const { attachWebSocket } = require('./websocket.js');
 
 const DEFAULT_ORIGINS = ['https://mcaronnewrelic.github.io', 'http://localhost:8080', 'http://127.0.0.1:8080'];
 const ALLOW_HEADERS = 'newrelic, traceparent, tracestate, content-type';
@@ -82,6 +84,26 @@ function createServer(opts) {
     const line = Object.assign({ timestamp: new Date().toISOString(), 'trace.id': link['trace.id'] || null, 'span.id': link['span.id'] || null }, event);
     if (line.error) line.error = line.error.message;
     try { stdout(JSON.stringify(line)); } catch (e) { /* never break the demo */ }
+  }
+
+  // One log line per WebSocket connection, when it ends. Upgrades run outside any APM
+  // transaction, so these logs carry entity.* but no trace.id.
+  const NORMAL_CLOSES = [1000, 1001, 1005];
+  function logSocket(s) {
+    const demoCode = (s.query.get('demoCode') || '').slice(0, 32);
+    const demoUser = (s.query.get('demoUser') || '').slice(0, 64);
+    const normal = NORMAL_CLOSES.includes(s.closeCode) || (s.closeCode >= 3000 && s.closeCode <= 4999);
+    const message = (demoCode ? '[' + demoCode + '] ' : '') + 'WebSocket ' + s.path + ' closed ' + s.closeCode +
+      (s.closeReason ? ' "' + s.closeReason + '"' : '') + ' by ' + s.closedBy + ' after ' + s.durationMs + ' ms';
+    const event = {
+      message, level: normal ? 'INFO' : 'WARN', route: 'ws',
+      closeCode: s.closeCode, closeReason: s.closeReason, closedBy: s.closedBy, durationMs: s.durationMs,
+      messagesIn: s.messagesIn, bytesIn: s.bytesIn, messagesOut: s.messagesOut, bytesOut: s.bytesOut
+    };
+    if (demoCode) event.demoCode = demoCode;
+    if (demoUser) event.demoUser = demoUser;
+    apm('recordLogEvent', Object.assign({}, event));
+    try { stdout(JSON.stringify(Object.assign({ timestamp: new Date().toISOString() }, event))); } catch (e) { /* never break the demo */ }
   }
 
   function send(req, res, status, payload, ctx) {
@@ -182,6 +204,7 @@ function createServer(opts) {
       return send(req, res, 500, { error: 'Unexpected server error' }, ctx);
     }
   });
+  attachWebSocket(server, { onClose: logSocket });
   return server;
 }
 

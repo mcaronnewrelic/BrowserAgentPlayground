@@ -11,6 +11,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="demo-identity.js"></script>
+<script src="site.js"></script>
 <script src="nr-init.js"></script>
 <!-- NR:SNIPPET -->
 <script src="nr-config.js"></script>
@@ -24,10 +25,11 @@
 <link rel="icon" href="favicons/favicon-16x16.png" sizes="16x16" type="image/png">
 <link rel="apple-touch-icon" href="favicons/apple-touch-icon.png" sizes="180x180">
 <meta name="theme-color" content="#080F11">
-<meta name="description" content="A self-serve tour of the New Relic browser agent: logs, errors, tracing, Core Web Vitals, frustration signals, custom events, session replay and manual SPA control, each one in its own demo page.">
+<meta name="description" content="A self-serve tour of the New Relic browser agent: logs, errors, tracing, WebSockets, Core Web Vitals, marks and measures, frustration signals, custom events, session replay and manual SPA control, each one in its own demo page.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,200..900&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
 <style>
   :root {
     color-scheme: light;
@@ -54,56 +56,10 @@
     --radius-md: 18px;
     --pill: 999px;
   }
-  * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
-  body {
-    margin: 0;
-    background: var(--sys-white);
-    color: var(--black);
-    font: 500 17px/1.5 var(--body);
-    letter-spacing: -0.3px;
-    -webkit-font-smoothing: antialiased;
-  }
-  a { color: inherit; }
-  code, .mono { font-family: var(--mono); letter-spacing: 0; }
-  :focus-visible { outline: 3px solid var(--green-deep); outline-offset: 3px; border-radius: 6px; }
-  .wrap { max-width: 1320px; margin: 0 auto; padding: 0 32px; }
 
-  /* ---------- Header ---------- */
-  .topbar { background: var(--black); color: var(--sand); font-size: 15px; }
-  .topbar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 10px; padding-bottom: 10px; }
-  .topbar a { color: var(--green); text-decoration: none; font-weight: 600; }
-  .topbar a:hover { text-decoration: underline; }
-  header.site { background: var(--black); color: var(--white); position: sticky; top: 0; z-index: 20; border-bottom: 1px solid rgba(253,252,240,.08); }
-  header.site .wrap { display: flex; align-items: center; justify-content: space-between; height: 76px; gap: 24px; }
-  .brand-row { display: flex; align-items: center; gap: 18px; min-width: 0; }
-  .brand { display: flex; align-items: center; text-decoration: none; }
-  .brand svg { height: 28px; width: auto; display: block; }
-  .brand-row .divider { width: 1px; height: 28px; background: rgba(253,252,240,.25); }
-  .switch { display: flex; gap: 4px; background: var(--panel-2); padding: 4px; border-radius: var(--pill); }
-  .switch a { text-decoration: none; color: var(--sand); font-size: 14px; font-weight: 600; padding: 7px 16px; border-radius: var(--pill); white-space: nowrap; }
-  .switch a:hover { color: var(--white); }
-  .switch a[aria-current="page"] { background: var(--sys-white); color: var(--black); }
-  .agent-badge {
-    display: inline-flex; align-items: center; gap: 10px;
-    padding: 9px 16px; border-radius: var(--pill);
-    background: var(--panel-2); color: var(--sand); font-size: 14px; font-weight: 600; white-space: nowrap;
-  }
+  /* Eleven pages: below 1180px the badge keeps only its dot, and the switcher scrolls if it still doesn't fit. */
+
   .agent-badge .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--gray); }
-  .agent-badge.on .dot { background: var(--green); box-shadow: 0 0 0 4px rgba(28,231,131,.18); }
-  .agent-badge.off .dot { background: var(--magenta-2); }
-
-  /* ---------- Type ---------- */
-  .display {
-    font-family: var(--display); font-weight: 860; font-stretch: 75%;
-    text-transform: uppercase; letter-spacing: -0.02em; line-height: .86; margin: 0;
-  }
-  h1.display { font-size: clamp(56px, 8.6vw, 128px); }
-  h2.display { font-size: clamp(40px, 5.2vw, 72px); }
-  h3 { font-size: 22px; line-height: 1.2; margin: 0; letter-spacing: -0.6px; font-weight: 700; }
-  .eyebrow { font-family: var(--mono); font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2); }
-  .lede { font-size: clamp(19px, 1.8vw, 24px); line-height: 1.35; font-weight: 500; letter-spacing: -0.6px; max-width: 34ch; }
-  .muted { color: var(--ink-2); }
 
   /* ---------- Buttons ---------- */
   .btn {
@@ -114,25 +70,10 @@
     background: var(--black); color: var(--sys-white);
     transition: transform .12s ease, background .15s ease, box-shadow .15s ease;
   }
-  .btn:hover { background: #1f272d; }
-  .btn:active { transform: translateY(1px) scale(.99); }
-  .btn.secondary { background: rgba(8,15,17,.06); color: var(--black); }
-  .btn.secondary:hover { background: rgba(8,15,17,.11); }
-  .btn.green { background: var(--green); color: var(--black); }
-  .btn.green:hover { background: #3ff09a; }
-  .btn.small { padding: 11px 16px; font-size: 14px; }
-  .btn.ghost-dark { background: rgba(253,252,240,.08); color: var(--white); }
-  .btn.ghost-dark:hover { background: rgba(253,252,240,.16); }
-  .btn .arrow { transition: transform .15s ease; }
-  .btn:hover .arrow { transform: translateX(3px); }
 
   /* ---------- Hero ---------- */
-  .hero { padding: 72px 0 64px; }
-  .hero .wrap { display: grid; grid-template-columns: 1.15fr .85fr; gap: 56px; align-items: center; }
-  .hero .ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 32px; }
-  .hero p.lede { margin: 28px 0 0; }
   html { scroll-padding-top: 96px; }
-  .hero .note { margin-top: 28px; max-width: 520px; font-size: 15px; color: var(--ink-2); }
+  .hero-note { margin-top: 28px; max-width: 520px; font-size: 15px; color: var(--ink-2); }
   .start-form { margin-top: 32px; display: grid; gap: 16px; max-width: 520px; }
   .start-form label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
   .start-form .input {
@@ -145,29 +86,12 @@
   .start-form .code-row .input { font-family: var(--mono); font-size: 22px; font-weight: 600; letter-spacing: .04em; color: var(--black); }
   .start-form .form-error { margin: 0; font-size: 14px; font-weight: 600; color: var(--magenta-2); }
   .start-form .ctas { margin-top: 0; }
-  .verbosity-note {
-    margin-top: 28px; display: flex; gap: 12px; align-items: flex-start;
-    background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-md);
-    padding: 14px 18px; font-size: 15px; max-width: 560px;
-  }
-  .verbosity-note strong { font-weight: 700; }
-  .term {
-    background: var(--black); color: var(--sand); border-radius: var(--radius-lg);
-    padding: 22px 24px 26px; font-family: var(--mono); font-size: 14px; line-height: 1.7;
-    box-shadow: 0 30px 60px -30px rgba(8,15,17,.45); overflow: hidden;
-  }
-  .term .bar { display: flex; gap: 7px; margin-bottom: 18px; }
-  .term .bar i { width: 11px; height: 11px; border-radius: 50%; background: rgba(253,252,240,.18); display: block; }
   .term .c { color: var(--gray); }
-  .term .k { color: var(--green); }
   .term .s { color: var(--blue-1); }
   .term pre { margin: 0; white-space: pre-wrap; word-break: break-word; }
 
   /* ---------- Sections ---------- */
-  section.step { padding: 64px 0; border-top: 1px solid var(--line); }
-  .step-head { margin-bottom: 36px; }
   .step-head p { margin: 14px 0 0; max-width: 60ch; }
-  .step-num { color: var(--green-deep); }
 
   /* ---------- Identity ---------- */
   .identity {
@@ -175,30 +99,14 @@
     padding: 36px; display: grid; grid-template-columns: 1fr 1fr auto; gap: 28px; align-items: end;
   }
   .field label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
-  .identity .field label { color: var(--sand); }
   .input, select.input, textarea.input {
     width: 100%; font: 500 16px/1.3 var(--body); letter-spacing: -0.2px;
     padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line);
     background: var(--white); color: var(--black);
   }
-  .input:focus { outline: none; border-color: var(--green-deep); box-shadow: 0 0 0 3px rgba(28,231,131,.3); }
-  .identity .input { background: var(--panel-2); color: var(--white); border-color: rgba(253,252,240,.12); }
-  .identity .input::placeholder { color: var(--gray); }
-  .code-row { display: flex; gap: 10px; }
-  .code-row .input { font-family: var(--mono); font-size: 22px; font-weight: 600; color: var(--green); letter-spacing: .04em; }
   .identity .hint { grid-column: 1 / -1; margin: 0; font-size: 14px; color: var(--sand); opacity: .8; }
-  .identity .hint code { color: var(--green); }
 
   /* ---------- Playground ---------- */
-  .playground { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 28px; align-items: start; }
-  .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-  .card {
-    background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg);
-    padding: 26px; display: flex; flex-direction: column; gap: 16px; min-width: 0;
-  }
-  .card.wide { grid-column: 1 / -1; }
-  .card .tag { font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2); }
-  .card p { margin: 0; font-size: 15px; color: var(--ink-2); }
   .card .tag-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .chip.auto { background: var(--green-1); }
   .chip.manual { background: var(--blue-1); }
@@ -211,23 +119,8 @@
     background: var(--black); color: var(--sand); border-radius: 14px; padding: 14px 16px;
     font-family: var(--mono); font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; margin: 0;
   }
-  .snippet .k { color: var(--green); }
   .snippet .s { color: var(--blue-1); }
   .snippet .c { color: var(--gray); }
-  .btn-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-  .btn-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .lvl-btn {
-    appearance: none; cursor: pointer; text-align: left;
-    border: 1px solid var(--line); background: var(--sys-white); color: var(--black);
-    border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;
-    font: 600 13px/1.2 var(--mono); letter-spacing: 0;
-    transition: border-color .15s, background .15s, transform .1s;
-  }
-  .lvl-btn:hover { border-color: var(--black); background: #fff; }
-  .lvl-btn:active { transform: scale(.98); }
-  .lvl-btn .meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
-  .row > .field { flex: 1 1 140px; min-width: 0; }
   .card .field label { color: var(--black); }
 
   .chip {
@@ -236,175 +129,37 @@
     background: var(--sand); white-space: nowrap;
   }
   .chip.error { background: var(--magenta-1); }
-  .chip.warn  { background: var(--ember-1); }
-  .chip.info  { background: var(--blue-1); }
-  .chip.debug { background: var(--sand); }
   .chip.trace { background: transparent; box-shadow: inset 0 0 0 1px var(--gray); }
   .entry .chip.trace, .scenario .chip.trace { color: var(--white); }
   .keep { font: 500 11px/1.4 var(--mono); color: var(--ink-2); display: inline-flex; align-items: center; gap: 5px; }
   .keep::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--gray); }
-  .keep.yes::before { background: var(--green-deep); }
   .keep.no { opacity: .7; }
 
-  .scenarios { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-  .scenario {
-    appearance: none; cursor: pointer; text-align: left; border: 0;
-    background: var(--black); color: var(--white); border-radius: 20px; padding: 18px;
-    display: flex; flex-direction: column; gap: 10px; min-height: 150px;
-    font: 500 14px/1.4 var(--body); transition: transform .12s, background .15s;
-  }
-  .scenario:hover { background: var(--panel-2); }
-  .scenario:active { transform: scale(.98); }
-  .scenario b { font-size: 17px; letter-spacing: -0.4px; font-weight: 700; }
-  .scenario .blurb { color: var(--sand); opacity: .8; font-size: 13px; }
-  .scenario .meta { margin-top: auto; display: flex; gap: 6px; flex-wrap: wrap; }
-  .scenario.running { box-shadow: inset 0 0 0 2px var(--green); }
-
-  .app-out {
-    background: var(--sys-white); border: 1px dashed rgba(8,15,17,.25); border-radius: 14px;
-    padding: 10px 14px; font: 500 12.5px/1.6 var(--mono); min-height: 64px; max-height: 120px; overflow: auto; color: var(--ink-2);
-  }
-  .app-out:empty::before { content: "appLogger output appears here"; opacity: .6; }
-
   /* ---------- Feed ---------- */
-  .feed {
-    position: sticky; top: 100px; background: var(--black); color: var(--white);
-    border-radius: var(--radius-lg); display: flex; flex-direction: column;
-    max-height: calc(100vh - 124px); min-height: 420px; overflow: hidden;
-  }
-  .feed-head { padding: 22px 22px 14px; border-bottom: 1px solid rgba(253,252,240,.1); }
-  .feed-head .top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-  .feed-head h3 { font-size: 18px; }
-  .feed-stats { margin-top: 10px; display: flex; gap: 14px; font: 500 12px/1.4 var(--mono); color: var(--sand); flex-wrap: wrap; }
-  .feed-stats b { color: var(--white); }
-  .feed-list { list-style: none; margin: 0; padding: 8px 12px 16px; overflow: auto; flex: 1; }
-  .feed-empty { color: var(--gray); font-size: 14px; padding: 18px 10px; }
-  .entry { padding: 12px 10px; border-bottom: 1px solid rgba(253,252,240,.07); animation: slidein .25s ease; }
-  .entry .line1 { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font: 500 11.5px/1.4 var(--mono); color: var(--gray); }
-  .entry .via { color: var(--green); }
-  .entry .msg { margin-top: 6px; font: 500 13px/1.45 var(--mono); color: var(--white); word-break: break-word; }
-  .entry .attrs { margin-top: 4px; font: 400 11.5px/1.5 var(--mono); color: var(--sand); opacity: .75; word-break: break-word; }
   .status { margin-left: auto; padding: 2px 8px; border-radius: var(--pill); font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; }
-  .status.collected { background: rgba(28,231,131,.16); color: var(--green); }
-  .status.filtered { background: rgba(253,252,240,.08); color: var(--sand); }
-  .status.unsent { background: rgba(220,70,111,.18); color: var(--magenta-1); }
-  @keyframes slidein { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 
   /* ---------- Find ---------- */
-  section.find { background: var(--black); color: var(--white); border-top: 0; }
-  section.find .eyebrow { color: var(--sand); }
-  section.find .step-head p { color: var(--sand); }
-  .find-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  .find-card { background: var(--panel); border-radius: var(--radius-lg); padding: 26px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-  .find-card p { margin: 0; color: var(--sand); font-size: 15px; }
-  .find-card ol { margin: 0; padding-left: 20px; color: var(--sand); font-size: 15px; }
-  .find-card ol li { margin: 4px 0; }
-  .find-card pre {
-    margin: 0; background: var(--black); border: 1px solid rgba(253,252,240,.1); border-radius: 14px;
-    padding: 16px; font: 500 14px/1.65 var(--mono); color: var(--green); white-space: pre-wrap; word-break: break-word;
-  }
-  .find-card .actions { display: flex; gap: 10px; flex-wrap: wrap; }
-  .tips { margin-top: 28px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-  .tip { border-top: 1px solid rgba(253,252,240,.15); padding-top: 16px; font-size: 15px; color: var(--sand); }
-  .tip b { color: var(--white); display: block; margin-bottom: 4px; }
-  .tip a { color: var(--green); }
 
-  footer { background: var(--black); color: var(--gray); font-size: 14px; border-top: 1px solid rgba(253,252,240,.08); }
-  footer .wrap { display: flex; justify-content: space-between; gap: 16px; padding-top: 28px; padding-bottom: 28px; flex-wrap: wrap; }
   footer a { color: var(--sand); }
 
-  .toast {
-    position: fixed; left: 50%; bottom: 20px; transform: translate(-50%, 20px); opacity: 0;
-    background: var(--black); color: var(--white); padding: 12px 18px; border-radius: var(--pill);
-    font: 500 13px/1.3 var(--mono); box-shadow: 0 10px 30px rgba(8,15,17,.3); pointer-events: none;
-    transition: opacity .2s, transform .2s; z-index: 50; max-width: calc(100vw - 32px);
-  }
-  .toast.show { opacity: 1; transform: translate(-50%, 0); }
-  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-
   /* ---------- Responsive ---------- */
-  @media (max-width: 1180px) {
-    .playground { grid-template-columns: 1fr; }
-    .feed { position: static; max-height: 520px; }
-    .scenarios { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  }
+
   @media (max-width: 900px) {
     .hero .wrap, .find-grid, .tips, .subcards { grid-template-columns: 1fr; }
-    .identity { grid-template-columns: 1fr; }
     .cards { grid-template-columns: 1fr; }
-    .brand-row .divider { display: none; }
   }
-  @media (max-width: 560px) {
-    .wrap { padding: 0 18px; }
-    .btn-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .scenarios { grid-template-columns: 1fr; }
-    .identity, .card, .find-card { padding: 22px; }
-    .topbar { display: none; }
-    header.site .wrap { height: 64px; gap: 10px; }
-    .brand-row { gap: 10px; }
-    .brand svg { height: 24px; }
-    .switch a { padding: 6px 9px; font-size: 12.5px; }
-    .agent-badge { padding: 9px; }
-    .agent-badge #agentText { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-  }
-  .js-code { white-space: nowrap; }
-  @media (max-width: 560px) {
-    /* Phones: logo + badge on the first row, page switcher full width on the second. */
-    header.site .wrap { height: auto; flex-wrap: wrap; row-gap: 10px; padding-top: 12px; padding-bottom: 10px; }
-    .brand-row { display: contents; }
-    .brand { order: 1; }
-    .agent-badge { order: 2; }
-    .switch { order: 3; flex: 1 1 100%; }
-    .switch a { flex: 1; text-align: center; padding: 7px 4px; font-size: 13px; }
-  }
-  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
 </style>
 </head>
 <body>
 
 <div class="topbar">
   <div class="wrap">
-    <span>Eight small pages, one shared account. Click around and watch your own data show up.</span>
+    <span>Ten small pages, one shared account. Click around and watch your own data show up.</span>
     <a href="https://docs.newrelic.com/docs/browser/" target="_blank" rel="noopener">Read the docs</a>
   </div>
 </div>
 
-<header class="site">
-  <div class="wrap">
-    <div class="brand-row">
-    <a class="brand" href="https://newrelic.com" target="_blank" rel="noopener" aria-label="New Relic">
-      <svg viewBox="0 0 246 48" fill="#FDFCF0" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M69.6509 12.1885C65.2049 12.1885 63.0989 14.9965 63.0989 14.9965H62.8649L62.3969 12.6565H57.0149V36.5245H62.8649V22.7185C62.8649 19.6765 64.9709 17.5705 68.0129 17.5705C71.0549 17.5705 73.1609 19.6765 73.1609 22.7185V36.5245H79.0109V22.2505C79.0109 16.1665 75.0329 12.1885 69.6509 12.1885Z"/>
-        <path d="M132.741 28.3342H132.405L128.427 12.6562H122.475L118.497 28.3342H118.164L114.183 12.6562H108.099L114.183 36.5242H121.305L125.283 21.0802H125.619L129.597 36.5242H136.719L142.803 12.6562H136.719L132.741 28.3342Z"/>
-        <path d="M160.716 14.7622H160.482L160.014 12.6562H155.1V36.5242H160.95V22.7183C160.95 19.6763 162.354 18.2723 165.396 18.2723H168.408V12.6562H164.928C162.12 12.6562 160.716 14.7622 160.716 14.7622Z"/>
-        <path d="M181.341 12.1885C174.321 12.1885 169.173 17.3365 169.173 24.5905C169.173 31.8445 174.03 36.9925 181.341 36.9925C187.26 36.9925 190.821 33.5095 192.306 30.9475L186.936 29.0335C186.405 30.0055 184.263 31.8745 181.338 31.8745C177.927 31.8745 175.488 29.7385 175.02 26.4625H192.804C192.804 26.4625 193.038 25.5265 193.038 24.1225C193.038 17.3365 187.89 12.1885 181.338 12.1885H181.341ZM175.023 22.4845C175.725 19.4425 177.831 17.1025 181.341 17.1025C184.617 17.1025 186.723 19.4425 187.191 22.4845H175.023Z"/>
-        <path d="M94.92 12.1885C87.9 12.1885 82.752 17.3365 82.752 24.5905C82.752 31.8445 87.609 36.9925 94.92 36.9925C100.839 36.9925 104.4 33.5095 105.885 30.9475L100.515 29.0335C99.9839 30.0055 97.842 31.8745 94.917 31.8745C91.506 31.8745 89.0669 29.7385 88.5989 26.4625H106.383C106.383 26.4625 106.617 25.5265 106.617 24.1225C106.617 17.3365 101.469 12.1885 94.917 12.1885H94.92ZM88.602 22.4845C89.304 19.4425 91.41 17.1025 94.92 17.1025C98.196 17.1025 100.302 19.4425 100.77 22.4845H88.602Z"/>
-        <path d="M213.492 3.2334H207.642V9.0834H213.492V3.2334Z"/>
-        <path d="M229.635 31.6105C226.125 31.6105 223.317 28.8025 223.317 24.5905C223.317 20.3785 226.125 17.5705 229.635 17.5705C233.145 17.5705 234.549 19.9105 235.017 21.3145L240.315 19.4305C239.034 16.0975 235.884 12.1885 229.638 12.1885C222.618 12.1885 217.47 17.3365 217.47 24.5905C217.47 31.8445 222.618 36.9925 229.638 36.9925C235.935 36.9925 239.088 33.0205 240.348 29.5285L235.02 27.6325C234.552 29.2705 233.148 31.6105 229.638 31.6105H229.635Z"/>
-        <path d="M193.689 8.4324H197.01V36.5244H202.86V3.2334H193.689V8.4324Z"/>
-        <path d="M213.492 12.6562H207.642V36.5242H213.492V12.6562Z"/>
-        <path d="M243.477 31.9346C242.193 31.9346 241.254 32.9066 241.254 34.1906C241.254 35.4746 242.193 36.4466 243.477 36.4466C244.761 36.4466 245.7 35.4746 245.7 34.1906C245.7 32.9066 244.761 31.9346 243.477 31.9346ZM243.477 36.1016C242.379 36.1016 241.596 35.2856 241.596 34.1906C241.596 33.0956 242.379 32.2796 243.477 32.2796C244.575 32.2796 245.358 33.0956 245.358 34.1906C245.358 35.2856 244.575 36.1016 243.477 36.1016Z"/>
-        <path d="M244.446 33.782C244.446 33.344 244.101 32.999 243.6 32.999H242.598V35.348H242.943V34.532H243.255L244.071 35.348H244.509L243.693 34.532C244.131 34.502 244.446 34.187 244.446 33.779V33.782ZM242.943 34.19V33.344H243.6C243.912 33.344 244.101 33.533 244.101 33.782C244.101 34.031 243.945 34.19 243.6 34.19H242.943Z"/>
-        <path d="M20.652 0.299805L2.41504 10.8268L10.359 15.4138L20.652 9.4738L33.357 16.8088V31.4818L23.067 37.4248V46.5988L41.304 36.0688V12.2218L20.652 0.299805Z"/>
-        <path d="M12.708 28.7337V43.4067L20.652 47.9907V24.1467L0 12.2217V21.3957L12.708 28.7337Z"/>
-      </svg>
-    </a>
-      <span class="divider" aria-hidden="true"></span>
-      <nav class="switch" aria-label="Demo pages">
-        <a href="index.html" aria-current="page">Home</a>
-        <a href="logs.html">Logs</a>
-        <a href="errors.html">Errors</a>
-        <a href="tracing.html">Tracing</a>
-        <a href="vitals.html">Vitals</a>
-        <a href="frustration.html">Frustration</a>
-        <a href="events.html">Events</a>
-        <a href="replay.html">Replay</a>
-        <a href="spa.html">SPA</a>
-      </nav>
-    </div>
-    <span id="agentBadge" class="agent-badge" role="status" aria-live="polite"><span class="dot"></span><span id="agentText">Checking for browser agent…</span></span>
-  </div>
-</header>
+<script>Demo.header()</script>
 
 <main>
   <!-- ================= HERO ================= -->
@@ -413,7 +168,7 @@
       <div>
         <div class="eyebrow">New Relic browser agent</div>
         <h1 class="display" style="margin-top:18px">Click it.<br>Then find it.</h1>
-        <p class="lede">Eight small demo pages, one shared New Relic account. Each page triggers a specific browser agent feature on purpose, then shows you exactly where to find the data it produced.</p>
+        <p class="lede">Ten small demo pages, one shared New Relic account. Each page triggers a specific browser agent feature on purpose, then shows you exactly where to find the data it produced.</p>
         <form class="start-form" id="startForm" novalidate>
           <div>
             <label for="userName">Your name or handle</label>
@@ -432,7 +187,7 @@
             <a class="btn secondary" href="#pages">See all pages</a>
           </div>
         </form>
-        <div class="note">
+        <div class="hero-note">
           <span class="chip" aria-hidden="true">Shared account</span>
           <span>Everyone who visits gets a random session code, so every page lets you filter down to just your own data, even while sharing the account with everyone else who has clicked through.</span>
         </div>
@@ -452,7 +207,7 @@
   <section class="step" id="pages">
     <div class="wrap">
       <div class="step-head">
-        <div class="eyebrow">Eight pages</div>
+        <div class="eyebrow">Ten pages</div>
         <h2 class="display" style="margin-top:14px">What you'll learn where</h2>
         <p class="muted">Every page stands on its own. Start anywhere, you don't need to go in order.</p>
       </div>
@@ -479,11 +234,25 @@
           <a class="btn secondary small" href="tracing.html">Go to Tracing <span class="arrow" aria-hidden="true">→</span></a>
         </article>
 
+        <article class="card" aria-labelledby="pWebSockets">
+          <div class="tag-row"><div class="tag">WebSockets</div><span class="chip auto">Automatic, one setting</span></div>
+          <h3 id="pWebSockets">One open socket, one event</h3>
+          <p>Turn on WebSocket tracking, then open, use and close sockets on purpose: clean closes, custom close codes, failed connections, handler errors and sockets left open when the page unloads.</p>
+          <a class="btn secondary small" href="websockets.html">Go to WebSockets <span class="arrow" aria-hidden="true">→</span></a>
+        </article>
+
         <article class="card" aria-labelledby="pVitals">
           <div class="tag-row"><div class="tag">Vitals</div><span class="chip auto">Automatic, no code</span></div>
           <h3 id="pVitals">Core Web Vitals, good or bad, on purpose</h3>
           <p>Make LCP, CLS and INP good or poor on demand, and watch a live scorecard react to your own choices.</p>
           <a class="btn secondary small" href="vitals.html">Go to Vitals <span class="arrow" aria-hidden="true">→</span></a>
+        </article>
+
+        <article class="card" aria-labelledby="pMeasures">
+          <div class="tag-row"><div class="tag">Measures</div><span class="chip both">Automatic + your code</span></div>
+          <h3 id="pMeasures">Time the moments only you know matter</h3>
+          <p><code>performance.mark()</code>, <code>performance.measure()</code> and <code>newrelic.measure()</code>, and the <code>BrowserPerformance</code> events each one becomes, including marks you never made yourself.</p>
+          <a class="btn secondary small" href="measures.html">Go to Measures <span class="arrow" aria-hidden="true">→</span></a>
         </article>
 
         <article class="card wide" aria-labelledby="pWhichOne">
@@ -540,20 +309,14 @@
 <script>
 (function () {
   'use strict';
-  var $ = function (id) { return document.getElementById(id); };
-  function agent() { var nr = window.newrelic; return (nr && typeof nr.setCustomAttribute === 'function') ? nr : null; }
-  function renderAgent() {
-    var on = !!agent(), b = $('agentBadge');
-    b.classList.toggle('on', on); b.classList.toggle('off', !on);
-    $('agentText').textContent = on ? 'Browser agent detected' : 'Browser agent not detected';
-    b.title = $('agentText').textContent;
-    return on;
-  }
+  var $ = Demo.$;
   var ID = window.DemoIdentity;
   var nextPage = ID.safeNext(new URLSearchParams(location.search).get('next'));
+  // The label the header's page switcher uses for that page.
   function pageLabel(page) {
-    var name = page.replace(/\?.*$/, '').replace(/\.html$/, '');
-    return name === 'spa' ? 'SPA' : name.charAt(0).toUpperCase() + name.slice(1);
+    var file = page.replace(/\?.*$/, '');
+    var match = Demo.PAGES.filter(function (p) { return p.file === file; })[0];
+    return match ? match.label : file.replace(/\.html$/, '');
   }
   function initIdentityForm() {
     var identity = ID.current();
@@ -572,9 +335,9 @@
     });
   }
   function init() {
-    renderAgent();
+    Demo.renderAgent();
     initIdentityForm();
-    [1000, 3000, 6000].forEach(function (ms) { setTimeout(renderAgent, ms); });
+    [1000, 3000, 6000].forEach(function (ms) { setTimeout(Demo.renderAgent, ms); });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();

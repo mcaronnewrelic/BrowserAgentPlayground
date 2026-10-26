@@ -14,12 +14,15 @@ There are no dependencies apart from the `newrelic` agent, which loads only when
 | `GET /api/orders/:id` | Order lookup |
 | `GET /api/slow?ms=1500` | Waits before responding (capped at 5000 ms) |
 | `GET /api/fail` | Returns 500 and reports the error with `noticeError` |
+| `GET /ws` (WebSocket) | Echo endpoint for `websockets.html`: one greeting, then every text and binary message comes back. It repeats the client's close code and reason, answers pings, and closes connections idle for 5 minutes or open for 15. Messages are capped at 64 KB. |
 
 Every response includes `trace.received` (the `traceparent`, `tracestate` and `newrelic` headers the server saw) and `trace.apm` (the trace ID from the APM agent). The page compares them to show "Backend joined trace". The `demoCode` and `demoUser` query params are added to each transaction as custom attributes.
 
 ## Logs on the trace
 
 Every API request (except health checks) writes one log with `newrelic.recordLogEvent()`. Because it runs inside the request's transaction, the agent adds `trace.id`, `span.id` and `entity.name` automatically, so the log shows up on the trace next to the browser's logs. `POST /api/checkout` writes three logs (inventory, payment, checkout), each with its own `span.id` on the same `trace.id`. Levels: INFO for 2xx, WARN for 4xx, and ERROR for 5xx (with `error.message` and `error.class`).
+
+Each WebSocket connection to `/ws` writes one log when it ends, with `route: 'ws'`, the close code, reason and who closed it (`client`, `server` or `network`), its duration, and message and byte counts. The page adds `demoCode` and `demoUser` to the socket URL so the log carries them. A WebSocket upgrade is not an APM transaction, so these logs have no `trace.id`. Levels: INFO for 1000, 1001, 1005 and 3000-4999, WARN for anything else (for example 1006, a dropped connection).
 
 The same line is printed to stdout as JSON for local runs. Responses also carry an `x-trace-id` header (exposed through CORS) so a browser can read the trace ID from the response.
 
@@ -63,5 +66,9 @@ If the page shows **"Agent added no trace headers"** for backend requests, step 
 ## Test
 
 ```bash
-node --test server.test.js
+npm test
 ```
+
+This runs `server.test.js`, `websocket.test.js` and `demo-identity.test.js`, and needs no install.
+
+A reverse proxy in front of the server must pass WebSocket upgrades through. Caddy's `reverse_proxy` does this by default. With nginx, add `proxy_http_version 1.1;` and set the `Upgrade` and `Connection` headers for `/ws`.

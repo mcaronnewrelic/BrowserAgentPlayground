@@ -6,10 +6,10 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test server.test.js demo-identity.test.js"
+    "test": "node --test server.test.js websocket.test.js demo-identity.test.js"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "dependencies": {
     "newrelic": "^12.0.0"
