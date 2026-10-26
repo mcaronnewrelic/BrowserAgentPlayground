@@ -56,8 +56,9 @@
 </script>
 <script src="nr-init.js"></script>
 <script>
-// Tracing page extras on top of nr-init.js. allowed_origins must list the backend the page calls cross-origin.
-NREUM.init.distributed_tracing={enabled:true,cors_use_newrelic_header:true,cors_use_tracecontext_headers:true,allowed_origins:['http://localhost:3000']};
+// Tracing page extras on top of nr-init.js. allowed_origins must list every backend the page calls cross-origin
+// (CONFIG.backendUrl below, and any you try with ?backend=); the agent adds no trace headers to other origins.
+NREUM.init.distributed_tracing={enabled:true,cors_use_newrelic_header:true,cors_use_tracecontext_headers:true,allowed_origins:['https://browser.nru.to','http://localhost:3000']};
 NREUM.init.web_sockets={enabled:false};
 NREUM.init.api={register:{enabled:true,duplicate_data_to_container:false}};
 </script>
@@ -415,6 +416,7 @@ newrelic.<span class="k">log</span>(<span class="s">'GET /api/products 200'</spa
       </div>
     </div>
   </section>
+  <script>Demo.upNext()</script>
 </main>
 
 <footer>
@@ -562,20 +564,25 @@ newrelic.<span class="k">log</span>(<span class="s">'GET /api/products 200'</spa
   'use strict';
 
   // ---- CONFIG -------------------------------------------------------------
-  // Leave empty for browser-only mode. Set to your deployed backend (see
-  // backend/README.md), e.g. 'https://browserlogsdemo-api.onrender.com'.
-  // You can also try a backend without editing: tracing.html?backend=URL
-  // Served by backend/server.js? Then the same origin is used automatically.
-  var CONFIG = { backendUrl: '' };
+  // The backend this page calls when it isn't served by one itself (GitHub Pages, a local
+  // static server). It must allow this page's origin under CORS (ALLOWED_ORIGINS in
+  // backend/README.md), and be listed in distributed_tracing.allowed_origins at the top
+  // of this page. Set it to '' for browser-only mode.
+  // Which backend is used, first match wins:
+  //   1. tracing.html?backend=URL (or ?backend=none for browser-only mode)
+  //   2. the same origin, when backend/server.js served this page
+  //   3. CONFIG.backendUrl
+  var CONFIG = { backendUrl: 'https://browser.nru.to' };
   // -------------------------------------------------------------------------
 
   var L = window.TraceDemo;
   var $ = function (id) { return document.getElementById(id); };
   var param = new URLSearchParams(location.search).get('backend');
+  var servedByBackend = !!document.querySelector('meta[name="demo-backend"]');
   var ID = window.DemoIdentity.current();
   var state = {
     name: ID.name, code: ID.code,
-    backend: L.normalizeBackendUrl(param || CONFIG.backendUrl || (document.querySelector('meta[name="demo-backend"]') ? location.origin : '')),
+    backend: L.normalizeBackendUrl(param || (servedByBackend ? location.origin : CONFIG.backendUrl)),
     traceIds: [], stats: { req: 0, traced: 0, joined: 0 }
   };
 

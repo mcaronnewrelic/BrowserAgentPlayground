@@ -77,7 +77,7 @@ test('?next= only accepts plain demo pages', () => {
   const { identity } = loadOnPage('index.html');
   assert.strictEqual(identity.safeNext('tracing.html?backend=http%3A%2F%2Fx'), 'tracing.html?backend=http%3A%2F%2Fx');
   for (const bad of ['https://evil.example', '//evil.example', 'javascript:alert(1)', '../x.html', 'a.html#x', '', null]) {
-    assert.strictEqual(identity.safeNext(bad), 'logs.html', String(bad));
+    assert.strictEqual(identity.safeNext(bad), 'install.html', String(bad));
   }
 });
 

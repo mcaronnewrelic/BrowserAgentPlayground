@@ -106,9 +106,24 @@
 
   /* ---------- Playground ---------- */
   .card .tag-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .subcards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-  .card.inner { background: var(--sys-white); }
   .card .when { color: var(--black); }
+
+  /* ---------- Learning path: numbered stages, each with its pages ---------- */
+  .path { list-style: none; margin: 0; padding: 0; display: grid; gap: 36px; }
+  .stage { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 28px; align-items: start; }
+  .stage-head { display: flex; gap: 14px; align-items: flex-start; position: sticky; top: 100px; }
+  .stage-num {
+    flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--black); color: var(--green);
+    display: grid; place-items: center; font: 700 17px/1 var(--mono);
+  }
+  .stage-head h3 { font-size: 20px; }
+  .stage-head p { margin: 6px 0 0; font-size: 14.5px; color: var(--ink-2); }
+  .cards.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  /* Narrower screens: each stage's heading sits above its cards. */
+  @media (max-width: 1180px) {
+    .stage { grid-template-columns: 1fr; gap: 16px; }
+    .stage-head { position: static; }
+  }
   .card > .btn { margin-top: auto; }
   .snippet {
     background: var(--black); color: var(--sand); border-radius: 14px; padding: 14px 16px;
@@ -140,8 +155,8 @@
   /* ---------- Responsive ---------- */
 
   @media (max-width: 900px) {
-    .hero .wrap, .find-grid, .tips, .subcards { grid-template-columns: 1fr; }
-    .cards { grid-template-columns: 1fr; }
+    .hero .wrap, .find-grid, .tips { grid-template-columns: 1fr; }
+    .cards, .cards.three { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -178,8 +193,8 @@
             </div>
           </div>
           <div class="ctas">
-            <button class="btn" type="submit"><span id="startLabel">Start with Logs</span> <span class="arrow" aria-hidden="true">→</span></button>
-            <a class="btn secondary" href="#pages">See all pages</a>
+            <button class="btn" type="submit"><span id="startLabel">Start with Install</span> <span class="arrow" aria-hidden="true">→</span></button>
+            <a class="btn secondary" href="#pages">See the learning path</a>
           </div>
         </form>
         <div class="hero-note">
@@ -199,101 +214,121 @@
   </section>
 
   <!-- ================= PAGES ================= -->
+  <!-- The stages and their order match PAGES in site.js, which drives the header and each page's Up next link. -->
   <section class="step" id="pages">
     <div class="wrap">
       <div class="step-head">
-        <div class="eyebrow">Eleven pages</div>
-        <h2 class="display" style="margin-top:14px">What you'll learn where</h2>
-        <p class="muted">Every page stands on its own. Start anywhere, you don't need to go in order.</p>
+        <div class="eyebrow">The learning path</div>
+        <h2 class="display" style="margin-top:14px">Six stages, eleven pages</h2>
+        <p class="muted">Each stage builds on the one before, and each page ends with a link to the next. Every page also stands on its own, so you can jump straight to the one you need.</p>
       </div>
-      <div class="cards">
+      <ol class="path">
 
-        <article class="card wide" aria-labelledby="pInstall">
-          <div class="tag-row"><div class="tag">Install</div><span class="chip both">Start here</span></div>
-          <h3 id="pInstall">How the agent gets on the page</h3>
-          <p>Copy/paste snippet, injection by an APM agent, or the npm package: which to use when, how to check an install is working, and how to read the NRQL queries every other page ends with.</p>
-          <a class="btn secondary small" href="install.html">Go to Install <span class="arrow" aria-hidden="true">→</span></a>
-        </article>
+        <li class="stage">
+          <div class="stage-head"><span class="stage-num">1</span><div><h3>Start here</h3><p>How the agent gets on a page, and how to read the queries every page ends with.</p></div></div>
+          <div class="cards">
+            <article class="card wide" aria-labelledby="pInstall">
+              <div class="tag-row"><div class="tag">Install</div><span class="chip both">Start here</span></div>
+              <h3 id="pInstall">How the agent gets on the page</h3>
+              <p>Copy/paste snippet, injection by an APM agent, or the npm package: which to use when, how to check an install is working, and how to read the NRQL queries every other page ends with.</p>
+              <a class="btn secondary small" href="install.html">Go to Install <span class="arrow" aria-hidden="true">→</span></a>
+            </article>
+          </div>
+        </li>
 
-        <article class="card" aria-labelledby="pLogs">
-          <div class="tag-row"><div class="tag">Logs</div><span class="chip both">Automatic + your code</span></div>
-          <h3 id="pLogs">Console calls become New Relic logs</h3>
-          <p>Console auto-logging, <code>newrelic.log()</code>, <code>newrelic.wrapLogger()</code>, and how log verbosity filters what actually gets sent.</p>
-          <a class="btn secondary small" href="logs.html">Go to Logs <span class="arrow" aria-hidden="true">→</span></a>
-        </article>
-
-        <article class="card" aria-labelledby="pErrors">
-          <div class="tag-row"><div class="tag">Errors</div><span class="chip both">Automatic + your code</span></div>
-          <h3 id="pErrors">Errors become triaged, grouped data</h3>
-          <p>Uncaught errors and promise rejections, <code>noticeError()</code>, <code>setErrorHandler()</code> for ignoring and grouping, <code>addRelease()</code>, and how errors relate to ERROR-level logs.</p>
-          <a class="btn secondary small" href="errors.html">Go to Errors <span class="arrow" aria-hidden="true">→</span></a>
-        </article>
-
-        <article class="card" aria-labelledby="pTracing">
-          <div class="tag-row"><div class="tag">Tracing</div><span class="chip auto">Automatic, needs a backend</span></div>
-          <h3 id="pTracing">Follow one click across the network</h3>
-          <p>The exact <code>traceparent</code>, <code>tracestate</code> and <code>newrelic</code> headers the agent adds, carrying one click into backend services on the same distributed trace.</p>
-          <a class="btn secondary small" href="tracing.html">Go to Tracing <span class="arrow" aria-hidden="true">→</span></a>
-        </article>
-
-        <article class="card" aria-labelledby="pWebSockets">
-          <div class="tag-row"><div class="tag">WebSockets</div><span class="chip auto">Automatic, one setting</span></div>
-          <h3 id="pWebSockets">One open socket, one event</h3>
-          <p>Turn on WebSocket tracking, then open, use and close sockets on purpose: clean closes, custom close codes, failed connections, handler errors and sockets left open when the page unloads.</p>
-          <a class="btn secondary small" href="websockets.html">Go to WebSockets <span class="arrow" aria-hidden="true">→</span></a>
-        </article>
-
-        <article class="card" aria-labelledby="pVitals">
-          <div class="tag-row"><div class="tag">Vitals</div><span class="chip auto">Automatic, no code</span></div>
-          <h3 id="pVitals">Core Web Vitals, good or bad, on purpose</h3>
-          <p>Make LCP, CLS and INP good or poor on demand, and watch a live scorecard react to your own choices.</p>
-          <a class="btn secondary small" href="vitals.html">Go to Vitals <span class="arrow" aria-hidden="true">→</span></a>
-        </article>
-
-        <article class="card" aria-labelledby="pMeasures">
-          <div class="tag-row"><div class="tag">Measures</div><span class="chip both">Automatic + your code</span></div>
-          <h3 id="pMeasures">Time the moments only you know matter</h3>
-          <p><code>performance.mark()</code>, <code>performance.measure()</code> and <code>newrelic.measure()</code>, and the <code>BrowserPerformance</code> events each one becomes, including marks you never made yourself.</p>
-          <a class="btn secondary small" href="measures.html">Go to Measures <span class="arrow" aria-hidden="true">→</span></a>
-        </article>
-
-        <article class="card wide" aria-labelledby="pWhichOne">
-          <div class="tag">Frustration or Events?</div>
-          <h3 id="pWhichOne">Which one do I need?</h3>
-          <p>Both are about what visitors do, but they start in different places. Pick the one that matches your question.</p>
-          <div class="subcards">
-            <article class="card inner" aria-labelledby="pFrustration">
+        <li class="stage">
+          <div class="stage-head"><span class="stage-num">2</span><div><h3>What you get for free</h3><p>Load the agent and these arrive with no code. Learn what each one measures and where to find it.</p></div></div>
+          <div class="cards three">
+            <article class="card" aria-labelledby="pVitals">
+              <div class="tag-row"><div class="tag">Vitals</div><span class="chip auto">Automatic, no code</span></div>
+              <h3 id="pVitals">Core Web Vitals, good or bad, on purpose</h3>
+              <p>Make LCP, CLS and INP good or poor on demand, and watch a live scorecard react to your own choices.</p>
+              <a class="btn secondary small" href="vitals.html">Go to Vitals <span class="arrow" aria-hidden="true">→</span></a>
+            </article>
+            <article class="card" aria-labelledby="pErrors">
+              <div class="tag-row"><div class="tag">Errors</div><span class="chip both">Automatic + your code</span></div>
+              <h3 id="pErrors">Errors become triaged, grouped data</h3>
+              <p>Uncaught errors and promise rejections, <code>noticeError()</code>, <code>setErrorHandler()</code> for ignoring and grouping, <code>addRelease()</code>, and how errors relate to ERROR-level logs.</p>
+              <a class="btn secondary small" href="errors.html">Go to Errors <span class="arrow" aria-hidden="true">→</span></a>
+            </article>
+            <article class="card" aria-labelledby="pFrustration">
               <div class="tag-row"><div class="tag">Frustration</div><span class="chip auto">Automatic, no code</span></div>
               <h3 id="pFrustration">The frustration signals most teams never see</h3>
               <p>Trigger rage clicks, dead clicks and error clicks on purpose, and learn the exact timing thresholds that trip each one.</p>
               <p class="when"><b>Use it when</b> you want to know where users get stuck.</p>
               <a class="btn secondary small" href="frustration.html">Go to Frustration <span class="arrow" aria-hidden="true">→</span></a>
             </article>
-            <article class="card inner" aria-labelledby="pEvents">
+          </div>
+        </li>
+
+        <li class="stage">
+          <div class="stage-head"><span class="stage-num">3</span><div><h3>What you add</h3><p>Your own logs, events and timings, each sent with a line of code.</p></div></div>
+          <div class="cards three">
+            <article class="card" aria-labelledby="pLogs">
+              <div class="tag-row"><div class="tag">Logs</div><span class="chip both">Automatic + your code</span></div>
+              <h3 id="pLogs">Console calls become New Relic logs</h3>
+              <p>Console auto-logging, <code>newrelic.log()</code>, <code>newrelic.wrapLogger()</code>, and how log verbosity filters what actually gets sent.</p>
+              <a class="btn secondary small" href="logs.html">Go to Logs <span class="arrow" aria-hidden="true">→</span></a>
+            </article>
+            <article class="card" aria-labelledby="pEvents">
               <div class="tag-row"><div class="tag">Events</div><span class="chip manual">You add the code</span></div>
               <h3 id="pEvents">Three ways to record "something happened"</h3>
               <p><code>addPageAction()</code>, <code>recordCustomEvent()</code>, and the automatic <code>BrowserInteraction</code> event, which despite its name doesn't record every interaction.</p>
               <p class="when"><b>Use it when</b> you want to count something your own way, like a button click or a checkout step.</p>
               <a class="btn secondary small" href="events.html">Go to Events <span class="arrow" aria-hidden="true">→</span></a>
             </article>
+            <article class="card" aria-labelledby="pMeasures">
+              <div class="tag-row"><div class="tag">Measures</div><span class="chip both">Automatic + your code</span></div>
+              <h3 id="pMeasures">Time the moments only you know matter</h3>
+              <p><code>performance.mark()</code>, <code>performance.measure()</code> and <code>newrelic.measure()</code>, and the <code>BrowserPerformance</code> events each one becomes, including marks you never made yourself.</p>
+              <a class="btn secondary small" href="measures.html">Go to Measures <span class="arrow" aria-hidden="true">→</span></a>
+            </article>
           </div>
-        </article>
+        </li>
 
-        <article class="card" aria-labelledby="pReplay">
-          <div class="tag-row"><div class="tag">Replay</div><span class="chip both">Automatic + your code</span></div>
-          <h3 id="pReplay">Everything's masked, until you say otherwise</h3>
-          <p>Force a session replay to record on demand, then see exactly what stays masked by default versus what you can deliberately unmask, block or ignore.</p>
-          <a class="btn secondary small" href="replay.html">Go to Replay <span class="arrow" aria-hidden="true">→</span></a>
-        </article>
+        <li class="stage">
+          <div class="stage-head"><span class="stage-num">4</span><div><h3>Follow the network</h3><p>Requests and connections leaving the page, and where they go next.</p></div></div>
+          <div class="cards">
+            <article class="card" aria-labelledby="pTracing">
+              <div class="tag-row"><div class="tag">Tracing</div><span class="chip auto">Automatic, needs a backend</span></div>
+              <h3 id="pTracing">Follow one click across the network</h3>
+              <p>The exact <code>traceparent</code>, <code>tracestate</code> and <code>newrelic</code> headers the agent adds, carrying one click into backend services on the same distributed trace.</p>
+              <a class="btn secondary small" href="tracing.html">Go to Tracing <span class="arrow" aria-hidden="true">→</span></a>
+            </article>
+            <article class="card" aria-labelledby="pWebSockets">
+              <div class="tag-row"><div class="tag">WebSockets</div><span class="chip auto">Automatic, one setting</span></div>
+              <h3 id="pWebSockets">One open socket, one event</h3>
+              <p>Turn on WebSocket tracking, then open, use and close sockets on purpose: clean closes, custom close codes, failed connections, handler errors and sockets left open when the page unloads.</p>
+              <a class="btn secondary small" href="websockets.html">Go to WebSockets <span class="arrow" aria-hidden="true">→</span></a>
+            </article>
+          </div>
+        </li>
 
-        <article class="card" aria-labelledby="pSpa">
-          <div class="tag-row"><div class="tag">SPA</div><span class="chip manual">You add the code</span></div>
-          <h3 id="pSpa">Take control yourself, instead of the heuristic</h3>
-          <p>Force a <code>BrowserInteraction</code> to save, suppress one on purpose, and name a route by hand, with the manual <code>interaction()</code> API.</p>
-          <a class="btn secondary small" href="spa.html">Go to SPA <span class="arrow" aria-hidden="true">→</span></a>
-        </article>
+        <li class="stage">
+          <div class="stage-head"><span class="stage-num">5</span><div><h3>Single-page apps</h3><p>When the URL changes without a page load. Builds on the <code>BrowserInteraction</code> lesson from Events.</p></div></div>
+          <div class="cards">
+            <article class="card wide" aria-labelledby="pSpa">
+              <div class="tag-row"><div class="tag">SPA</div><span class="chip manual">You add the code</span></div>
+              <h3 id="pSpa">Take control yourself, instead of the heuristic</h3>
+              <p>Force a <code>BrowserInteraction</code> to save, suppress one on purpose, and name a route by hand, with the manual <code>interaction()</code> API.</p>
+              <a class="btn secondary small" href="spa.html">Go to SPA <span class="arrow" aria-hidden="true">→</span></a>
+            </article>
+          </div>
+        </li>
 
-      </div>
+        <li class="stage">
+          <div class="stage-head"><span class="stage-num">6</span><div><h3>Privacy</h3><p>What a session recording keeps, what it hides, and how you decide.</p></div></div>
+          <div class="cards">
+            <article class="card wide" aria-labelledby="pReplay">
+              <div class="tag-row"><div class="tag">Replay</div><span class="chip both">Automatic + your code</span></div>
+              <h3 id="pReplay">Everything's masked, until you say otherwise</h3>
+              <p>Force a session replay to record on demand, then see exactly what stays masked by default versus what you can deliberately unmask, block or ignore.</p>
+              <a class="btn secondary small" href="replay.html">Go to Replay <span class="arrow" aria-hidden="true">→</span></a>
+            </article>
+          </div>
+        </li>
+
+      </ol>
     </div>
   </section>
 </main>

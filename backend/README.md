@@ -55,13 +55,17 @@ Then open `https://mcaronnewrelic.github.io/BrowserLogsDemo/tracing.html?backend
 
 Free instances sleep when idle, so the first request after a while can take 30 seconds or more. Any host that runs a Node.js process or a Docker image works the same way.
 
-## Connect it to the page (required)
+## Connect it to the page
 
-1. **Allow the backend origin for tracing.** In New Relic, open **Browser > (your app) > Settings > Application settings**. Keep **Distributed tracing** on, turn on **Cross-origin resource sharing (CORS)**, add `https://<your-service>.onrender.com` to the allowed list, and save.
-2. **Re-copy the snippet.** The copy/paste snippet includes the allowed origins list, so it does not pick up the new setting automatically. Copy the updated snippet from **Application settings** and replace the old one in `index.html`, `errors.html` and `tracing.html`. It sits right after the `<meta name="viewport">` tag. In `tracing.html`, keep the small header-capture script that comes before it.
-3. **Point the page at the backend.** In `tracing.html`, set `CONFIG.backendUrl` to `https://<your-service>.onrender.com`, or try it first with `?backend=https://<your-service>.onrender.com`.
+When the backend serves the pages itself (the Docker image, as on browser.nru.to), `tracing.html` calls its own origin and there is nothing to set up.
 
-If the page shows **"Agent added no trace headers"** for backend requests, step 1 or 2 is not done yet. If it shows **"Backend started a new trace"**, the APM agent is not attached or has distributed tracing turned off.
+When the pages come from somewhere else, such as GitHub Pages or a local static server, `tracing.html` calls the backend in its `CONFIG.backendUrl`, which is `https://browser.nru.to`. That cross-origin call needs three things to line up:
+
+1. **The page points at the backend.** `CONFIG.backendUrl` in `tracing.html`. To try another backend without editing, add `?backend=https://your-backend` to the page's address; `?backend=none` forces browser-only mode.
+2. **The browser agent may add trace headers for it.** The agent adds `traceparent`, `tracestate` and `newrelic` only to same-origin requests and to origins in `distributed_tracing.allowed_origins`. `tracing.html` sets that list itself, near the top, so add any new backend there. (The **Cross-origin resource sharing (CORS)** list in the browser app's **Application settings** does the same job for the copy/paste snippet, but this page doesn't rely on it.)
+3. **The backend accepts the page's origin.** Its `ALLOWED_ORIGINS` must include the page's origin: scheme, host and port, without any path. The default list already includes `https://mcaronnewrelic.github.io`, which covers any repository published there. To test from a local static server, add its origin too, for example `ALLOWED_ORIGINS=https://mcaronnewrelic.github.io,http://localhost:8080`. Setting `ALLOWED_ORIGINS` replaces the default list, so include the GitHub Pages origin as well.
+
+If the page shows **"Agent added no trace headers"** for backend requests, step 2 is missing. If requests fail with a CORS error in the browser console, step 3 is. If it shows **"Backend started a new trace"**, the APM agent is not attached or has distributed tracing turned off.
 
 ## Test
 

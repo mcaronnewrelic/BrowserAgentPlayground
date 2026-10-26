@@ -6,20 +6,21 @@
 (function () {
   'use strict';
 
-  // The page switcher. Add a page here and it shows up in every header.
+  // The learning path, in order. It drives the page switcher in every header and each page's "Up next" link,
+  // and matches the stages on the home page. Add a page here and it shows up everywhere.
   var PAGES = [
     { file: 'index.html', label: 'Home' },
-    { file: 'install.html', label: 'Install' },
-    { file: 'logs.html', label: 'Logs' },
-    { file: 'errors.html', label: 'Errors' },
-    { file: 'tracing.html', label: 'Tracing' },
-    { file: 'websockets.html', label: 'WebSockets' },
-    { file: 'vitals.html', label: 'Vitals' },
-    { file: 'measures.html', label: 'Measures' },
-    { file: 'frustration.html', label: 'Frustration' },
-    { file: 'events.html', label: 'Events' },
-    { file: 'replay.html', label: 'Replay' },
-    { file: 'spa.html', label: 'SPA' }
+    { file: 'install.html', label: 'Install', stage: 'Start here', hook: 'How the agent gets on the page' },
+    { file: 'vitals.html', label: 'Vitals', stage: 'What you get for free', hook: 'Core Web Vitals, good or bad, on purpose' },
+    { file: 'errors.html', label: 'Errors', stage: 'What you get for free', hook: 'Errors become triaged, grouped data' },
+    { file: 'frustration.html', label: 'Frustration', stage: 'What you get for free', hook: 'The frustration signals most teams never see' },
+    { file: 'logs.html', label: 'Logs', stage: 'What you add', hook: 'Console calls become New Relic logs' },
+    { file: 'events.html', label: 'Events', stage: 'What you add', hook: 'Three ways to record "something happened"' },
+    { file: 'measures.html', label: 'Measures', stage: 'What you add', hook: 'Time the moments only you know matter' },
+    { file: 'tracing.html', label: 'Tracing', stage: 'Follow the network', hook: 'Follow one click across the network' },
+    { file: 'websockets.html', label: 'WebSockets', stage: 'Follow the network', hook: 'One open socket, one event' },
+    { file: 'spa.html', label: 'SPA', stage: 'Single-page apps', hook: 'Take control of route changes yourself' },
+    { file: 'replay.html', label: 'Replay', stage: 'Privacy', hook: 'Everything\'s masked, until you say otherwise' }
   ];
 
   var LOGO =
@@ -80,6 +81,22 @@
         '<p class="hint" id="codeHint">Write this code down. You will search for <code class="js-code">NR-XXXX</code> in the queries further down. ' +
           'It stays the same on every page until you click New code or close this tab.</p>' +
       '</div>');
+  }
+
+  // The next page on the learning path, at the end of each page. The last page points back home.
+  function upNext() {
+    var i = -1, here = currentFile();
+    PAGES.forEach(function (p, n) { if (p.file === here) i = n; });
+    var next = i > 0 ? PAGES[i + 1] : null;
+    var stageChange = next && next.stage !== PAGES[i].stage;
+    var body = next
+      ? '<div class="tag">Up next' + (stageChange ? ' · new stage: ' + next.stage : ' · ' + next.stage) + '</div>' +
+        '<h3>' + next.label + ': ' + next.hook + '</h3>' +
+        '<a class="btn green small" href="' + next.file + '">Go to ' + next.label + ' <span class="arrow" aria-hidden="true">→</span></a>'
+      : '<div class="tag">End of the path</div>' +
+        '<h3>You\'ve been through every page.</h3>' +
+        '<a class="btn green small" href="index.html#pages">Back to the path <span class="arrow" aria-hidden="true">→</span></a>';
+    writeHere('<section class="up-next"><div class="wrap"><div class="up-next-card">' + body + '</div></div></section>');
   }
 
   // The page switcher scrolls sideways when it doesn't fit, so bring the current page's tab into view.
@@ -258,7 +275,7 @@
   }
 
   window.Demo = {
-    PAGES: PAGES, header: header, whoSummary: whoSummary, identityForm: identityForm,
+    PAGES: PAGES, header: header, whoSummary: whoSummary, identityForm: identityForm, upNext: upNext,
     $: $, agent: agent, safe: safe, esc: esc, time: time, renderAgent: renderAgent,
     copyText: copyText, toast: toast, feed: feed, start: start, QUIZ_EVENT_TYPE: QUIZ_EVENT_TYPE, quizAnswer: quizAnswer
   };

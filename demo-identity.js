@@ -63,7 +63,8 @@
   function isComplete(identity) { return Boolean(identity.name && identity.code); }
 
   // Only plain demo page names are accepted, so ?next= cannot send anyone to another site.
-  function safeNext(next) { return /^[a-z0-9-]+\.html(\?[\w=&%.-]*)?$/i.test(next || '') ? next : 'logs.html'; }
+  // Without a valid ?next=, visitors start at the beginning of the learning path.
+  function safeNext(next) { return /^[a-z0-9-]+\.html(\?[\w=&%.-]*)?$/i.test(next || '') ? next : 'install.html'; }
 
   function redirectHomeIfIncomplete() {
     var page = location.pathname.split('/').pop();
