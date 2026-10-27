@@ -20,8 +20,14 @@
 #   LOG                             default /var/log/bad-deploy.log
 set -euo pipefail
 
-# shellcheck source=/dev/null
-[ -n "${ENV_FILE:-}" ] && [ -f "${ENV_FILE}" ] && . "${ENV_FILE}"
+# The env file is Docker's env-file format (KEY=VALUE, with spaces allowed in values), not a shell script.
+# Read just the values we need, rather than sourcing it: sourcing would try to run lines like
+# "NEW_RELIC_APP_NAME=Browser Agent Playground" as commands.
+if [ -n "${ENV_FILE:-}" ] && [ -f "${ENV_FILE}" ]; then
+  from_env() { sed -n "s/^$1=//p" "$ENV_FILE" | tail -n1 | tr -d '\r'; }
+  : "${NEW_RELIC_API_KEY:=$(from_env NEW_RELIC_API_KEY)}"
+  : "${NEW_RELIC_DEPLOYMENT_ENTITY_GUID:=$(from_env NEW_RELIC_DEPLOYMENT_ENTITY_GUID)}"
+fi
 
 : "${NEW_RELIC_API_KEY:?Set NEW_RELIC_API_KEY (User key) or ENV_FILE that defines it}"
 ENTITY_GUID="${NEW_RELIC_DEPLOYMENT_ENTITY_GUID:-NjkzMjM0N3xBUE18QVBQTElDQVRJT058MTExNzgyNTc1Ng}"
