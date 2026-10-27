@@ -37,10 +37,12 @@ fi
 note() { printf '%s noisy-neighbor: %s\n' "$(date -u +%FT%TZ)" "$*" | tee -a "$LOG" >&2; }
 
 # --cpu 0 means one worker per online CPU: deliberately aggressive, to crowd out the app's containers.
+# --keep-name stops stress-ng renaming its workers after each stressor (stress-ng-cpu, -io, -vm), so every
+# process shows as noisy-neighbor instead of advertising that it is stress-ng.
 note "start: ${DURATION}s, cpu=${CPU_WORKERS} vm=${VM_WORKERS}x${VM_BYTES} io=${IO_WORKERS} (hard stop at $((DURATION + GRACE))s)"
 set +e
 timeout --signal=TERM --kill-after=10 "$((DURATION + GRACE))" \
-  "$BIN" --cpu "$CPU_WORKERS" --vm "$VM_WORKERS" --vm-bytes "$VM_BYTES" --io "$IO_WORKERS" \
+  "$BIN" --keep-name --cpu "$CPU_WORKERS" --vm "$VM_WORKERS" --vm-bytes "$VM_BYTES" --io "$IO_WORKERS" \
     --timeout "${DURATION}s" --metrics-brief
 status=$?
 set -e
