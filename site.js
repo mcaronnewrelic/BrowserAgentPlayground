@@ -23,6 +23,25 @@
     { file: 'replay.html', label: 'Replay', stage: 'Privacy', hook: 'Everything\'s masked, until you say otherwise' }
   ];
 
+  // The guided investigation pages, off the learning path: their own nav group and bonus cards on the home
+  // page, but not part of the Up next flow.
+  var INVESTIGATIONS = [
+    { file: 'noisy-neighbor.html', label: 'Noisy neighbor' },
+    { file: 'downstream-culprit.html', label: 'Downstream culprit' },
+    { file: 'n-plus-one.html', label: 'N+1' },
+    { file: 'bad-deploy.html', label: 'Bad deploy' }
+  ];
+
+  // Short labels for the stage menus in the header (the full stage names are too long for the nav).
+  var STAGE_NAV = {
+    'Start here': 'Start',
+    'What you get for free': 'Automatic',
+    'What you add': 'Your code',
+    'Follow the network': 'Network',
+    'Single-page apps': 'SPA',
+    'Privacy': 'Privacy'
+  };
+
   var LOGO =
     '<svg viewBox="0 0 246 48" fill="#FDFCF0" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
     '<path d="M69.6509 12.1885C65.2049 12.1885 63.0989 14.9965 63.0989 14.9965H62.8649L62.3969 12.6565H57.0149V36.5245H62.8649V22.7185C62.8649 19.6765 64.9709 17.5705 68.0129 17.5705C71.0549 17.5705 73.1609 19.6765 73.1609 22.7185V36.5245H79.0109V22.2505C79.0109 16.1665 75.0329 12.1885 69.6509 12.1885Z"/>' +
@@ -46,17 +65,40 @@
   // Inserts markup where the calling <script> tag sits. Only works while the page is being parsed.
   function writeHere(html) { document.currentScript.insertAdjacentHTML('beforebegin', html); }
 
+  // The learning-path pages grouped by stage (in order), then the investigations as their own group.
+  function navGroups() {
+    var groups = [], byStage = {};
+    PAGES.forEach(function (p) {
+      if (!p.stage) return; // Home isn't in a stage
+      if (!byStage[p.stage]) { byStage[p.stage] = { label: STAGE_NAV[p.stage] || p.stage, pages: [] }; groups.push(byStage[p.stage]); }
+      byStage[p.stage].pages.push(p);
+    });
+    groups.push({ label: 'Investigations', pages: INVESTIGATIONS });
+    return groups;
+  }
+
   function header() {
     var here = currentFile();
-    var links = PAGES.map(function (p) {
-      return '<a href="' + p.file + '"' + (p.file === here ? ' aria-current="page"' : '') + '>' + p.label + '</a>';
-    }).join('');
+    var items = '<a class="nav-link" href="index.html"' + (here === 'index.html' ? ' aria-current="page"' : '') + '>Home</a>';
+    navGroups().forEach(function (g, i) {
+      var active = g.pages.some(function (p) { return p.file === here; });
+      var id = 'navm' + i;
+      var links = g.pages.map(function (p) {
+        return '<a href="' + p.file + '"' + (p.file === here ? ' aria-current="page"' : '') + '>' + p.label + '</a>';
+      }).join('');
+      items +=
+        '<div class="nav-group' + (active ? ' active' : '') + '">' +
+          '<button type="button" class="nav-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="' + id + '">' +
+            g.label + '<i class="caret" aria-hidden="true"></i></button>' +
+          '<div class="nav-menu" id="' + id + '" hidden>' + links + '</div>' +
+        '</div>';
+    });
     writeHere(
       '<header class="site"><div class="wrap">' +
         '<div class="brand-row">' +
           '<a class="brand" href="https://newrelic.com" target="_blank" rel="noopener" aria-label="New Relic">' + LOGO + '</a>' +
           '<span class="divider" aria-hidden="true"></span>' +
-          '<nav class="switch" aria-label="Demo pages">' + links + '</nav>' +
+          '<nav class="switch" aria-label="Pages">' + items + '</nav>' +
         '</div>' +
         '<span id="agentBadge" class="agent-badge" role="status" aria-live="polite"><span class="dot"></span><span id="agentText">Checking for browser agent…</span></span>' +
       '</div></header>');
@@ -106,7 +148,7 @@
   function pathCounts() {
     var stages = {};
     PAGES.forEach(function (p) { if (p.stage) stages[p.stage] = true; });
-    return { pages: PAGES.length - 1, stages: Object.keys(stages).length };  // Home isn't a stop on the path
+    return { pages: PAGES.length - 1, stages: Object.keys(stages).length, investigations: INVESTIGATIONS.length };  // Home isn't a stop on the path
   }
   function fillCounts() {
     var counts = pathCounts();
@@ -120,19 +162,31 @@
   }
   document.addEventListener('DOMContentLoaded', fillCounts);
 
-  // The page switcher scrolls sideways when it doesn't fit, so bring the current page's tab into view.
-  function centerCurrentTab() {
-    var nav = document.querySelector('.switch'), tab = nav && nav.querySelector('[aria-current="page"]');
-    if (!tab || nav.scrollWidth <= nav.clientWidth) return;
-    var left = tab.getBoundingClientRect().left - nav.getBoundingClientRect().left + nav.scrollLeft;
-    nav.scrollLeft = left - (nav.clientWidth - tab.offsetWidth) / 2;
+  // The header's stage menus: click a trigger to open its dropdown; click away or press Escape to close.
+  function setupNav() {
+    var triggers = Array.prototype.slice.call(document.querySelectorAll('.nav-trigger'));
+    if (!triggers.length) return;
+    function menuOf(t) { return document.getElementById(t.getAttribute('aria-controls')); }
+    function closeAll(except) {
+      triggers.forEach(function (t) {
+        if (t === except) return;
+        t.setAttribute('aria-expanded', 'false');
+        var m = menuOf(t); if (m) m.hidden = true;
+      });
+    }
+    triggers.forEach(function (t) {
+      t.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var open = t.getAttribute('aria-expanded') === 'true';
+        closeAll(t);
+        t.setAttribute('aria-expanded', open ? 'false' : 'true');
+        var m = menuOf(t); if (m) m.hidden = open;
+      });
+    });
+    document.addEventListener('click', function (e) { if (!e.target.closest('.nav-group')) closeAll(null); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAll(null); });
   }
-  document.addEventListener('DOMContentLoaded', centerCurrentTab);
-  // Tab widths change once the web fonts arrive, so center again when they have.
-  window.addEventListener('load', function () {
-    centerCurrentTab();
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(centerCurrentTab);
-  });
+  document.addEventListener('DOMContentLoaded', setupNav);
 
   // ---- Helpers --------------------------------------------------------------
   function $(id) { return document.getElementById(id); }
