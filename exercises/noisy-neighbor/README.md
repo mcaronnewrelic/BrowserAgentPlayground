@@ -9,7 +9,7 @@ The busy process is a copy of [stress-ng](https://github.com/ColinIanKing/stress
 ## What's here
 
 | File | What it does |
-|---|---|
+| --- | --- |
 | `setup.sh` | Installs stress-ng, copies it to `/usr/local/bin/noisy-neighbor`, and installs a daily cron job |
 | `run.sh` | Runs one bounded burst of load. The cron job runs this, and you can run it by hand to test. |
 | `teardown.sh` | Removes the cron job and the binary |
@@ -41,16 +41,20 @@ Watch the host in New Relic for a few minutes (see the queries below). Tune the 
 
 ## Intensity
 
-The defaults are deliberately aggressive, to make the impact obvious on a small instance: `run.sh` runs one stress-ng CPU worker per core, plus a memory worker and an I/O worker, for `DURATION` seconds (default 300), with a hard timeout so it always stops. Override any of these as environment variables, in the cron file, or on a manual run:
+The defaults are deliberately aggressive, to make the impact obvious on a small instance: `run.sh` runs one stress-ng CPU worker per core, plus a memory worker and an I/O worker, for `DURATION` seconds (default 300), with a hard timeout so it always stops. While it runs, it also drives a steady, light stream of requests at the app so the APM response-time chart reliably shows the slowdown even with no visitors. Override any of these as environment variables, in the cron file, or on a manual run:
 
 | Variable | Default | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `DURATION` | `300` | Seconds of load |
 | `CPU_WORKERS` | `0` | CPU hogs; `0` means one per core |
 | `VM_WORKERS` | `1` | Memory hogs |
 | `VM_BYTES` | `256M` | Memory per memory hog |
 | `IO_WORKERS` | `1` | Disk I/O hogs |
+| `API_URL` | `http://127.0.0.1:3000/api/products` | App endpoint the load generator hits |
+| `API_CLIENTS` | `2` | Steady requests in flight against `API_URL`; `0` turns it off |
 | `CRON_TIME` | `0 15` | `setup.sh` only: daily run time, "minute hour" in UTC |
+
+To keep the host responsive while testing by hand, drop the stressors below the core count and skip the app load, e.g. `CPU_WORKERS=1 VM_WORKERS=0 IO_WORKERS=0 DURATION=60 sudo bash run.sh`. Stop a runaway burst any time with `sudo bash stop.sh`.
 
 ## Queries for checking the impact
 
