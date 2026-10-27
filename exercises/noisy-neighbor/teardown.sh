@@ -13,9 +13,10 @@ if [[ $EUID -ne 0 ]]; then echo "Run with sudo: sudo bash teardown.sh" >&2; exit
 rm -f "/etc/cron.d/$NAME" && echo "Removed /etc/cron.d/$NAME"
 rm -f "/usr/local/bin/$NAME" && echo "Removed /usr/local/bin/$NAME"
 
-# Stop any burst still running from a manual test or an overlapping cron run.
-if pgrep -x "$NAME" >/dev/null; then
-  pkill -x "$NAME" && echo "Stopped a running $NAME"
+# Stop any burst still running from a manual test or an overlapping cron run. Match on the full command
+# line and include stress-ng, since workers are named stress-ng-* unless the burst used --keep-name.
+if pgrep -f "$NAME|stress-ng" >/dev/null; then
+  pkill -9 -f "$NAME|stress-ng" && echo "Stopped a running burst"
 fi
 
 echo "Done. stress-ng and /var/log/$NAME.log were left in place; remove them by hand if you want."
