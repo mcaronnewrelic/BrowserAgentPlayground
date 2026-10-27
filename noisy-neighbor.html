@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- ===================================================================
+     NEW RELIC BROWSER SNIPPET
+     Same snippet as the other pages. This bonus exercise is about
+     infrastructure, not the browser agent, but it loads the agent so
+     your checkpoint answers record as DemoQuizAnswer events like the
+     other pages' quizzes.
+     =================================================================== -->
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="demo-identity.js"></script>
+<script src="site.js"></script>
+<script src="nr-init.js"></script>
+<!-- NR:SNIPPET -->
+<script src="nr-config.js"></script>
+<script src="nr-agent.js"></script>
+<!-- /NR:SNIPPET -->
+
+<title>Noisy Neighbor: Find the Culprit | New Relic</title>
+<link rel="icon" href="favicons/favicon.ico" sizes="48x48">
+<link rel="icon" href="favicons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicons/favicon-32x32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="favicons/favicon-16x16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="favicons/apple-touch-icon.png" sizes="180x180">
+<meta name="theme-color" content="#080F11">
+<meta name="description" content="A bonus New Relic exercise: an app endpoint keeps slowing down with no code change. Follow the entity relationships from application to container to host to find the process stealing the CPU.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Browser Agent Playground">
+<meta property="og:title" content="Noisy Neighbor: Find the Culprit | New Relic">
+<meta property="og:description" content="A bonus New Relic exercise: an app endpoint keeps slowing down with no code change. Follow the entity relationships from application to container to host to find the process stealing the CPU.">
+<meta property="og:image" content="https://mcaronnewrelic.github.io/BrowserAgentPlayground/images/vitals-hero.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,200..900&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+<style>
+  /* ---------- Staged diagnostic ---------- */
+  .dx-progress { margin: 0 0 18px; font: 600 14px/1.4 var(--mono); color: var(--ink-2); }
+  .diagnostic { display: grid; gap: 18px; max-width: 900px; }
+  .dx { display: grid; gap: 0; min-width: 0; }
+  .dx.locked, .dx-reveal.locked, #dxSolution.locked { display: none; }
+  .dx-num { font: 600 13px/1.4 var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--green-deep); margin: 0 0 8px; }
+  .dx-reveal { margin-top: 12px; background: var(--white); border: 1px solid var(--line); border-left: 3px solid var(--green-deep); border-radius: var(--radius-md); padding: 18px 20px; display: grid; gap: 12px; }
+  .dx-reveal h3 { margin: 0; font-size: 17px; }
+  .dx-reveal p { margin: 0; font-size: 15px; color: var(--ink-2); }
+  .dx-see { font: 600 12px/1.4 var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--green-deep); }
+  .dx-reveal pre { margin: 0; background: var(--black); color: var(--sand); border-radius: 12px; padding: 14px 16px; overflow-x: auto; font: 500 13px/1.5 var(--mono); white-space: pre-wrap; word-break: break-word; }
+  .dx-reveal .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  #dxSolution { background: var(--green-1); border: 1px solid var(--green-deep); border-radius: var(--radius-lg); padding: 26px 28px; display: grid; gap: 12px; max-width: 900px; }
+  #dxSolution h3 { margin: 0; font-size: 20px; }
+  #dxSolution p { margin: 0; font-size: 15px; color: var(--ink-2); }
+  #dxSolution ul { margin: 4px 0 0; padding-left: 20px; font-size: 15px; color: var(--ink-2); }
+  #dxSolution li { margin: 4px 0; }
+  #dxSolution .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <span>Bonus exercise. This one is about infrastructure, not the browser agent: it uses the host and process data from the New Relic infrastructure agent.</span>
+    <a href="https://docs.newrelic.com/docs/infrastructure/infrastructure-monitoring/introduction-infra-monitoring/" target="_blank" rel="noopener">Read the docs</a>
+  </div>
+</div>
+
+<script>Demo.header()</script>
+
+<main>
+  <!-- ================= HERO ================= -->
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <div class="eyebrow">Bonus exercise · Infrastructure</div>
+        <h1 class="display" style="margin-top:18px">Who's stealing<br>the CPU?</h1>
+        <p class="lede">The store's recommendations keep slowing to a crawl, then recover. No deploy, no code change. Support is blaming the app team. Your job: prove what's really happening by following the data from the slow request down to the process behind it.</p>
+        <div class="ctas">
+          <a class="btn" href="#start">Start the investigation <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn secondary" href="#brief">Read the brief</a>
+        </div>
+        <div class="note">
+          <span class="chip" aria-hidden="true">Mystery</span>
+          <span>Everything you need is already in New Relic. You won't touch the code once. The whole skill is following the <b>entity relationships</b>: application → container → host → process.</span>
+        </div>
+      </div>
+      <div class="term" aria-label="The dependency chain you'll follow">
+        <div class="bar"><i></i><i></i><i></i></div>
+<pre><span class="c">// The chain of entities, top to bottom</span>
+Browser app      <span class="c">// where users feel it</span>
+   &#8595;
+APM service      <span class="c">// /api/recommendations is slow</span>
+   &#8595;
+Container        <span class="c">// the service runs here</span>
+   &#8595;
+Host             <span class="c">// shared with...?</span>
+   &#8595;
+<span class="k">??????????</span>       <span class="c">// something is eating the CPU</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= WHO ================= -->
+  <section class="who-bar">
+    <div class="wrap">
+      <details class="who" id="who">
+        <script>Demo.whoSummary()</script>
+        <div class="who-body">
+          <p class="muted">Your checkpoint answers are recorded as <code>DemoQuizAnswer</code> custom events, tagged with your name and code (<code>demoUser</code> and <code>demoCode</code>) like everything else on this site, so we can see which steps trip people up. Only the option you pick is recorded.</p>
+          <script>Demo.identityForm()</script>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ================= BRIEF ================= -->
+  <section class="step" id="brief">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">The brief</div>
+        <h2 class="display" style="margin-top:14px">What you know going in</h2>
+        <p class="muted">The site runs on one small host: the demo app in a container, next to the New Relic infrastructure agent that reports the host and everything on it. Something else on that host misbehaves on a schedule. Work the chain and the data will tell you what.</p>
+      </div>
+
+      <div class="primer">
+        <div>
+          <div class="tag-row"><div class="tag">You'll learn to</div><span class="chip">Diagnosis method</span></div>
+          <ul>
+            <li>Localize a slowdown to one service and one transaction in APM.</li>
+            <li>Tell a resource problem apart from a code problem.</li>
+            <li>Follow an entity's relationships down to the container and host it runs on.</li>
+            <li>Read host CPU and load, and find the process to blame in <code>ProcessSample</code>.</li>
+          </ul>
+        </div>
+        <div>
+          <div class="tag-row"><div class="tag">Before you start</div></div>
+          <ul class="needs">
+            <li><span class="chip">New Relic</span><span>Access to the account the site reports to (the one in <code>nr-config.js</code>).</span></li>
+            <li><span class="chip">Host load</span><span>The host needs to be under the daily "noisy neighbor" load (or ask your instructor to run it). If it's quiet, widen each query's <code>SINCE</code> to find the last burst.</span></li>
+            <li><span class="chip">Process metrics</span><span>The infrastructure agent must report <code>ProcessSample</code> for the final step. It does on this host.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= INVESTIGATION ================= -->
+  <section class="step" id="start">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">Work the chain / Checkpoints</div>
+        <h2 class="display" style="margin-top:14px">Follow the data to the culprit</h2>
+        <p class="muted">Answer each checkpoint to reveal the next. A wrong pick can be retried. Each correct answer unlocks how to see it in New Relic, with a query you can run.</p>
+      </div>
+      <p class="dx-progress" id="dxProgress" aria-live="polite">Step 1 of 6</p>
+
+      <div class="diagnostic">
+
+        <!-- Step 1 -->
+        <div class="dx" data-step="1">
+          <div class="q" data-qid="nn-localize">
+            <p class="dx-num">Step 1 · Confirm and localize</p>
+            <p class="q-text">Support says "the site is slow." Where do you look first to confirm it and narrow it down?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button">The browser app's page views, to see if visitors dropped off</button>
+              <button class="q-opt" type="button" data-correct>The APM service's response time, to see which side is slow and when</button>
+              <button class="q-opt" type="button">The host list, to look for an offline server</button>
+            </div>
+            <p class="q-feedback" hidden>"Slow" is a response-time question. The APM service shows its response time over time, so you can confirm the slowdown is real and see exactly when it happens before chasing anything else.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">See it in New Relic</span>
+            <h3>Open the APM service and watch response time</h3>
+            <p>Open <b>APM &amp; services → the demo service</b> and look at the response-time chart. You'll see flat, fast baseline with sharp spikes that come and go. Note when a spike happens; you'll line the other tiers up against it.</p>
+            <pre id="nrqlApp"></pre>
+            <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlApp" type="button">Copy NRQL</button></div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="dx" data-step="2">
+          <div class="q" data-qid="nn-transaction">
+            <p class="dx-num">Step 2 · Find the transaction</p>
+            <p class="q-text">The service's response time spikes on and off. How do you find which endpoint is behind the spikes?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button" data-correct>Break response time down by transaction name and see which one jumps</button>
+              <button class="q-opt" type="button">Redeploy the service and watch if it comes back</button>
+              <button class="q-opt" type="button">Read the browser console on the slow page</button>
+            </div>
+            <p class="q-feedback" hidden>Faceting response time by transaction name points straight at the offender. Here it's <code>/api/recommendations</code>: it jumps from about 160&nbsp;ms to well over half a second during the spikes, while the other endpoints stay flat.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">See it in New Relic</span>
+            <h3>Response time by transaction</h3>
+            <p>In the service, open <b>Transactions</b>, or run the query below. One transaction, <code>/api/recommendations</code>, accounts for the spikes. That's a clue in itself: it's the endpoint that does real computation, so it's the one that suffers when CPU is scarce.</p>
+            <pre id="nrqlFacet"></pre>
+            <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlFacet" type="button">Copy NRQL</button></div>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="dx" data-step="3">
+          <div class="q" data-qid="nn-reasoning">
+            <p class="dx-num">Step 3 · Code or resource?</p>
+            <p class="q-text">The slow endpoint comes and goes, in bursts, with no deploy between fast and slow. What does that pattern point to?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button">A bug in the recommendations code that fires at random</button>
+              <button class="q-opt" type="button" data-correct>A resource the service has to share, being taken away at times</button>
+              <button class="q-opt" type="button">A problem inside New Relic's charts</button>
+            </div>
+            <p class="q-feedback" hidden>Code that didn't change doesn't get intermittently slower on its own. Latency that comes and goes in bursts, with the same code, almost always means a shared resource (CPU, memory, I/O) is being contended. So the next move is down a tier, to where the service actually runs.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">The reasoning</span>
+            <h3>Rule out the code, look at the infrastructure</h3>
+            <p>No deploy, intermittent, bursty: that's the signature of resource contention, not a logic bug. The recommendations endpoint is CPU-bound, so when something steals CPU, it's the first to feel it. Follow the service down to the machine it shares.</p>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="dx" data-step="4">
+          <div class="q" data-qid="nn-related">
+            <p class="dx-num">Step 4 · Follow the entities</p>
+            <p class="q-text">You want to get from the slow service to the infrastructure it depends on. What's the fastest honest way there in New Relic?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button">Search every host in the account and guess which one</button>
+              <button class="q-opt" type="button" data-correct>Use the service's related entities to jump to its container and host</button>
+              <button class="q-opt" type="button">File a ticket for the infrastructure team</button>
+            </div>
+            <p class="q-feedback" hidden>New Relic links entities that depend on each other. From the service, <b>Related entities</b> (and the service map) takes you straight to the container it runs in and the host underneath, with no guessing which machine.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">See it in New Relic</span>
+            <h3>Service → container → host</h3>
+            <p>On the service, open <b>Related entities</b> or the service map and follow the links down: the service runs in a container, and the container runs on a host. Open that host entity. Everything from here on is about the host, which is shared by whatever else happens to run on it.</p>
+          </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="dx" data-step="5">
+          <div class="q" data-qid="nn-host">
+            <p class="dx-num">Step 5 · Read the host</p>
+            <p class="q-text">On the host, which reading best confirms CPU contention lined up with the slow periods?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button">Disk space used</button>
+              <button class="q-opt" type="button" data-correct>CPU near 100% with a high load average, during the same windows</button>
+              <button class="q-opt" type="button">Network bytes in</button>
+            </div>
+            <p class="q-feedback" hidden>CPU pinned near 100% with a load average well above the core count means processes are queued waiting for CPU. When those windows line up with the recommendations spikes, you've connected the app symptom to the host.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">See it in New Relic</span>
+            <h3>Host CPU and load average</h3>
+            <p>On the host, the CPU chart sits near 100% during the spikes and the load average climbs well past the number of cores. Same windows as the recommendations slowdown. The host is starved; now find what's eating it.</p>
+            <pre id="nrqlHost"></pre>
+            <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlHost" type="button">Copy NRQL</button></div>
+          </div>
+        </div>
+
+        <!-- Step 6 -->
+        <div class="dx" data-step="6">
+          <div class="q" data-qid="nn-process">
+            <p class="dx-num">Step 6 · Name the culprit</p>
+            <p class="q-text">The host CPU is pegged. How do you find the process responsible, and what do you expect to see?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button">Reboot the host and hope it clears up</button>
+              <button class="q-opt" type="button" data-correct>Break CPU down by process; one unfamiliar process is on top, not the app</button>
+              <button class="q-opt" type="button">Scale the app to more containers</button>
+            </div>
+            <p class="q-feedback" hidden>Faceting <code>ProcessSample</code> by process shows the truth: a single process named <code>noisy-neighbor</code> sits at the top of CPU during every burst, and it isn't part of the app at all. The recommendations endpoint was never broken; a neighbor on the shared host was taking its CPU.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">See it in New Relic</span>
+            <h3>CPU by process on the host</h3>
+            <p>Open <b>Processes</b> on the host, or run the query below. During the bursts, a process called <code>noisy-neighbor</code> dominates CPU, far above the app's own container processes. That's your culprit, found by following the chain, not by guessing.</p>
+            <pre id="nrqlProc"></pre>
+            <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlProc" type="button">Copy NRQL</button><a class="btn secondary small" href="https://one.newrelic.com" target="_blank" rel="noopener">Open New Relic <span class="arrow" aria-hidden="true">→</span></a></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Wrap-up -->
+      <div id="dxSolution" class="locked">
+        <div class="tag">Case closed</div>
+        <h3>The app was innocent. A noisy neighbor took its CPU.</h3>
+        <p>The recommendations endpoint slowed down because a process named <code>noisy-neighbor</code> on the same host spiked CPU to 100% on a schedule, starving the app's container. Nothing in the app changed. You proved it by following one chain: slow request → APM service → its transaction → container → host → the process on top.</p>
+        <p><b>What you'd do next in the real world:</b></p>
+        <ul>
+          <li>Identify and stop the rogue process, and find out who or what started it.</li>
+          <li>Stop it recurring with resource isolation: CPU limits on containers, requests and limits in Kubernetes, or moving a hungry workload to its own host.</li>
+          <li>Add an alert on host CPU or load so the next noisy neighbor pages someone before customers feel it.</li>
+        </ul>
+        <p><b>Why it worked:</b> entity relationships let you follow real dependencies across tiers, so a browser-side symptom leads all the way to a process on a host, without guessing.</p>
+        <div class="actions">
+          <a class="btn green small" href="index.html#pages">Back to the learning path <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn secondary small" href="https://docs.newrelic.com/docs/infrastructure/infrastructure-monitoring/infrastructure-ui-pages/infra-ui-pages/infrastructure-processes-page/" target="_blank" rel="noopener">Docs: the Processes page <span class="arrow" aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>A sample exercise for practicing root-cause analysis across New Relic entities.</span>
+    <span>Avoid typing anything sensitive. Data is visible to everyone in the shared account.</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- ================= LOGIC (pure functions, tested by backend/page-logic.test.js) ================= -->
+<script>
+/*LOGIC-START*/
+(function (root) {
+  // The queries each checkpoint reveals. They describe shared infrastructure, not one visitor, so they
+  // filter by the app and host rather than by your session code. Widen SINCE to find an earlier burst.
+  var APP = 'Browser Agent Playground';
+  var HOST = 'browser.nru.to';
+
+  function buildAppLatencyNrql() {
+    return "SELECT average(duration) * 1000 AS 'ms'\n" +
+           "FROM Transaction\n" +
+           "WHERE appName = '" + APP + "' AND name = 'WebTransaction/Custom/api/recommendations'\n" +
+           "SINCE 1 day ago TIMESERIES";
+  }
+  function buildTransactionFacetNrql() {
+    return "SELECT average(duration) * 1000 AS 'ms'\n" +
+           "FROM Transaction\n" +
+           "WHERE appName = '" + APP + "' AND transactionType = 'Web'\n" +
+           "FACET name\n" +
+           "SINCE 1 day ago LIMIT 20";
+  }
+  function buildHostNrql() {
+    return "SELECT average(cpuPercent) AS 'cpu %', average(loadAverageOneMinute) AS 'load'\n" +
+           "FROM SystemSample\n" +
+           "WHERE entityName = '" + HOST + "'\n" +
+           "SINCE 1 day ago TIMESERIES";
+  }
+  function buildProcessNrql() {
+    return "SELECT average(cpuPercent) AS 'cpu %'\n" +
+           "FROM ProcessSample\n" +
+           "WHERE entityName = '" + HOST + "'\n" +
+           "FACET commandName\n" +
+           "SINCE 1 day ago LIMIT 10";
+  }
+
+  root.NoisyNeighbor = {
+    buildAppLatencyNrql: buildAppLatencyNrql,
+    buildTransactionFacetNrql: buildTransactionFacetNrql,
+    buildHostNrql: buildHostNrql,
+    buildProcessNrql: buildProcessNrql
+  };
+})(window);
+/*LOGIC-END*/
+</script>
+
+<!-- ================= UI ================= -->
+<script>
+(function () {
+  'use strict';
+
+  var L = window.NoisyNeighbor;
+  var $ = function (id) { return document.getElementById(id); };
+  var ID = window.DemoIdentity.current();
+  var state = { name: ID.name, code: ID.code };
+
+  function fillQueries() {
+    $('nrqlApp').textContent = L.buildAppLatencyNrql();
+    $('nrqlFacet').textContent = L.buildTransactionFacetNrql();
+    $('nrqlHost').textContent = L.buildHostNrql();
+    $('nrqlProc').textContent = L.buildProcessNrql();
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll('.dx'));
+  var solved = 0;
+  function updateProgress() {
+    var el = $('dxProgress');
+    if (!el) return;
+    el.textContent = solved >= steps.length ? 'Solved. See the wrap-up below.' : 'Step ' + (solved + 1) + ' of ' + steps.length;
+  }
+
+  // Each checkpoint answer is recorded like the other pages' quizzes, plus an exercise tag so the
+  // knowledge-check dashboard can tell these apart.
+  function recordAnswer(q, option, attempt) {
+    var nr = Demo.agent();
+    if (!nr || typeof nr.recordCustomEvent !== 'function') return;
+    var answer = Demo.quizAnswer(q, option, attempt);
+    answer.exercise = 'noisy-neighbor';
+    Demo.safe(function () { nr.recordCustomEvent(Demo.QUIZ_EVENT_TYPE, answer); });
+  }
+
+  function wireStep(step, idx) {
+    var q = step.querySelector('.q');
+    var feedback = q.querySelector('.q-feedback');
+    var explanation = feedback.innerHTML;
+    feedback.innerHTML = '';
+    feedback.hidden = false;
+    feedback.setAttribute('role', 'status');
+    feedback.setAttribute('aria-live', 'polite');
+    var attempts = 0, locked = false;
+
+    Array.prototype.forEach.call(q.querySelectorAll('.q-opt'), function (option) {
+      option.addEventListener('click', function () {
+        if (locked) return;
+        attempts++;
+        recordAnswer(q, option, attempts);
+        var correct = option.hasAttribute('data-correct');
+        option.classList.add(correct ? 'right' : 'wrong');
+        option.disabled = true;
+        if (!correct) { feedback.innerHTML = '<b>Not quite.</b> Follow the chain and try another answer.'; return; }
+
+        locked = true;
+        Array.prototype.forEach.call(q.querySelectorAll('.q-opt'), function (o) { o.disabled = true; });
+        feedback.innerHTML = '<b>' + (attempts === 1 ? 'Right.' : 'That\'s it.') + '</b> ' + explanation;
+
+        var reveal = step.querySelector('.dx-reveal');
+        if (reveal) reveal.classList.remove('locked');
+        solved++;
+        updateProgress();
+
+        var next = steps[idx + 1];
+        if (next) { next.classList.remove('locked'); next.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        else { var sol = $('dxSolution'); if (sol) { sol.classList.remove('locked'); sol.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }
+      });
+    });
+  }
+
+  function init() {
+    fillQueries();
+    steps.forEach(function (step, i) {
+      if (i > 0) step.classList.add('locked');
+      wireStep(step, i);
+    });
+    updateProgress();
+    // Wires the name/code fields, the agent badge and the Copy NRQL buttons; no .quiz on this page, so
+    // Demo's own quiz handler finds nothing and the staged logic above is the only thing driving the steps.
+    Demo.start({ state: state });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>

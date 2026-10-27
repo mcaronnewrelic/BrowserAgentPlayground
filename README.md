@@ -38,6 +38,8 @@ The pages form a learning path in six stages. Each page ends with an **Up next**
 | Single-page apps | [SPA API](https://mcaronnewrelic.github.io/BrowserAgentPlayground/spa.html) (`spa.html`) | Manual SPA tracking with the `interaction()` handle (`.save()`, `.ignore()`, `.setName()`, `.end()`, ...), `setCurrentRouteName()`, `setPageViewName()` and `finished()`: forcing, suppressing and renaming `BrowserInteraction` events. |
 | Privacy | [Replay](https://mcaronnewrelic.github.io/BrowserAgentPlayground/replay.html) (`replay.html`) | Session replay masks everything by default. `recordReplay()` and `pauseReplay()` start and stop it, and `nr-unmask`, `nr-block` and `nr-ignore` show the privacy controls live. |
 
+There's also a standalone **bonus exercise**, `noisy-neighbor.html`, that isn't part of the path above: a guided root-cause investigation that has students trace a slowdown from the app down to a CPU-hogging process on the host. Hand them the link directly. It pairs with [`exercises/noisy-neighbor/`](exercises/noisy-neighbor/README.md), which puts the load on the host.
+
 **Which backend Tracing and WebSockets use:** when the Node server serves a page, the page uses that server. Anywhere else (GitHub Pages, a local static server), it uses `https://browser.nru.to`.
 
 - **WebSockets** first checks that browser.nru.to's `/api/health` reports `websocket: true`. If the server is older or unreachable, it falls back to the public `wss://echo.websocket.org`.

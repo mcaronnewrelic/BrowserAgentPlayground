@@ -4,7 +4,9 @@ A "noisy neighbor" is a process that hogs a shared host and starves everything e
 
 The busy process is a copy of [stress-ng](https://github.com/ColinIanKing/stress-ng) named `noisy-neighbor`. The name is self-labelled, not a disguise: students still have to follow the dependency chain to find *which* host and container it lands on, which is the real skill, rather than grepping every host for "stress-ng".
 
-> **Status: being built.** The host load and the metrics it moves are still being tuned. The student-facing steps and the in-site hints aren't written yet.
+The **student-facing exercise** is the page [`noisy-neighbor.html`](../../noisy-neighbor.html) at the site root (for example `https://browser.nru.to/noisy-neighbor.html`). It's a standalone bonus page, not part of the main learning path, so hand students the link directly. It walks them, checkpoint by checkpoint, from the slow request down to the `noisy-neighbor` process, revealing each step only after they answer the previous one. Run a burst (or let the daily cron run) so the data is there while they work.
+
+This folder is the operator side: what puts the load on the host.
 
 ## What's here
 
