@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- ===================================================================
+     NEW RELIC BROWSER SNIPPET
+     Same snippet as the other pages. This bonus exercise is about
+     distributed tracing on the backend, but it loads the browser agent
+     so your checkpoint answers record as DemoQuizAnswer events.
+     =================================================================== -->
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="demo-identity.js"></script>
+<script src="site.js"></script>
+<script src="nr-init.js"></script>
+<!-- NR:SNIPPET -->
+<script src="nr-config.js"></script>
+<script src="nr-agent.js"></script>
+<!-- /NR:SNIPPET -->
+
+<title>N+1: Too Many Calls | New Relic</title>
+<link rel="icon" href="favicons/favicon.ico" sizes="48x48">
+<link rel="icon" href="favicons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicons/favicon-32x32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="favicons/favicon-16x16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="favicons/apple-touch-icon.png" sizes="180x180">
+<meta name="theme-color" content="#080F11">
+<meta name="description" content="A bonus New Relic exercise: a catalog page is slow and hammers the product service. Open one distributed trace, spot the row of identical calls, and recognize the N+1 pattern, then name the fix.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Browser Agent Playground">
+<meta property="og:title" content="N+1: Too Many Calls | New Relic">
+<meta property="og:description" content="A bonus New Relic exercise: a catalog page is slow and hammers the product service. Open one distributed trace, spot the row of identical calls, and recognize the N+1 pattern, then name the fix.">
+<meta property="og:image" content="https://mcaronnewrelic.github.io/BrowserAgentPlayground/images/vitals-hero.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,200..900&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+<!-- Guided investigation styles (.dx, .dx-reveal, #dxSolution) are shared in site.css -->
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <span>Bonus exercise. This one is about distributed tracing: reading a span waterfall to spot a wasteful call pattern.</span>
+    <a href="https://docs.newrelic.com/docs/distributed-tracing/concepts/introduction-distributed-tracing/" target="_blank" rel="noopener">Read the docs</a>
+  </div>
+</div>
+
+<script>Demo.header()</script>
+
+<main>
+  <!-- ================= HERO ================= -->
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <div class="eyebrow">Bonus exercise · Distributed tracing</div>
+        <h1 class="display" style="margin-top:18px">One page,<br>a dozen calls.</h1>
+        <p class="lede">The catalog page is sluggish, and the product service is getting hammered with traffic nobody can explain. The code works, the data is right, it's just slow and noisy. Open one trace and the reason is impossible to miss.</p>
+        <div class="ctas">
+          <a class="btn" href="#start">Start the investigation <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn secondary" href="#brief">Read the brief</a>
+        </div>
+        <div class="note">
+          <span class="chip" aria-hidden="true">Mystery</span>
+          <span>One request to load the catalog turns into a pile of calls to the product service. The skill is reading the <b>span waterfall</b> and recognizing the shape of the problem.</span>
+        </div>
+      </div>
+      <div class="term" aria-label="One catalog request and the calls it makes">
+        <div class="bar"><i></i><i></i><i></i></div>
+<pre><span class="c">// One catalog request, as a trace</span>
+GET /api/catalog
+  &#9500;&#9472; /internal/product/NR-TEE    15 ms
+  &#9500;&#9472; /internal/product/NR-MUG    15 ms
+  &#9500;&#9472; /internal/product/NR-HOOD   15 ms
+  &#9492;&#9472; <span class="k">...one per item...</span>
+</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= WHO ================= -->
+  <section class="who-bar">
+    <div class="wrap">
+      <details class="who" id="who">
+        <script>Demo.whoSummary()</script>
+        <div class="who-body">
+          <p class="muted">Your checkpoint answers are recorded as <code>DemoQuizAnswer</code> custom events, tagged with your name and code (<code>demoUser</code> and <code>demoCode</code>), so we can see which steps trip people up. Only the option you pick is recorded.</p>
+          <script>Demo.identityForm()</script>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ================= BRIEF ================= -->
+  <section class="step" id="brief">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">The brief</div>
+        <h2 class="display" style="margin-top:14px">What you know going in</h2>
+        <p class="muted">The catalog endpoint loads the list of products and then the details for each one. It's correct, and there's no error, no deploy, no resource problem. It's just slower than it should be, and the product service sees far more calls than there are catalog loads. One trace explains both at once.</p>
+      </div>
+
+      <div class="primer">
+        <div>
+          <div class="tag-row"><div class="tag">You'll learn to</div><span class="chip">Tracing method</span></div>
+          <ul>
+            <li>Localize slowness to one transaction in APM.</li>
+            <li>Read a span waterfall and spot a repeating call.</li>
+            <li>Recognize the N+1 pattern by its shape, not by reading code.</li>
+            <li>Explain why it scales badly, and name the fix.</li>
+          </ul>
+        </div>
+        <div>
+          <div class="tag-row"><div class="tag">Before you start</div></div>
+          <ul class="needs">
+            <li><span class="chip">New Relic</span><span>Access to the account the site reports to (the one in <code>nr-config.js</code>).</span></li>
+            <li><span class="chip">Always on</span><span>This one isn't on a timer: the pattern is in every catalog request, so there's a trace to open whenever you look.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= INVESTIGATION ================= -->
+  <section class="step" id="start">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">Work the trace / Checkpoints</div>
+        <h2 class="display" style="margin-top:14px">Follow one request to the pattern</h2>
+        <p class="muted">Answer each checkpoint to reveal the next. A wrong pick can be retried. Each correct answer unlocks how to see it in New Relic, with a query you can run.</p>
+      </div>
+      <p class="dx-progress" id="dxProgress" aria-live="polite">Step 1 of 6</p>
+
+      <div class="diagnostic">
+
+        <!-- Step 1 -->
+        <div class="dx" data-step="1">
+          <div class="q" data-qid="n1-localize">
+            <p class="dx-num">Step 1 · Confirm and localize</p>
+            <p class="q-text">The catalog page feels slow and the product service is swamped. Where do you start?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button">The host's CPU, to look for contention</button>
+              <button class="q-opt" type="button" data-correct>The APM service: find the catalog transaction and look at its duration and throughput</button>
+              <button class="q-opt" type="button">The browser's Core Web Vitals for the catalog page</button>
+            </div>
+            <p class="q-feedback" hidden>The slowness is in a backend endpoint, so start in APM: find <code>/api/catalog</code> and look at how long it takes and how often it runs. That frames the question before you open a trace.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">See it in New Relic</span>
+            <h3>Open the service and find the catalog transaction</h3>
+            <p>In <b>APM &amp; services → the demo service → Transactions</b>, find <code>/api/catalog</code>. It's steadily slow, not spiking: the cost is baked into how it works, not a passing incident.</p>
+            <pre id="nrqlCatalog"></pre>
+            <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlCatalog" type="button">Copy NRQL</button></div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="dx" data-step="2">
+          <div class="q" data-qid="n1-open">
+            <p class="dx-num">Step 2 · Open the trace</p>
+            <p class="q-text">Catalog isn't doing heavy computation, it's making calls. What shows you how many it makes, and to what?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button" data-correct>Open a distributed trace of one catalog request and read its span waterfall</button>
+              <button class="q-opt" type="button">Add a log line to every function and read the logs</button>
+              <button class="q-opt" type="button">Increase the service's memory limit</button>
+            </div>
+            <p class="q-feedback" hidden>One trace breaks a single catalog request into its spans, one per call it makes. That's the fastest way to see how many downstream calls a single page load really causes.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">See it in New Relic</span>
+            <h3>One request, as a waterfall</h3>
+            <p>Open a <code>/api/catalog</code> transaction and follow it into <b>Distributed tracing</b>. Under the one catalog span you'll see the calls it makes, stacked as a waterfall. Look at how many there are and where they go.</p>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="dx" data-step="3">
+          <div class="q" data-qid="n1-waterfall">
+            <p class="dx-num">Step 3 · Read the waterfall</p>
+            <p class="q-text">Under the single catalog request, what do you see?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button">One slow call to a database</button>
+              <button class="q-opt" type="button" data-correct>A long row of identical calls to the product service, one per item</button>
+              <button class="q-opt" type="button">A single call to a third-party API</button>
+            </div>
+            <p class="q-feedback" hidden>It's a stack of identical <code>/internal/product/:sku</code> spans, one for each item in the catalog. In aggregate, the product service gets many times more calls than there are catalog loads.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">See it in New Relic</span>
+            <h3>The product service dwarfs the catalog</h3>
+            <p>Count the calls over time: the product endpoint runs many times for every single catalog request. That ratio is the fingerprint of the problem.</p>
+            <pre id="nrqlFanout"></pre>
+            <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlFanout" type="button">Copy NRQL</button></div>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="dx" data-step="4">
+          <div class="q" data-qid="n1-name">
+            <p class="dx-num">Step 4 · Name the pattern</p>
+            <p class="q-text">One call to fetch the list, then one more call for each item in it. What's this called?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button">A memory leak</button>
+              <button class="q-opt" type="button" data-correct>The N+1 problem: 1 call for the list, then N calls, one per item</button>
+              <button class="q-opt" type="button">A race condition</button>
+            </div>
+            <p class="q-feedback" hidden>This is the N+1 problem. It shows up anywhere you loop over a list and fetch each row on its own, classically with database queries behind an ORM, and just as often with service-to-service calls like these.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">The pattern</span>
+            <h3>1 to list, N to fill in</h3>
+            <p>The "+1" is the query that gets the list; the "N" is the one-per-item calls that follow. The waterfall's tell-tale shape is a run of identical spans, all to the same place, differing only by the id.</p>
+          </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="dx" data-step="5">
+          <div class="q" data-qid="n1-why">
+            <p class="dx-num">Step 5 · Why it matters</p>
+            <p class="q-text">There are only a handful of items today. Why care?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button" data-correct>It scales with the list: a few calls now, hundreds at a full catalog, each adding latency and load</button>
+              <button class="q-opt" type="button">It doesn't; a few extra calls are free</button>
+              <button class="q-opt" type="button">It only matters if one of the calls errors</button>
+            </div>
+            <p class="q-feedback" hidden>The cost grows one-for-one with the list. What's a handful of calls on the demo catalog is hundreds on a real one, each with its own round trip and its own load on the downstream service, so the page gets slower exactly as the catalog grows.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">See it in New Relic</span>
+            <h3>Each call is cheap; the count is the problem</h3>
+            <p>Any single product call is quick. The damage is the sheer number of them, which is why the fix is to make fewer calls, not faster ones.</p>
+            <pre id="nrqlProduct"></pre>
+            <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlProduct" type="button">Copy NRQL</button><a class="btn secondary small" href="https://one.newrelic.com" target="_blank" rel="noopener">Open New Relic <span class="arrow" aria-hidden="true">→</span></a></div>
+          </div>
+        </div>
+
+        <!-- Step 6 -->
+        <div class="dx" data-step="6">
+          <div class="q" data-qid="n1-fix">
+            <p class="dx-num">Step 6 · The fix</p>
+            <p class="q-text">How do you fix an N+1?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button">Add more replicas of the product service</button>
+              <button class="q-opt" type="button" data-correct>Fetch all the items in one call instead of one per item</button>
+              <button class="q-opt" type="button">Retry each call so it fails less often</button>
+            </div>
+            <p class="q-feedback" hidden>Collapse the N calls into one: a single batched request, a join, or an "in" query that returns every item at once. The row of identical spans becomes one span, and the page stops slowing down as the catalog grows.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">The takeaway</span>
+            <h3>Make fewer calls, not faster ones</h3>
+            <p>Throwing hardware or retries at an N+1 treats the symptom. The fix is to stop fanning out: ask for everything in one request.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Wrap-up -->
+      <div id="dxSolution" class="locked">
+        <div class="tag">Case closed</div>
+        <h3>The catalog asked for one thing at a time.</h3>
+        <p>The page was slow and the product service was swamped because loading the catalog made one call to list the items and then one more call for every item, the N+1 pattern. One request fanned out into N+1. The trace made it obvious: a single catalog span over a stack of identical product calls.</p>
+        <p><b>What you'd do next in the real world:</b></p>
+        <ul>
+          <li>Replace the per-item calls with one batched request (a join, an "in" query, or a bulk endpoint that takes all the ids).</li>
+          <li>Re-open the trace and confirm the row of spans has collapsed to one.</li>
+          <li>Watch for the pattern in code review and in slow-trace samples: a loop that makes a call each time around is the usual source.</li>
+        </ul>
+        <p><b>Why it worked:</b> the waterfall shows the shape of a request. N+1 has a shape, a run of identical spans, that you can spot without reading a line of code.</p>
+        <div class="actions">
+          <a class="btn green small" href="index.html#pages">Back to the learning path <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn secondary small" href="https://docs.newrelic.com/docs/distributed-tracing/ui-data/understand-use-distributed-tracing-ui/" target="_blank" rel="noopener">Docs: the distributed tracing UI <span class="arrow" aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>A sample exercise for recognizing the N+1 pattern with distributed tracing.</span>
+    <span>Avoid typing anything sensitive. Data is visible to everyone in the shared account.</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- ================= LOGIC (pure functions, tested by backend/page-logic.test.js) ================= -->
+<script>
+/*LOGIC-START*/
+(function (root) {
+  // The queries each checkpoint reveals. They describe the shared services, not one visitor, so they
+  // filter by the app rather than by your session code. Widen SINCE if traffic is light.
+  var APP = 'Browser Agent Playground';
+
+  function buildCatalogNrql() {
+    return "SELECT average(duration) * 1000 AS 'ms', count(*) AS requests\n" +
+           "FROM Transaction\n" +
+           "WHERE appName = '" + APP + "' AND name = 'WebTransaction/Custom/api/catalog'\n" +
+           "SINCE 1 hour ago TIMESERIES";
+  }
+  function buildFanoutNrql() {
+    return "SELECT count(*)\n" +
+           "FROM Transaction\n" +
+           "WHERE appName = '" + APP + "' AND name IN ('WebTransaction/Custom/api/catalog', 'WebTransaction/Custom/internal/product/:sku')\n" +
+           "FACET name\n" +
+           "SINCE 1 hour ago";
+  }
+  function buildProductCallNrql() {
+    return "SELECT count(*) AS calls, average(duration) * 1000 AS 'ms each'\n" +
+           "FROM Transaction\n" +
+           "WHERE appName = '" + APP + "' AND name = 'WebTransaction/Custom/internal/product/:sku'\n" +
+           "SINCE 1 hour ago TIMESERIES";
+  }
+
+  root.NplusOne = {
+    buildCatalogNrql: buildCatalogNrql,
+    buildFanoutNrql: buildFanoutNrql,
+    buildProductCallNrql: buildProductCallNrql
+  };
+})(window);
+/*LOGIC-END*/
+</script>
+
+<!-- ================= UI ================= -->
+<script>
+(function () {
+  'use strict';
+
+  var L = window.NplusOne;
+  var $ = function (id) { return document.getElementById(id); };
+  var ID = window.DemoIdentity.current();
+  var state = { name: ID.name, code: ID.code };
+
+  function fillQueries() {
+    $('nrqlCatalog').textContent = L.buildCatalogNrql();
+    $('nrqlFanout').textContent = L.buildFanoutNrql();
+    $('nrqlProduct').textContent = L.buildProductCallNrql();
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll('.dx'));
+  var solved = 0;
+  function updateProgress() {
+    var el = $('dxProgress');
+    if (!el) return;
+    el.textContent = solved >= steps.length ? 'Solved. See the wrap-up below.' : 'Step ' + (solved + 1) + ' of ' + steps.length;
+  }
+
+  // Each checkpoint answer is recorded like the other pages' quizzes, plus an exercise tag so the
+  // knowledge-check dashboard can tell these apart.
+  function recordAnswer(q, option, attempt) {
+    var nr = Demo.agent();
+    if (!nr || typeof nr.recordCustomEvent !== 'function') return;
+    var answer = Demo.quizAnswer(q, option, attempt);
+    answer.exercise = 'n-plus-one';
+    Demo.safe(function () { nr.recordCustomEvent(Demo.QUIZ_EVENT_TYPE, answer); });
+  }
+
+  function wireStep(step, idx) {
+    var q = step.querySelector('.q');
+    var feedback = q.querySelector('.q-feedback');
+    var explanation = feedback.innerHTML;
+    feedback.innerHTML = '';
+    feedback.hidden = false;
+    feedback.setAttribute('role', 'status');
+    feedback.setAttribute('aria-live', 'polite');
+    var attempts = 0, locked = false;
+
+    Array.prototype.forEach.call(q.querySelectorAll('.q-opt'), function (option) {
+      option.addEventListener('click', function () {
+        if (locked) return;
+        attempts++;
+        recordAnswer(q, option, attempts);
+        var correct = option.hasAttribute('data-correct');
+        option.classList.add(correct ? 'right' : 'wrong');
+        option.disabled = true;
+        if (!correct) { feedback.innerHTML = '<b>Not quite.</b> Look at the waterfall again and try another answer.'; return; }
+
+        locked = true;
+        Array.prototype.forEach.call(q.querySelectorAll('.q-opt'), function (o) { o.disabled = true; });
+        feedback.innerHTML = '<b>' + (attempts === 1 ? 'Right.' : 'That\'s it.') + '</b> ' + explanation;
+
+        var reveal = step.querySelector('.dx-reveal');
+        if (reveal) reveal.classList.remove('locked');
+        solved++;
+        updateProgress();
+
+        var next = steps[idx + 1];
+        if (next) { next.classList.remove('locked'); next.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        else { var sol = $('dxSolution'); if (sol) { sol.classList.remove('locked'); sol.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }
+      });
+    });
+  }
+
+  function init() {
+    fillQueries();
+    steps.forEach(function (step, i) {
+      if (i > 0) step.classList.add('locked');
+      wireStep(step, i);
+    });
+    updateProgress();
+    Demo.start({ state: state });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>
