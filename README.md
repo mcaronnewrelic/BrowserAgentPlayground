@@ -55,7 +55,7 @@ The pages form a learning path in six stages. Each page ends with an **Up next**
 | [`backend/`](backend/README.md) | The Node server: serves the pages, the tracing API and the `/ws` WebSocket, with the APM agent. Also all the tests. |
 | `Dockerfile`, `compose.yaml` | The server's image, and the three containers browser.nru.to runs |
 | [`traffic/`](traffic/README.md) | Simulated visitors in real browsers |
-| [`newrelic/`](newrelic/README.md) | Scripts that create the dashboards, synthetic checks, alerts and workload in New Relic |
+| [`newrelic/`](newrelic/README.md) | Scripts that create the dashboards, synthetic checks, alerts, service levels and workload in New Relic |
 | [`account-cleanup/`](account-cleanup/README.md) | Not part of the site: deletes what the shared demo@ login leaves behind in the enablement accounts. Self-contained, to move to its own repository. |
 | `.github/` | Workflows for tests, change tracking, New Relic setup and account cleanup |
 
@@ -330,14 +330,15 @@ The repository is set up for account `6932347`. To report somewhere else, change
 - `accountIds` in the dashboard JSON (or set `NEW_RELIC_ACCOUNT_ID` when running `dashboards.sh`), and the learning-path dashboard's `appId`;
 - the entity GUIDs and account ID the setup scripts and change tracking use (see [newrelic/README.md](newrelic/README.md)).
 
-## New Relic setup: dashboards, synthetic checks, alerts and workload
+## New Relic setup: dashboards, synthetic checks, alerts, service levels and workload
 
 The scripts in `newrelic/` create, through the NerdGraph API:
 
 - the two dashboards;
 - three hourly synthetic checks on browser.nru.to: availability, the backend's health, and an end-to-end journey with a load-time budget;
 - an email alert when any check fails;
-- the **Agent Playground** workload, which groups the browser app, APM app, monitors, dashboards and the EC2 host.
+- four service levels: latency and success for the APM app, and latency (LCP) and availability (AJAX) for the browser app;
+- the **Agent Playground** workload, which groups the browser app, APM app, monitors, dashboards, service levels and the EC2 host.
 
 They create only what is missing, so they're safe to run any time. To restore something changed by hand, delete it in New Relic and run them again. Run them from the **New Relic setup** workflow on the Actions tab, or from your own shell:
 

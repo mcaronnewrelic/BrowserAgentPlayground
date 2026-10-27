@@ -3,8 +3,13 @@
 # Anything with "DO NOT DELETE" (or "DONOTDELETE") in its name is always kept and needn't be listed.
 # Only items created by the cleanup's owner (demo@newrelicuniversity.com) are ever considered.
 
-# Agent Playground (this site's dashboards, monitors, alerts and workload; some were created as demo@)
+# Agent Playground: this site's dashboards, monitors, alerts, service levels and workload, created by
+# newrelic/setup.sh (some of them as demo@). All their names start with "Agent Playground".
 Agent Playground*
+Agent Playground API - Latency
+Agent Playground API - Success
+Agent Playground Browser - Latency (LCP)
+Agent Playground Browser - Availability (AJAX)
 
 # Instructors' notification destinations, last edited through the demo@ login
 Dan Johnson

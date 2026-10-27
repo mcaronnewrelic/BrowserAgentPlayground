@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Creates the "Agent Playground" workload, unless it exists: the browser app, the APM app behind
-# browser.nru.to, the synthetic monitors and dashboards (by name), and the EC2 host (by the
+# browser.nru.to, the synthetic monitors, dashboards and service levels (by name), and the EC2 host (by the
 # project=agent-playground tag its infrastructure agent sets in compose.yaml). Because everything but the
 # two apps is found by a search, recreating one of them later adds it back to the workload automatically.
 #
@@ -34,6 +34,7 @@ result="$(nerdgraph 'mutation($account: Int!, $workload: WorkloadCreateInput!) {
         entitySearchQueries: [
           {query: "domain = '\''SYNTH'\'' AND type = '\''MONITOR'\'' AND name LIKE '\''Agent Playground - %'\''"},
           {query: "type = '\''DASHBOARD'\'' AND name LIKE '\''Agent Playground%'\''"},
+          {query: "type = '\''SERVICE_LEVEL'\'' AND name LIKE '\''Agent Playground%'\''"},
           {query: "type = '\''HOST'\'' AND tags.project = '\''agent-playground'\''"}
         ],
         scopeAccounts: {accountIds: [$account]}

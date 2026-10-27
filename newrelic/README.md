@@ -8,8 +8,9 @@ That makes them safe to run any time. If someone changes one of these items by h
 |---|---|
 | `dashboards.sh` | Every dashboard in `dashboards/*.json` |
 | `synthetics.sh` | Three hourly synthetic monitors on browser.nru.to, an alert policy and condition that fire when any of them fails, and an email destination, channel and workflow that send the alert |
-| `workload.sh` | The **Agent Playground** workload: the browser app, the APM app, and the monitors and dashboards above |
-| `setup.sh` | All three, in that order |
+| `service-levels.sh` | Latency and availability service levels for the APM app and the browser app |
+| `workload.sh` | The **Agent Playground** workload: the browser app, the APM app, and the monitors, dashboards and service levels above |
+| `setup.sh` | All four, in that order |
 
 ## What gets created
 
@@ -24,9 +25,15 @@ That makes them safe to run any time. If someone changes one of these items by h
 | A synthetic check failed | NRQL alert condition | Fires when any check of an `Agent Playground - ` monitor fails |
 | Agent Playground alert email | Email destination and channel | Sends to `ALERT_EMAIL` |
 | Agent Playground - Synthetic check alerts | Alert workflow | Emails every issue from the policy, when it opens and when it closes |
-| Agent Playground | Workload | The browser app, the APM app, and any monitor or dashboard named `Agent Playground…` |
+| Agent Playground API - Latency | Service level (APM app) | 95% of web requests answered in under 0.5 seconds, over 7 days |
+| Agent Playground API - Success | Service level (APM app) | 99% of web requests end without an unexpected error, over 7 days. Leaves out `/api/fail`, which fails on purpose. |
+| Agent Playground Browser - Latency (LCP) | Service level (browser app) | 95% of page loads have a Largest Contentful Paint under 2.5 seconds, over 7 days |
+| Agent Playground Browser - Availability (AJAX) | Service level (browser app) | 99% of the pages' AJAX requests get an answer (not a 5xx or a network failure), over 7 days. Leaves out `/api/fail`. |
+| Agent Playground | Workload | The browser app, the APM app, and any monitor, dashboard or service level named `Agent Playground…` |
 
-The monitors run every hour from two locations. The journey signs in as **Synthetic check**, and the learning-path dashboard leaves that user out so the checks don't count as visitors.
+The monitors run every hour from two locations.
+
+The browser availability service level uses AJAX requests, not the usual measure of JavaScript errors per page view, because the demo pages throw errors on purpose: on that measure the site would always sit around 65%. For the same reason, both availability service levels leave out the Tracing page's **fail** button. They show whether the site works, not how often learners press it. The Vitals page's slow LCP and the Tracing page's slow request still count, so learners can watch them spend the error budget. The journey signs in as **Synthetic check**, and the learning-path dashboard leaves that user out so the checks don't count as visitors.
 
 ## Run it
 
