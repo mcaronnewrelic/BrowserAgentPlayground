@@ -15,7 +15,7 @@ The same HTML files are served in two places:
 | Serves | The static files, published from `main` | The Node server in [`backend/`](backend/README.md), on an EC2 host behind Caddy |
 | Browser agent | The snippet in `nr-config.js`, `nr-init.js` and `nr-agent.js` | Injected by the server's APM agent |
 | Backend for Tracing and WebSockets | browser.nru.to, across origins | The same server |
-| Deployed by | Pushing to `main` | `git pull` and `docker compose up` on the server ([how](#deploy-to-browsernruto-ec2)) |
+| Deployed by | Pushing site files to `main` (the `Deploy site to Pages` workflow; pushes that touch only `backend/`, `newrelic/`, `exercises/`, docs and the like are skipped) | `git pull` and `docker compose up` on the server ([how](#deploy-to-browsernruto-ec2)) |
 
 Both report to the same browser app, which is linked to the server's APM app.
 
@@ -57,7 +57,7 @@ The pages form a learning path in six stages. Each page ends with an **Up next**
 | [`traffic/`](traffic/README.md) | Simulated visitors in real browsers |
 | [`newrelic/`](newrelic/README.md) | Scripts that create the dashboards, synthetic checks, alerts, service levels and workload in New Relic |
 | [`account-cleanup/`](account-cleanup/README.md) | Not part of the site: deletes what the shared demo@ login leaves behind in the enablement accounts. Self-contained, to move to its own repository. |
-| `.github/` | Workflows for tests, change tracking, New Relic setup and account cleanup |
+| `.github/` | Workflows for the Pages deploy, tests, change tracking, New Relic setup and account cleanup |
 
 ## Run it locally
 

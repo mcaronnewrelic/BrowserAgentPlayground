@@ -18,7 +18,7 @@ name: Change tracking
 
 on:
   workflow_run:
-    workflows: ["pages-build-deployment"]
+    workflows: ["Deploy site to Pages"]
     types: [completed]
   schedule:
     # GitHub cron is UTC only: 16:07 UTC is 9:07 AM PDT or 8:07 AM PST. GitHub often starts

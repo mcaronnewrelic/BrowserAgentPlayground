@@ -1,0 +1,60 @@
+# Publishes the static site to GitHub Pages. Replaces GitHub's built-in "Deploy from a branch", so it can
+# skip pushes that don't touch the site (paths-ignore below): the exercise, setup scripts, backend, Docker
+# and docs don't change what Pages serves, so they don't trigger a rebuild.
+#
+# This needs a one-time setting: repository Settings -> Pages -> Build and deployment -> Source -> GitHub
+# Actions. While the source is still "Deploy from a branch", this workflow runs but the old builder also
+# runs, so switch the source when you add this.
+#
+# change-tracking.yml listens for this workflow by name to send a deployment marker; keep the two in step.
+name: Deploy site to Pages
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "exercises/**"
+      - "newrelic/**"
+      - "account-cleanup/**"
+      - "traffic/**"
+      - "backend/**"
+      - ".github/**"
+      - "Dockerfile"
+      - "compose.yaml"
+      - ".dockerignore"
+      - ".gitattributes"
+      - ".gitignore"
+      - ".mcp.json"
+      - "**/*.md"
+  workflow_dispatch: {}
+
+# Least privilege for a Pages deploy.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; don't cancel a publish in flight.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+      # Publishes the repository as-is (no Jekyll), the same content the branch build served.
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
