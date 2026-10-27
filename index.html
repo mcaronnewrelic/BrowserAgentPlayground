@@ -305,6 +305,12 @@
           <p>A guided root-cause investigation, separate from the browser-agent tour. An endpoint keeps slowing down with no code change; you follow the data from the slow request down to the process hogging the host. Each checkpoint reveals the next, so you prove the cause step by step.</p>
           <a class="btn secondary small" href="noisy-neighbor.html">Start the investigation <span class="arrow" aria-hidden="true">→</span></a>
         </article>
+        <article class="card wide" aria-labelledby="pBonusTrace">
+          <div class="tag-row"><div class="tag">Investigation</div><span class="chip">Distributed tracing · root cause</span></div>
+          <h3 id="pBonusTrace">It's not checkout</h3>
+          <p>Checkout is slow and failing, but the checkout team changed nothing. Follow one distributed trace through its service calls to find the downstream dependency that's really at fault, one checkpoint at a time.</p>
+          <a class="btn secondary small" href="downstream-culprit.html">Start the investigation <span class="arrow" aria-hidden="true">→</span></a>
+        </article>
       </div>
     </div>
   </section>

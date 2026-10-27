@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- ===================================================================
+     NEW RELIC BROWSER SNIPPET
+     Same snippet as the other pages. This bonus exercise is about
+     distributed tracing on the backend, but it loads the browser agent
+     so your checkpoint answers record as DemoQuizAnswer events.
+     =================================================================== -->
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="demo-identity.js"></script>
+<script src="site.js"></script>
+<script src="nr-init.js"></script>
+<!-- NR:SNIPPET -->
+<script src="nr-config.js"></script>
+<script src="nr-agent.js"></script>
+<!-- /NR:SNIPPET -->
+
+<title>Downstream Culprit: Trace the Failure | New Relic</title>
+<link rel="icon" href="favicons/favicon.ico" sizes="48x48">
+<link rel="icon" href="favicons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicons/favicon-32x32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="favicons/favicon-16x16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="favicons/apple-touch-icon.png" sizes="180x180">
+<meta name="theme-color" content="#080F11">
+<meta name="description" content="A bonus New Relic exercise: checkout is slow and failing, but the checkout team changed nothing. Follow one distributed trace through its service calls to find the downstream dependency that's really at fault.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Browser Agent Playground">
+<meta property="og:title" content="Downstream Culprit: Trace the Failure | New Relic">
+<meta property="og:description" content="A bonus New Relic exercise: checkout is slow and failing, but the checkout team changed nothing. Follow one distributed trace through its service calls to find the downstream dependency that's really at fault.">
+<meta property="og:image" content="https://mcaronnewrelic.github.io/BrowserAgentPlayground/images/vitals-hero.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,200..900&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+<style>
+  /* ---------- Staged diagnostic (shared shape with the other investigation pages) ---------- */
+  .dx-progress { margin: 0 0 18px; font: 600 14px/1.4 var(--mono); color: var(--ink-2); }
+  .diagnostic { display: grid; gap: 18px; max-width: 900px; }
+  .dx { display: grid; gap: 0; min-width: 0; }
+  .dx.locked, .dx-reveal.locked, #dxSolution.locked { display: none; }
+  .dx-num { font: 600 13px/1.4 var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--green-deep); margin: 0 0 8px; }
+  .dx-reveal { margin-top: 12px; background: var(--white); border: 1px solid var(--line); border-left: 3px solid var(--green-deep); border-radius: var(--radius-md); padding: 18px 20px; display: grid; gap: 12px; }
+  .dx-reveal h3 { margin: 0; font-size: 17px; }
+  .dx-reveal p { margin: 0; font-size: 15px; color: var(--ink-2); }
+  .dx-see { font: 600 12px/1.4 var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--green-deep); }
+  .dx-reveal pre { margin: 0; background: var(--black); color: var(--sand); border-radius: 12px; padding: 14px 16px; overflow-x: auto; font: 500 13px/1.5 var(--mono); white-space: pre-wrap; word-break: break-word; }
+  .dx-reveal .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  #dxSolution { background: var(--green-1); border: 1px solid var(--green-deep); border-radius: var(--radius-lg); padding: 26px 28px; display: grid; gap: 12px; max-width: 900px; }
+  #dxSolution h3 { margin: 0; font-size: 20px; }
+  #dxSolution p { margin: 0; font-size: 15px; color: var(--ink-2); }
+  #dxSolution ul { margin: 4px 0 0; padding-left: 20px; font-size: 15px; color: var(--ink-2); }
+  #dxSolution li { margin: 4px 0; }
+  #dxSolution .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <span>Bonus exercise. This one is about distributed tracing: following one request across services to find where it really breaks.</span>
+    <a href="https://docs.newrelic.com/docs/distributed-tracing/concepts/introduction-distributed-tracing/" target="_blank" rel="noopener">Read the docs</a>
+  </div>
+</div>
+
+<script>Demo.header()</script>
+
+<main>
+  <!-- ================= HERO ================= -->
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <div class="eyebrow">Bonus exercise · Distributed tracing</div>
+        <h1 class="display" style="margin-top:18px">It's not<br>checkout.</h1>
+        <p class="lede">Checkout is slow and throwing errors, and the complaints are piling up. The checkout team swears they didn't change a thing. They're probably right. Follow one request through its trace and prove where the failure actually comes from.</p>
+        <div class="ctas">
+          <a class="btn" href="#start">Start the investigation <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn secondary" href="#brief">Read the brief</a>
+        </div>
+        <div class="note">
+          <span class="chip" aria-hidden="true">Mystery</span>
+          <span>Checkout doesn't do the work itself: it calls other services. The skill here is reading a <b>distributed trace</b>, the waterfall of spans, to see which call down the chain is slow or failing.</span>
+        </div>
+      </div>
+      <div class="term" aria-label="One checkout request and the calls it makes">
+        <div class="bar"><i></i><i></i><i></i></div>
+<pre><span class="c">// One checkout request, as a trace</span>
+POST /api/checkout        <span class="c">// slow, sometimes 502</span>
+  &#9500;&#9472; /internal/inventory   40 ms   <span class="c">// fine</span>
+  &#9492;&#9472; /internal/payment     <span class="k">? ms</span>    <span class="c">// ...?</span>
+</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= WHO ================= -->
+  <section class="who-bar">
+    <div class="wrap">
+      <details class="who" id="who">
+        <script>Demo.whoSummary()</script>
+        <div class="who-body">
+          <p class="muted">Your checkpoint answers are recorded as <code>DemoQuizAnswer</code> custom events, tagged with your name and code (<code>demoUser</code> and <code>demoCode</code>), so we can see which steps trip people up. Only the option you pick is recorded.</p>
+          <script>Demo.identityForm()</script>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ================= BRIEF ================= -->
+  <section class="step" id="brief">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">The brief</div>
+        <h2 class="display" style="margin-top:14px">What you know going in</h2>
+        <p class="muted">The store's checkout service calls two others to do its job: an inventory check and a payment authorization. Checkout goes slow and fails in bursts, with no deploy behind it. Don't guess which service is at fault, let one trace show you.</p>
+      </div>
+
+      <div class="primer">
+        <div>
+          <div class="tag-row"><div class="tag">You'll learn to</div><span class="chip">Tracing method</span></div>
+          <ul>
+            <li>Confirm a slowdown in APM and localize it to one transaction.</li>
+            <li>Open a distributed trace and read its span waterfall.</li>
+            <li>Tell a service's own problem apart from a downstream dependency's.</li>
+            <li>Attribute the root cause to the span that actually carries the time and the error.</li>
+          </ul>
+        </div>
+        <div>
+          <div class="tag-row"><div class="tag">Before you start</div></div>
+          <ul class="needs">
+            <li><span class="chip">New Relic</span><span>Access to the account the site reports to (the one in <code>nr-config.js</code>).</span></li>
+            <li><span class="chip">Fault window</span><span>Checkout breaks for the first 15 minutes of each hour (UTC). If it's quiet, widen each query's <code>SINCE</code> to find the last burst.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= INVESTIGATION ================= -->
+  <section class="step" id="start">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">Work the trace / Checkpoints</div>
+        <h2 class="display" style="margin-top:14px">Follow one request to the fault</h2>
+        <p class="muted">Answer each checkpoint to reveal the next. A wrong pick can be retried. Each correct answer unlocks how to see it in New Relic, with a query you can run.</p>
+      </div>
+      <p class="dx-progress" id="dxProgress" aria-live="polite">Step 1 of 6</p>
+
+      <div class="diagnostic">
+
+        <!-- Step 1 -->
+        <div class="dx" data-step="1">
+          <div class="q" data-qid="dc-localize">
+            <p class="dx-num">Step 1 · Confirm and localize</p>
+            <p class="q-text">Support says "checkout is broken." Where do you look first to confirm it and see when it happens?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button">The browser app's page views, to count abandoned carts</button>
+              <button class="q-opt" type="button" data-correct>The APM service's response time and error rate, to confirm both and see the pattern</button>
+              <button class="q-opt" type="button">The host list, to look for an offline server</button>
+            </div>
+            <p class="q-feedback" hidden>"Slow and failing" is a response-time and error-rate question, and the APM service shows both over time. You'll see checkout spiking and erroring in bursts, which tells you it's real and when to look.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">See it in New Relic</span>
+            <h3>Open the service: response time and errors</h3>
+            <p>Open <b>APM &amp; services → the demo service</b>. Response time has sharp spikes that come and go, and the error rate climbs in the same windows. Note when a spike happens, then line the trace up with it.</p>
+            <pre id="nrqlCheckout"></pre>
+            <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlCheckout" type="button">Copy NRQL</button></div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="dx" data-step="2">
+          <div class="q" data-qid="dc-transaction">
+            <p class="dx-num">Step 2 · Find the transaction</p>
+            <p class="q-text">The service is slow overall. How do you pin it to a specific endpoint?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button" data-correct>Break response time down by transaction name and see which one jumps</button>
+              <button class="q-opt" type="button">Restart the service and see if it recovers</button>
+              <button class="q-opt" type="button">Read the browser console on the checkout page</button>
+            </div>
+            <p class="q-feedback" hidden>Faceting by transaction name points straight at <code>/api/checkout</code>: it carries the spikes and the errors while the other endpoints stay flat.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">See it in New Relic</span>
+            <h3>Response time by transaction</h3>
+            <p>In the service, open <b>Transactions</b>, or run the query below. <code>/api/checkout</code> is the one that's slow and failing. Next, stop guessing why, and open one of its traces.</p>
+            <pre id="nrqlFacet"></pre>
+            <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlFacet" type="button">Copy NRQL</button></div>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="dx" data-step="3">
+          <div class="q" data-qid="dc-trace">
+            <p class="dx-num">Step 3 · Open the trace</p>
+            <p class="q-text">Checkout's code didn't change, and it mostly orchestrates calls to other services. What shows you where its time and errors actually go?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button">Rewrite the checkout function and redeploy</button>
+              <button class="q-opt" type="button" data-correct>Open a distributed trace of a slow checkout and read the span waterfall</button>
+              <button class="q-opt" type="button">Add more CPU to the host</button>
+            </div>
+            <p class="q-feedback" hidden>A transaction that calls other services is best understood through its trace. The waterfall breaks the request into spans, one per step, so you can see which call takes the time and which one fails.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">See it in New Relic</span>
+            <h3>From a slow transaction to its trace</h3>
+            <p>Open a slow <code>/api/checkout</code> transaction and follow it into <b>Distributed tracing</b>, or open the trace from a slow trace sample. You'll see checkout at the top and, nested under it, the calls it makes: <code>/internal/inventory</code> then <code>/internal/payment</code>. Read down the waterfall.</p>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="dx" data-step="4">
+          <div class="q" data-qid="dc-waterfall">
+            <p class="dx-num">Step 4 · Read the waterfall</p>
+            <p class="q-text">In the trace, checkout calls inventory and then payment. Which span carries the time, and the error?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button">Inventory: it runs first, so it must be the hold-up</button>
+              <button class="q-opt" type="button" data-correct>Payment: it's long and sometimes red, while inventory stays short</button>
+              <button class="q-opt" type="button">Checkout's own span, between the two calls</button>
+            </div>
+            <p class="q-feedback" hidden>Inventory stays quick (around 40&nbsp;ms). The payment span is the long bar in the waterfall, and the one that turns red when the request fails. That's where both the latency and the error live.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">See it in New Relic</span>
+            <h3>Inventory stays flat, payment spikes</h3>
+            <p>Compare the two dependencies over time. Inventory holds steady; payment's duration jumps during the bursts. The query below shows them side by side, which confirms what the single trace suggested.</p>
+            <pre id="nrqlDeps"></pre>
+            <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlDeps" type="button">Copy NRQL</button></div>
+          </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="dx" data-step="5">
+          <div class="q" data-qid="dc-root">
+            <p class="dx-num">Step 5 · Name the root cause</p>
+            <p class="q-text">The failure surfaces as a 502 from checkout, but in the trace the error is thrown in the payment span. What's the honest root cause?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button">Checkout has a bug and should be rolled back</button>
+              <button class="q-opt" type="button" data-correct>The payment dependency: checkout fails because payment does, and just passes it on</button>
+              <button class="q-opt" type="button">New Relic attributed the error to the wrong service</button>
+            </div>
+            <p class="q-feedback" hidden>Checkout returns the 502, but it only fails because the call it depends on fails. The error originates in the payment span; checkout propagates it. The root cause is downstream, which is why "fix checkout" would have gone nowhere.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">See it in New Relic</span>
+            <h3>The errors live on payment</h3>
+            <p>The errors are recorded on the <code>/internal/payment</code> transaction, not on checkout's own logic. Checkout's failures are downstream of them, in the same windows.</p>
+            <pre id="nrqlPaymentErr"></pre>
+            <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlPaymentErr" type="button">Copy NRQL</button><a class="btn secondary small" href="https://one.newrelic.com" target="_blank" rel="noopener">Open New Relic <span class="arrow" aria-hidden="true">→</span></a></div>
+          </div>
+        </div>
+
+        <!-- Step 6 -->
+        <div class="dx" data-step="6">
+          <div class="q" data-qid="dc-next">
+            <p class="dx-num">Step 6 · What next</p>
+            <p class="q-text">You've proven payment is the culprit. What's the right follow-up?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button">Tell the checkout team to fix their code</button>
+              <button class="q-opt" type="button" data-correct>Investigate the payment service, and make checkout resilient to it</button>
+              <button class="q-opt" type="button">Nothing: it recovers on its own each time</button>
+            </div>
+            <p class="q-feedback" hidden>Fix the payment dependency, and in the meantime protect checkout from it with a timeout, a retry or a circuit breaker, and a fallback message. Alert on payment's own health so the dependency pages someone before customers feel it.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">The takeaway</span>
+            <h3>Blame the span that carries the failure, not the one that reports it</h3>
+            <p>The service that returns the error is rarely the one that caused it. The trace is what lets you tell the difference.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Wrap-up -->
+      <div id="dxSolution" class="locked">
+        <div class="tag">Case closed</div>
+        <h3>Checkout was the messenger. Payment was the cause.</h3>
+        <p>Checkout returned 502s and ran slow because the payment service it calls was slow and failing. Nothing in checkout changed. You proved it by following one request's trace: slow checkout → its span waterfall → the payment span carrying the time and the error.</p>
+        <p><b>What you'd do next in the real world:</b></p>
+        <ul>
+          <li>Investigate the payment service itself: its own traces, logs, resources and recent changes.</li>
+          <li>Make checkout resilient while payment is shaky: a timeout, a retry with backoff, a circuit breaker, and a clear message to the shopper instead of a hang.</li>
+          <li>Alert on payment's latency and error rate, so the dependency is caught at the source next time.</li>
+        </ul>
+        <p><b>Why it worked:</b> distributed tracing turns one request into a waterfall of spans, so you can point at the exact call that failed, across service boundaries, instead of blaming whoever reported the error.</p>
+        <div class="actions">
+          <a class="btn green small" href="index.html#pages">Back to the learning path <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn secondary small" href="https://docs.newrelic.com/docs/distributed-tracing/ui-data/understand-use-distributed-tracing-ui/" target="_blank" rel="noopener">Docs: the distributed tracing UI <span class="arrow" aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>A sample exercise for practicing root-cause analysis with distributed tracing.</span>
+    <span>Avoid typing anything sensitive. Data is visible to everyone in the shared account.</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- ================= LOGIC (pure functions, tested by backend/page-logic.test.js) ================= -->
+<script>
+/*LOGIC-START*/
+(function (root) {
+  // The queries each checkpoint reveals. They describe the shared services, not one visitor, so they
+  // filter by the app rather than by your session code. Widen SINCE to find an earlier burst.
+  var APP = 'Browser Agent Playground';
+
+  function buildCheckoutNrql() {
+    return "SELECT average(duration) * 1000 AS 'ms', percentage(count(*), WHERE error IS true) AS 'error %'\n" +
+           "FROM Transaction\n" +
+           "WHERE appName = '" + APP + "' AND name = 'WebTransaction/Custom/api/checkout'\n" +
+           "SINCE 1 hour ago TIMESERIES";
+  }
+  function buildTransactionFacetNrql() {
+    return "SELECT average(duration) * 1000 AS 'ms'\n" +
+           "FROM Transaction\n" +
+           "WHERE appName = '" + APP + "' AND transactionType = 'Web'\n" +
+           "FACET name\n" +
+           "SINCE 1 hour ago LIMIT 20";
+  }
+  function buildDependencyNrql() {
+    return "SELECT average(duration) * 1000 AS 'ms'\n" +
+           "FROM Transaction\n" +
+           "WHERE appName = '" + APP + "' AND name IN ('WebTransaction/Custom/internal/inventory', 'WebTransaction/Custom/internal/payment')\n" +
+           "FACET name\n" +
+           "SINCE 1 hour ago TIMESERIES";
+  }
+  function buildPaymentErrorNrql() {
+    return "SELECT count(*)\n" +
+           "FROM TransactionError\n" +
+           "WHERE appName = '" + APP + "' AND transactionName = 'WebTransaction/Custom/internal/payment'\n" +
+           "SINCE 1 hour ago TIMESERIES";
+  }
+
+  root.DownstreamCulprit = {
+    buildCheckoutNrql: buildCheckoutNrql,
+    buildTransactionFacetNrql: buildTransactionFacetNrql,
+    buildDependencyNrql: buildDependencyNrql,
+    buildPaymentErrorNrql: buildPaymentErrorNrql
+  };
+})(window);
+/*LOGIC-END*/
+</script>
+
+<!-- ================= UI ================= -->
+<script>
+(function () {
+  'use strict';
+
+  var L = window.DownstreamCulprit;
+  var $ = function (id) { return document.getElementById(id); };
+  var ID = window.DemoIdentity.current();
+  var state = { name: ID.name, code: ID.code };
+
+  function fillQueries() {
+    $('nrqlCheckout').textContent = L.buildCheckoutNrql();
+    $('nrqlFacet').textContent = L.buildTransactionFacetNrql();
+    $('nrqlDeps').textContent = L.buildDependencyNrql();
+    $('nrqlPaymentErr').textContent = L.buildPaymentErrorNrql();
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll('.dx'));
+  var solved = 0;
+  function updateProgress() {
+    var el = $('dxProgress');
+    if (!el) return;
+    el.textContent = solved >= steps.length ? 'Solved. See the wrap-up below.' : 'Step ' + (solved + 1) + ' of ' + steps.length;
+  }
+
+  // Each checkpoint answer is recorded like the other pages' quizzes, plus an exercise tag so the
+  // knowledge-check dashboard can tell these apart.
+  function recordAnswer(q, option, attempt) {
+    var nr = Demo.agent();
+    if (!nr || typeof nr.recordCustomEvent !== 'function') return;
+    var answer = Demo.quizAnswer(q, option, attempt);
+    answer.exercise = 'downstream-culprit';
+    Demo.safe(function () { nr.recordCustomEvent(Demo.QUIZ_EVENT_TYPE, answer); });
+  }
+
+  function wireStep(step, idx) {
+    var q = step.querySelector('.q');
+    var feedback = q.querySelector('.q-feedback');
+    var explanation = feedback.innerHTML;
+    feedback.innerHTML = '';
+    feedback.hidden = false;
+    feedback.setAttribute('role', 'status');
+    feedback.setAttribute('aria-live', 'polite');
+    var attempts = 0, locked = false;
+
+    Array.prototype.forEach.call(q.querySelectorAll('.q-opt'), function (option) {
+      option.addEventListener('click', function () {
+        if (locked) return;
+        attempts++;
+        recordAnswer(q, option, attempts);
+        var correct = option.hasAttribute('data-correct');
+        option.classList.add(correct ? 'right' : 'wrong');
+        option.disabled = true;
+        if (!correct) { feedback.innerHTML = '<b>Not quite.</b> Follow the trace and try another answer.'; return; }
+
+        locked = true;
+        Array.prototype.forEach.call(q.querySelectorAll('.q-opt'), function (o) { o.disabled = true; });
+        feedback.innerHTML = '<b>' + (attempts === 1 ? 'Right.' : 'That\'s it.') + '</b> ' + explanation;
+
+        var reveal = step.querySelector('.dx-reveal');
+        if (reveal) reveal.classList.remove('locked');
+        solved++;
+        updateProgress();
+
+        var next = steps[idx + 1];
+        if (next) { next.classList.remove('locked'); next.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        else { var sol = $('dxSolution'); if (sol) { sol.classList.remove('locked'); sol.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }
+      });
+    });
+  }
+
+  function init() {
+    fillQueries();
+    steps.forEach(function (step, i) {
+      if (i > 0) step.classList.add('locked');
+      wireStep(step, i);
+    });
+    updateProgress();
+    Demo.start({ state: state });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>
