@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- ===================================================================
+     NEW RELIC BROWSER SNIPPET
+     Same snippet as the other pages. This bonus exercise is about change
+     tracking and errors on the backend, but it loads the browser agent
+     so your checkpoint answers record as DemoQuizAnswer events.
+     =================================================================== -->
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="demo-identity.js"></script>
+<script src="site.js"></script>
+<script src="nr-init.js"></script>
+<!-- NR:SNIPPET -->
+<script src="nr-config.js"></script>
+<script src="nr-agent.js"></script>
+<!-- /NR:SNIPPET -->
+
+<title>Bad Deploy: Correlate the Spike | New Relic</title>
+<link rel="icon" href="favicons/favicon.ico" sizes="48x48">
+<link rel="icon" href="favicons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicons/favicon-32x32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="favicons/favicon-16x16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="favicons/apple-touch-icon.png" sizes="180x180">
+<meta name="theme-color" content="#080F11">
+<meta name="description" content="A bonus New Relic exercise: errors spike on a feature in bursts. Use change tracking to correlate the spikes with deployment markers, then confirm the new error in Errors Inbox and pin it to the deploy that caused it.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Browser Agent Playground">
+<meta property="og:title" content="Bad Deploy: Correlate the Spike | New Relic">
+<meta property="og:description" content="A bonus New Relic exercise: errors spike on a feature in bursts. Use change tracking to correlate the spikes with deployment markers, then confirm the new error in Errors Inbox and pin it to the deploy that caused it.">
+<meta property="og:image" content="https://mcaronnewrelic.github.io/BrowserAgentPlayground/images/vitals-hero.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,200..900&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+<!-- Guided investigation styles (.dx, .dx-reveal, #dxSolution) are shared in site.css -->
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <span>Bonus exercise. This one is about change tracking: lining up an error spike with the deploy that caused it.</span>
+    <a href="https://docs.newrelic.com/docs/change-tracking/change-tracking-introduction/" target="_blank" rel="noopener">Read the docs</a>
+  </div>
+</div>
+
+<script>Demo.header()</script>
+
+<main>
+  <!-- ================= HERO ================= -->
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <div class="eyebrow">Bonus exercise · Change tracking</div>
+        <h1 class="display" style="margin-top:18px">A deploy<br>broke it.</h1>
+        <p class="lede">The profile feature started throwing errors, in bursts, with quiet gaps between. Nothing's wrong with the host or any dependency. The one question that matters: did something ship? Line the errors up against your deploys and find out.</p>
+        <div class="ctas">
+          <a class="btn" href="#start">Start the investigation <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn secondary" href="#brief">Read the brief</a>
+        </div>
+        <div class="note">
+          <span class="chip" aria-hidden="true">Mystery</span>
+          <span>Bursty errors that start abruptly usually follow a change. The skill is using <b>change tracking</b>, deployment markers on your charts, to correlate the spike with a deploy, then confirming the new error in <b>Errors Inbox</b>.</span>
+        </div>
+      </div>
+      <div class="term" aria-label="Error bursts lining up with deploys">
+        <div class="bar"><i></i><i></i><i></i></div>
+<pre><span class="c">// /api/profile errors, hour by hour</span>
+errors   &#9601;&#9601;&#9601;&#9601;&#9608;&#9608;&#9608;&#9601;&#9601;&#9601;&#9601;&#9601;&#9601;&#9608;&#9608;&#9608;&#9601;&#9601;&#9601;&#9601;&#9601;&#9601;&#9608;&#9608;&#9608;&#9601;&#9601;
+deploy   &#9601;&#9601;&#9601;&#9650;&#9601;&#9601;&#9601;&#9601;&#9601;&#9601;&#9601;&#9601;&#9650;&#9601;&#9601;&#9601;&#9601;&#9601;&#9601;&#9601;&#9601;&#9650;&#9601;&#9601;&#9601;&#9601;
+             <span class="k">&#8593; each spike starts right after a deploy</span>
+</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= WHO ================= -->
+  <section class="who-bar">
+    <div class="wrap">
+      <details class="who" id="who">
+        <script>Demo.whoSummary()</script>
+        <div class="who-body">
+          <p class="muted">Your checkpoint answers are recorded as <code>DemoQuizAnswer</code> custom events, tagged with your name and code (<code>demoUser</code> and <code>demoCode</code>), so we can see which steps trip people up. Only the option you pick is recorded.</p>
+          <script>Demo.identityForm()</script>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ================= BRIEF ================= -->
+  <section class="step" id="brief">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">The brief</div>
+        <h2 class="display" style="margin-top:14px">What you know going in</h2>
+        <p class="muted">The profile feature throws errors in bursts and then goes quiet, over and over. The host is healthy and no dependency is failing. Deployments are being recorded in New Relic as change-tracking markers. Use them to answer the only question that matters here: did a change cause this?</p>
+      </div>
+
+      <div class="primer">
+        <div>
+          <div class="tag-row"><div class="tag">You'll learn to</div><span class="chip">Correlation method</span></div>
+          <ul>
+            <li>Localize an error spike to one transaction in APM.</li>
+            <li>Overlay deployment markers on your charts with change tracking.</li>
+            <li>Correlate each error burst with the deploy that preceded it.</li>
+            <li>Confirm the specific new error in Errors Inbox and pin it to a release.</li>
+          </ul>
+        </div>
+        <div>
+          <div class="tag-row"><div class="tag">Before you start</div></div>
+          <ul class="needs">
+            <li><span class="chip">New Relic</span><span>Access to the account the site reports to (the one in <code>nr-config.js</code>).</span></li>
+            <li><span class="chip">Error window</span><span>The errors run for the second quarter of each hour (about :30&ndash;:44 UTC), with a deploy marker at the start. If it's quiet, widen each query's <code>SINCE</code> to find the last burst.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= INVESTIGATION ================= -->
+  <section class="step" id="start">
+    <div class="wrap">
+      <div class="step-head">
+        <div class="eyebrow">Work the timeline / Checkpoints</div>
+        <h2 class="display" style="margin-top:14px">Line the errors up with the deploys</h2>
+        <p class="muted">Answer each checkpoint to reveal the next. A wrong pick can be retried. Each correct answer unlocks how to see it in New Relic, with a query you can run.</p>
+      </div>
+      <p class="dx-progress" id="dxProgress" aria-live="polite">Step 1 of 6</p>
+
+      <div class="diagnostic">
+
+        <!-- Step 1 -->
+        <div class="dx" data-step="1">
+          <div class="q" data-qid="bd-localize">
+            <p class="dx-num">Step 1 · Confirm and localize</p>
+            <p class="q-text">Users report errors on their profile. What confirms it and shows which part of the app?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button">The host's disk usage</button>
+              <button class="q-opt" type="button" data-correct>The APM service's error rate, down to the transaction that's throwing</button>
+              <button class="q-opt" type="button">The browser's Core Web Vitals</button>
+            </div>
+            <p class="q-feedback" hidden>An error problem is an error-rate question. APM (and Errors Inbox) show the rate over time and which transaction is throwing: here it's <code>/api/profile</code>, erroring in bursts.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">See it in New Relic</span>
+            <h3>Find the error spike and its transaction</h3>
+            <p>In <b>APM &amp; services → the demo service</b>, look at the error rate, or open <b>Errors Inbox</b>. <code>/api/profile</code> throws in sharp bursts with clean gaps between, which already hints at something switching on and off, like a release.</p>
+            <pre id="nrqlErrors"></pre>
+            <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlErrors" type="button">Copy NRQL</button></div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="dx" data-step="2">
+          <div class="q" data-qid="bd-ask">
+            <p class="dx-num">Step 2 · Ask the right question</p>
+            <p class="q-text">The errors come in abrupt bursts, then stop. For errors that appear and vanish like that, what's the first thing to check?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button" data-correct>Whether a deployment lines up with the start of each burst</button>
+              <button class="q-opt" type="button">Whether the host is low on memory</button>
+              <button class="q-opt" type="button">Whether a third-party API is down</button>
+            </div>
+            <p class="q-feedback" hidden>Errors that start abruptly and come and go usually follow a change. Before chasing infrastructure, check whether a deploy coincides. New Relic's change tracking puts deployment markers right on your charts for exactly this.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">See it in New Relic</span>
+            <h3>Put deployments on the chart</h3>
+            <p>On the service, open <b>Deployments / Change tracking</b>, or turn on the deployment markers on the error chart. Each marker is a recorded release. Now line them up against the error bursts.</p>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="dx" data-step="3">
+          <div class="q" data-qid="bd-correlate">
+            <p class="dx-num">Step 3 · Read the correlation</p>
+            <p class="q-text">With deployment markers on the error chart, what do you see?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button">The markers land in the quiet gaps, away from the spikes</button>
+              <button class="q-opt" type="button" data-correct>Each error spike begins right after a deployment marker</button>
+              <button class="q-opt" type="button">There are no markers at all</button>
+            </div>
+            <p class="q-feedback" hidden>Every spike starts just after a marker. That timing is a strong signal: the change shipped, then the errors began. It doesn't prove cause on its own, but it tells you exactly which release to look at.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">See it in New Relic</span>
+            <h3>The markers precede the spikes</h3>
+            <p>List the deployment markers and compare their times to the error bursts from step 1. Each burst follows a marker. The markers carry a version, so you know which release to suspect.</p>
+            <pre id="nrqlDeploys"></pre>
+            <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlDeploys" type="button">Copy NRQL</button></div>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="dx" data-step="4">
+          <div class="q" data-qid="bd-error">
+            <p class="dx-num">Step 4 · Identify the error</p>
+            <p class="q-text">A deploy lines up with the spike. What does Errors Inbox tell you about the error itself?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button">A request timeout</button>
+              <button class="q-opt" type="button" data-correct>A new error group: a TypeError null reference, "reading 'tier'"</button>
+              <button class="q-opt" type="button">A 404 Not Found</button>
+            </div>
+            <p class="q-feedback" hidden>Errors Inbox shows a <code>TypeError: Cannot read properties of undefined (reading 'tier')</code>, a null reference, appearing in the same windows. That's the kind of bug a code change introduces: the new version reads a field off something that isn't always there.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">See it in New Relic</span>
+            <h3>The new error, by message</h3>
+            <p>In <b>Errors Inbox</b>, the profile errors are a single group: a <code>TypeError</code> about reading <code>'tier'</code> off <code>undefined</code>. Break the errors down by message to see it dominate the window.</p>
+            <pre id="nrqlErrorGroup"></pre>
+            <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlErrorGroup" type="button">Copy NRQL</button><a class="btn secondary small" href="https://one.newrelic.com" target="_blank" rel="noopener">Open New Relic <span class="arrow" aria-hidden="true">→</span></a></div>
+          </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="dx" data-step="5">
+          <div class="q" data-qid="bd-root">
+            <p class="dx-num">Step 5 · Name the root cause</p>
+            <p class="q-text">Infra is healthy, no dependency is failing, and a null-reference error appears only after a deploy. What's the root cause?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button">A noisy neighbor on the host</button>
+              <button class="q-opt" type="button" data-correct>The deployed code change: a regression in the profile feature</button>
+              <button class="q-opt" type="button">A slow downstream dependency</button>
+            </div>
+            <p class="q-feedback" hidden>The new version has a bug: it reads a field off an object that's sometimes undefined. It's a code regression, and change tracking pinned it to a specific release. "Fix the infrastructure" would have gone nowhere.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">The reasoning</span>
+            <h3>A regression, tied to a release</h3>
+            <p>Healthy host, healthy dependencies, a brand-new null-reference error that starts at a deploy: that's a code regression. The marker tells you which deploy introduced it, so you're not guessing which change to revert.</p>
+          </div>
+        </div>
+
+        <!-- Step 6 -->
+        <div class="dx" data-step="6">
+          <div class="q" data-qid="bd-fix">
+            <p class="dx-num">Step 6 · What next</p>
+            <p class="q-text">You've tied the errors to a deploy and identified the bug. What's the move?</p>
+            <div class="q-options">
+              <button class="q-opt" type="button">Add CPU to the host and move on</button>
+              <button class="q-opt" type="button" data-correct>Roll back or fix forward that release, and alert on the new error</button>
+              <button class="q-opt" type="button">Nothing: the errors stop on their own between bursts</button>
+            </div>
+            <p class="q-feedback" hidden>Roll back the bad version, or ship a fix, using the marker to know exactly which release. Then alert on the new error group and add a guard for the missing field, so the next regression is caught in minutes, not by users.</p>
+          </div>
+          <div class="dx-reveal locked">
+            <span class="dx-see">The takeaway</span>
+            <h3>"What changed?" should have an answer</h3>
+            <p>Recording deployments is what turns "errors are up, no idea why" into "this release, at this time, introduced this error." That's the whole point of change tracking.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Wrap-up -->
+      <div id="dxSolution" class="locked">
+        <div class="tag">Case closed</div>
+        <h3>A release broke profile, and the marker proved it.</h3>
+        <p>The profile errors were a bad deploy: a new version read a field off an object that wasn't always there, throwing a <code>TypeError</code>. You tied the error bursts to deployment markers with change tracking, then confirmed the exact error in Errors Inbox and pinned it to the release.</p>
+        <p><b>What you'd do next in the real world:</b></p>
+        <ul>
+          <li>Roll back the bad release, or ship a fix that guards the missing field, using the marker to know which deploy to act on.</li>
+          <li>Add an alert on the new error group so a repeat pages someone immediately.</li>
+          <li>Keep recording deployments on every service, so "what changed?" always has an answer on the chart.</li>
+        </ul>
+        <p><b>Why it worked:</b> change tracking overlays your releases on your telemetry, so an error spike and the deploy that caused it sit on the same timeline, one click apart.</p>
+        <div class="actions">
+          <a class="btn green small" href="index.html#pages">Back to the learning path <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn secondary small" href="https://docs.newrelic.com/docs/change-tracking/change-tracking-view-analyze/" target="_blank" rel="noopener">Docs: view and analyze changes <span class="arrow" aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>A sample exercise for correlating error spikes with deployments using change tracking.</span>
+    <span>Avoid typing anything sensitive. Data is visible to everyone in the shared account.</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- ================= LOGIC (pure functions, tested by backend/page-logic.test.js) ================= -->
+<script>
+/*LOGIC-START*/
+(function (root) {
+  // The queries each checkpoint reveals. They describe the shared service, not one visitor, so they filter
+  // by the app rather than by your session code, and look back far enough to span several deploy windows.
+  var APP = 'Browser Agent Playground';
+
+  function buildErrorNrql() {
+    return "SELECT count(*)\n" +
+           "FROM TransactionError\n" +
+           "WHERE appName = '" + APP + "' AND transactionName = 'WebTransaction/Custom/api/profile'\n" +
+           "SINCE 3 hours ago TIMESERIES";
+  }
+  function buildDeploymentNrql() {
+    return "SELECT timestamp, version\n" +
+           "FROM Deployment\n" +
+           "WHERE version LIKE 'demo-%'\n" +
+           "SINCE 3 hours ago LIMIT 50";
+  }
+  function buildErrorGroupNrql() {
+    return "SELECT count(*)\n" +
+           "FROM TransactionError\n" +
+           "WHERE appName = '" + APP + "' AND transactionName = 'WebTransaction/Custom/api/profile'\n" +
+           "FACET error.message\n" +
+           "SINCE 3 hours ago";
+  }
+
+  root.BadDeploy = {
+    buildErrorNrql: buildErrorNrql,
+    buildDeploymentNrql: buildDeploymentNrql,
+    buildErrorGroupNrql: buildErrorGroupNrql
+  };
+})(window);
+/*LOGIC-END*/
+</script>
+
+<!-- ================= UI ================= -->
+<script>
+(function () {
+  'use strict';
+
+  var L = window.BadDeploy;
+  var $ = function (id) { return document.getElementById(id); };
+  var ID = window.DemoIdentity.current();
+  var state = { name: ID.name, code: ID.code };
+
+  function fillQueries() {
+    $('nrqlErrors').textContent = L.buildErrorNrql();
+    $('nrqlDeploys').textContent = L.buildDeploymentNrql();
+    $('nrqlErrorGroup').textContent = L.buildErrorGroupNrql();
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll('.dx'));
+  var solved = 0;
+  function updateProgress() {
+    var el = $('dxProgress');
+    if (!el) return;
+    el.textContent = solved >= steps.length ? 'Solved. See the wrap-up below.' : 'Step ' + (solved + 1) + ' of ' + steps.length;
+  }
+
+  // Each checkpoint answer is recorded like the other pages' quizzes, plus an exercise tag so the
+  // knowledge-check dashboard can tell these apart.
+  function recordAnswer(q, option, attempt) {
+    var nr = Demo.agent();
+    if (!nr || typeof nr.recordCustomEvent !== 'function') return;
+    var answer = Demo.quizAnswer(q, option, attempt);
+    answer.exercise = 'bad-deploy';
+    Demo.safe(function () { nr.recordCustomEvent(Demo.QUIZ_EVENT_TYPE, answer); });
+  }
+
+  function wireStep(step, idx) {
+    var q = step.querySelector('.q');
+    var feedback = q.querySelector('.q-feedback');
+    var explanation = feedback.innerHTML;
+    feedback.innerHTML = '';
+    feedback.hidden = false;
+    feedback.setAttribute('role', 'status');
+    feedback.setAttribute('aria-live', 'polite');
+    var attempts = 0, locked = false;
+
+    Array.prototype.forEach.call(q.querySelectorAll('.q-opt'), function (option) {
+      option.addEventListener('click', function () {
+        if (locked) return;
+        attempts++;
+        recordAnswer(q, option, attempts);
+        var correct = option.hasAttribute('data-correct');
+        option.classList.add(correct ? 'right' : 'wrong');
+        option.disabled = true;
+        if (!correct) { feedback.innerHTML = '<b>Not quite.</b> Compare the timeline again and try another answer.'; return; }
+
+        locked = true;
+        Array.prototype.forEach.call(q.querySelectorAll('.q-opt'), function (o) { o.disabled = true; });
+        feedback.innerHTML = '<b>' + (attempts === 1 ? 'Right.' : 'That\'s it.') + '</b> ' + explanation;
+
+        var reveal = step.querySelector('.dx-reveal');
+        if (reveal) reveal.classList.remove('locked');
+        solved++;
+        updateProgress();
+
+        var next = steps[idx + 1];
+        if (next) { next.classList.remove('locked'); next.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        else { var sol = $('dxSolution'); if (sol) { sol.classList.remove('locked'); sol.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }
+      });
+    });
+  }
+
+  function init() {
+    fillQueries();
+    steps.forEach(function (step, i) {
+      if (i > 0) step.classList.add('locked');
+      wireStep(step, i);
+    });
+    updateProgress();
+    Demo.start({ state: state });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>
