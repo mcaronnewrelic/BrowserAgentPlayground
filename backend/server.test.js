@@ -138,6 +138,23 @@ test('outside the fault window, payment is healthy even with the error rate at 1
   });
 });
 
+test('profile is healthy outside the bad-deploy window, and throws the new error inside it', async () => {
+  const healthy = () => new Date(Date.UTC(2026, 0, 1, 10, 5));   // minute 5: before the :30 window
+  const buggy = () => new Date(Date.UTC(2026, 0, 1, 10, 35));    // minute 35: inside the :30-:44 window
+  await withServer({ nr: null, now: healthy, badDeployErrorRate: 1 }, async (base) => {
+    const res = await fetch(base + '/api/profile');
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual((await res.json()).data.tier, 'gold');
+  });
+  const nr = fakeNewRelic();
+  await withServer({ nr, now: buggy, badDeployErrorRate: 1 }, async (base) => {
+    const res = await fetch(base + '/api/profile');
+    assert.strictEqual(res.status, 500);
+    assert.match((await res.json()).error, /reading 'tier'/);
+    assert.ok(nr.calls.errors.some(m => /reading 'tier'/.test(m)), 'the new error is reported to APM');
+  });
+});
+
 test('catalog fans out into one internal call per item (the N+1 pattern), capped', async () => {
   async function detailCount(items) {
     const seen = [];

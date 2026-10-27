@@ -50,7 +50,13 @@ function createServer(opts) {
   const faultWindowMinutes = opts.faultWindowMinutes != null ? opts.faultWindowMinutes : num(process.env.FAULT_WINDOW_MINUTES, 15);
   const paymentSlowMs = opts.paymentSlowMs != null ? opts.paymentSlowMs : num(process.env.PAYMENT_SLOW_MS, 700);
   const paymentErrorRate = opts.paymentErrorRate != null ? opts.paymentErrorRate : num(process.env.PAYMENT_ERROR_RATE, 0.25);
-  function inFaultWindow() { return now().getUTCMinutes() < faultWindowMinutes; }
+  // Bad-deploy exercise: a second window, offset from the payment one so the two exercises don't collide.
+  // /api/profile throws a new error during it, lined up with a deployment marker the host cron emits.
+  const badDeployStart = opts.badDeployStart != null ? opts.badDeployStart : num(process.env.BAD_DEPLOY_WINDOW_START, 30);
+  const badDeployMinutes = opts.badDeployMinutes != null ? opts.badDeployMinutes : num(process.env.BAD_DEPLOY_WINDOW_MINUTES, 15);
+  const badDeployErrorRate = opts.badDeployErrorRate != null ? opts.badDeployErrorRate : num(process.env.BAD_DEPLOY_ERROR_RATE, 0.5);
+  function inWindow(start, len) { const m = now().getUTCMinutes(); return m >= start && m < start + len; }
+  function inFaultWindow() { return inWindow(0, faultWindowMinutes); }
 
   function apm(method) {
     const args = Array.prototype.slice.call(arguments, 1);
@@ -216,6 +222,19 @@ function createServer(opts) {
       if (path.startsWith('/api/orders/') && req.method === 'GET') {
         route('api/orders/:id');
         return send(req, res, 200, { data: { orderId: path.split('/').pop(), status: 'confirmed' } }, ctx);
+      }
+      if (path === '/api/profile' && req.method === 'GET') {
+        route('api/profile');
+        // In the bad-deploy window this "new version" has a bug: a null-reference that only some requests
+        // hit. It lines up with the deployment marker the host cron emits, so the error spike follows a
+        // deploy. Outside the window the endpoint is healthy.
+        if (inWindow(badDeployStart, badDeployMinutes) && random() < badDeployErrorRate) {
+          const err = new TypeError("Cannot read properties of undefined (reading 'tier')");
+          apm('noticeError', err);
+          ctx.error = err;
+          return send(req, res, 500, { error: err.message }, ctx);
+        }
+        return send(req, res, 200, { data: { user: 'demo', tier: 'gold', memberSince: 2021 } }, ctx);
       }
       if (path === '/api/recommendations' && req.method === 'GET') {
         route('api/recommendations');
