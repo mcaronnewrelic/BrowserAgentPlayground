@@ -94,6 +94,10 @@
     .stage-head { position: static; }
   }
   .card > .btn { margin-top: auto; }
+  /* Bonus exercise, off the numbered path. */
+  .bonus-row { margin-top: 40px; display: grid; gap: 14px; }
+  .bonus-row .bonus-eyebrow { font: 500 13px/1.4 var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--green); }
+  .bonus-row .card { border-style: dashed; }
   .snippet { white-space: pre-wrap; word-break: break-word; margin: 0; }
   .snippet .s { color: var(--blue-1); }
   .snippet .c { color: var(--gray); }
@@ -291,6 +295,17 @@
         </li>
 
       </ol>
+
+      <!-- Bonus exercise: standalone, not one of the numbered stages (not in PAGES in site.js). -->
+      <div class="bonus-row">
+        <div class="bonus-eyebrow">Bonus · off the path</div>
+        <article class="card wide" aria-labelledby="pBonus">
+          <div class="tag-row"><div class="tag">Investigation</div><span class="chip">Infrastructure · root cause</span></div>
+          <h3 id="pBonus">Who's stealing the CPU?</h3>
+          <p>A guided root-cause investigation, separate from the browser-agent tour. An endpoint keeps slowing down with no code change; you follow the data from the slow request down to the process hogging the host. Each checkpoint reveals the next, so you prove the cause step by step.</p>
+          <a class="btn secondary small" href="noisy-neighbor.html">Start the investigation <span class="arrow" aria-hidden="true">→</span></a>
+        </article>
+      </div>
     </div>
   </section>
 </main>

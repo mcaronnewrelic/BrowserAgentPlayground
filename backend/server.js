@@ -18,6 +18,9 @@ const MAX_SLOW_MS = 5000;
 // ?iterations=, capped so it can't be abused.
 const RECOMMEND_ITERATIONS = 2000000;
 const MAX_RECOMMEND_ITERATIONS = 50000000;
+// /api/catalog fetches this many item details, one internal call each (the N+1 pattern). Capped.
+const CATALOG_ITEMS = 8;
+const MAX_CATALOG_ITEMS = 50;
 
 const PRODUCTS = [
   { sku: 'NR-TEE', name: 'Observability tee', price: 24 },
@@ -36,6 +39,18 @@ function createServer(opts) {
   const sleep = opts.sleep || defaultSleep;
   const onRequest = opts.onRequest || function () {};
   const stdout = opts.stdout || ((line) => process.stdout.write(line + '\n'));
+  // Clock and RNG are injectable so tests can land inside or outside the fault window deterministically.
+  const now = opts.now || (() => new Date());
+  const random = opts.random || Math.random;
+
+  // Downstream-culprit exercise: for the first FAULT_WINDOW_MINUTES of each hour (UTC), the payment
+  // dependency gets slow and errors part of the time, so checkout slows and fails. A 15-minute window
+  // means any default 60-minute query range always contains it. See backend/README.md and exercises/.
+  const num = (v, d) => (v == null || v === '' || !Number.isFinite(Number(v)) ? d : Number(v));
+  const faultWindowMinutes = opts.faultWindowMinutes != null ? opts.faultWindowMinutes : num(process.env.FAULT_WINDOW_MINUTES, 15);
+  const paymentSlowMs = opts.paymentSlowMs != null ? opts.paymentSlowMs : num(process.env.PAYMENT_SLOW_MS, 700);
+  const paymentErrorRate = opts.paymentErrorRate != null ? opts.paymentErrorRate : num(process.env.PAYMENT_ERROR_RATE, 0.25);
+  function inFaultWindow() { return now().getUTCMinutes() < faultWindowMinutes; }
 
   function apm(method) {
     const args = Array.prototype.slice.call(arguments, 1);
@@ -130,7 +145,8 @@ function createServer(opts) {
       const r = http.request({ host: '127.0.0.1', port, path, method: 'POST', headers: { 'Content-Type': 'application/json' } }, (resp) => {
         let data = '';
         resp.on('data', (c) => { data += c; });
-        resp.on('end', () => { try { resolve(JSON.parse(data)); } catch (e) { reject(e); } });
+        // Carry the child's status back so a caller (checkout) can react to a downstream failure.
+        resp.on('end', () => { try { const parsed = JSON.parse(data); parsed.status = resp.statusCode; resolve(parsed); } catch (e) { reject(e); } });
       });
       r.on('error', reject);
       r.end('{}');
@@ -173,7 +189,29 @@ function createServer(opts) {
         route('api/checkout');
         const inventory = await callInternal(server, withCode('/internal/inventory'));
         const payment = await callInternal(server, withCode('/internal/payment'));
+        // The user-facing failure, caused downstream: when payment fails, checkout fails too. The trace
+        // shows the error originating in the payment span, not in checkout's own code.
+        if (payment.status >= 500) {
+          const err = new Error('Checkout failed: payment did not authorize');
+          apm('noticeError', err);
+          ctx.error = err;
+          return send(req, res, 502, { error: err.message }, ctx);
+        }
         return send(req, res, 200, { data: { orderId: rid('ORD'), steps: [inventory.data, payment.data] } }, ctx);
+      }
+      // N+1 exercise: instead of one call for the catalog, this fetches each item's details in its own
+      // call, so the trace shows one request fanning out into many identical child spans. items= sets how
+      // many (capped), cycling through the catalog.
+      if (path === '/api/catalog' && req.method === 'GET') {
+        route('api/catalog');
+        const n = Math.min(num(url.searchParams.get('items'), CATALOG_ITEMS), MAX_CATALOG_ITEMS);
+        const products = [];
+        for (let i = 0; i < n; i++) {
+          const sku = PRODUCTS[i % PRODUCTS.length].sku;
+          const detail = await callInternal(server, withCode('/internal/product/' + sku));
+          products.push(detail.data);
+        }
+        return send(req, res, 200, { data: { products } }, ctx);
       }
       if (path.startsWith('/api/orders/') && req.method === 'GET') {
         route('api/orders/:id');
@@ -214,7 +252,25 @@ function createServer(opts) {
       if (path === '/internal/payment') {
         route('internal/payment');
         await sleep(120);
+        // During the fault window the payment gateway is slow, and fails some of the time. This is the
+        // real cause behind the slow, sometimes-failing checkout above.
+        if (inFaultWindow()) {
+          await sleep(paymentSlowMs);
+          if (random() < paymentErrorRate) {
+            const err = new Error('Payment gateway timeout');
+            apm('noticeError', err);
+            ctx.error = err;
+            return send(req, res, 503, { error: err.message }, ctx);
+          }
+        }
         return send(req, res, 200, { data: { service: 'payment', authorized: true } }, ctx);
+      }
+      if (path.startsWith('/internal/product/')) {
+        route('internal/product/:sku');
+        await sleep(15);
+        const sku = decodeURIComponent(path.split('/').pop());
+        const product = PRODUCTS.filter((p) => p.sku === sku)[0] || { sku: sku, name: 'Unknown', price: 0 };
+        return send(req, res, 200, { data: product }, ctx);
       }
       route('not-found');
       return send(req, res, 404, { error: 'Not found: ' + path }, ctx);

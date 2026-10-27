@@ -88,9 +88,13 @@ test('without an APM agent, apm is null and nothing throws', async () => {
   });
 });
 
+// Pinned outside the fault window (minute 30) so the healthy path is deterministic whatever time CI runs.
+const OUT_OF_WINDOW = () => new Date(Date.UTC(2026, 0, 1, 10, 30));
+const IN_WINDOW = () => new Date(Date.UTC(2026, 0, 1, 10, 5));
+
 test('checkout calls internal inventory and payment services', async () => {
   const seen = [];
-  await withServer({ nr: null, onRequest: (p) => seen.push(p) }, async (base) => {
+  await withServer({ nr: null, now: OUT_OF_WINDOW, onRequest: (p) => seen.push(p) }, async (base) => {
     const res = await fetch(base + '/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     assert.strictEqual(res.status, 200);
     const body = await res.json();
@@ -98,6 +102,55 @@ test('checkout calls internal inventory and payment services', async () => {
     assert.deepStrictEqual(body.data.steps.map(s => s.service), ['inventory', 'payment']);
     assert.ok(seen.includes('/internal/inventory') && seen.includes('/internal/payment'));
   });
+});
+
+test('in the fault window, payment fails and checkout fails downstream of it', async () => {
+  const nr = fakeNewRelic();
+  const waits = [];
+  const sleep = (ms) => { waits.push(ms); return Promise.resolve(); };
+  await withServer({ nr, now: IN_WINDOW, paymentErrorRate: 1, sleep }, async (base) => {
+    const res = await fetch(base + '/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    assert.strictEqual(res.status, 502);
+    assert.match((await res.json()).error, /payment/i);
+    assert.ok(waits.includes(700), 'payment was slowed inside the window');
+    assert.ok(nr.calls.errors.some(m => /payment gateway timeout/i.test(m)), 'payment error reported to APM');
+    assert.ok(nr.calls.errors.some(m => /did not authorize/i.test(m)), 'checkout error reported to APM');
+  });
+});
+
+test('in the fault window, payment is slow but checkout still succeeds when it does not error', async () => {
+  const waits = [];
+  const sleep = (ms) => { waits.push(ms); return Promise.resolve(); };
+  await withServer({ nr: null, now: IN_WINDOW, paymentErrorRate: 0, sleep }, async (base) => {
+    const res = await fetch(base + '/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    assert.strictEqual(res.status, 200);
+    assert.ok(waits.includes(700), 'payment was slowed inside the window');
+  });
+});
+
+test('outside the fault window, payment is healthy even with the error rate at 1', async () => {
+  const waits = [];
+  const sleep = (ms) => { waits.push(ms); return Promise.resolve(); };
+  await withServer({ nr: null, now: OUT_OF_WINDOW, paymentErrorRate: 1, sleep }, async (base) => {
+    const res = await fetch(base + '/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    assert.strictEqual(res.status, 200);
+    assert.ok(!waits.includes(700), 'no extra payment latency outside the window');
+  });
+});
+
+test('catalog fans out into one internal call per item (the N+1 pattern), capped', async () => {
+  async function detailCount(items) {
+    const seen = [];
+    let products;
+    await withServer({ nr: null, now: OUT_OF_WINDOW, onRequest: (p) => seen.push(p) }, async (base) => {
+      const res = await fetch(base + '/api/catalog?items=' + items);
+      assert.strictEqual(res.status, 200);
+      products = (await res.json()).data.products.length;
+    });
+    return { details: seen.filter(p => p.startsWith('/internal/product/')).length, products };
+  }
+  assert.deepStrictEqual(await detailCount(5), { details: 5, products: 5 });
+  assert.deepStrictEqual(await detailCount(999), { details: 50, products: 50 });
 });
 
 test('slow waits the requested time, capped at 5000 ms', async () => {

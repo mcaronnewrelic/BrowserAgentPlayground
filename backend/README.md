@@ -10,7 +10,8 @@ There are no dependencies apart from the `newrelic` agent, which loads only when
 | --- | --- |
 | `GET /api/health` | Reachability check used by the page's mode badge |
 | `GET /api/products`, `GET /api/cart` | Simple JSON responses |
-| `POST /api/checkout` | Calls `/internal/inventory` and `/internal/payment` over HTTP, which produces child spans |
+| `POST /api/checkout` | Calls `/internal/inventory` and `/internal/payment` over HTTP, which produces child spans. In the fault window (below) payment is slow and sometimes fails, and checkout returns 502 downstream of it. |
+| `GET /api/catalog?items=8` | Fetches each item's details in its own `/internal/product/:sku` call, so one request fans out into many identical child spans (the N+1 pattern). `items` is capped at 50. |
 | `GET /api/orders/:id` | Order lookup |
 | `GET /api/slow?ms=1500` | Waits before responding (capped at 5000 ms) |
 | `GET /api/recommendations?iterations=2000000` | Returns a few recommended products after a fixed amount of real CPU work, so its response time rises under CPU contention (iterations capped at 50,000,000; the effective count is on the `x-compute-iterations` response header). Used by the noisy-neighbor exercise. |
@@ -36,6 +37,11 @@ The same line is printed to stdout as JSON for local runs. Responses also carry 
 | `ALLOWED_ORIGINS` | `https://mcaronnewrelic.github.io,http://localhost:8080,http://127.0.0.1:8080` | Comma-separated origins allowed to call the API |
 | `PORT` | `3000` | |
 | `SITE_ROOT` | none (set to `/app/site` in the Docker image) | Folder of demo pages to serve. When set, the server also injects the browser agent into each page and requires `NEW_RELIC_LICENSE_KEY`. |
+| `FAULT_WINDOW_MINUTES` | `15` | The downstream-culprit exercise: for this many minutes at the top of each hour (UTC), payment is slow and sometimes fails. 15 of every 60 means it's always in a default 1-hour query range. `0` turns it off. |
+| `PAYMENT_SLOW_MS` | `700` | Extra latency on payment during the fault window. |
+| `PAYMENT_ERROR_RATE` | `0.25` | Fraction of payments that fail (503) during the fault window. |
+
+The downstream-culprit and N+1 endpoints are the engines behind the guided exercises in [`../exercises/`](../exercises/) and the pages that go with them. The fault is driven by the server's own clock, so no cron or extra process is needed.
 
 ## Run locally
 
