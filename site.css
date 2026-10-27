@@ -207,6 +207,39 @@ section.step { padding: 64px 0; border-top: 1px solid var(--line); }
 .q-feedback b { color: var(--black); }
 .quiz-note { margin: 0 0 18px; max-width: 72ch; font-size: 14px; color: var(--ink-2); }
 
+/* ---------- Guided investigation pages (noisy-neighbor, downstream-culprit, ...) ---------- */
+.dx-progress { margin: 0 0 18px; font: 600 14px/1.4 var(--mono); color: var(--ink-2); }
+.diagnostic { display: grid; gap: 18px; max-width: 900px; }
+.dx { display: grid; gap: 0; min-width: 0; }
+.dx.locked, .dx-reveal.locked, #dxSolution.locked { display: none; }
+.dx-num { font: 600 13px/1.4 var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--green-deep); margin: 0 0 8px; }
+/* The reveal is the "you got it right, now verify" panel: a green wash and a checked header, so it reads
+   as a different kind of block from the white question card above it. */
+.dx-reveal {
+  margin-top: 14px; background: rgba(28,231,131,.08); border: 1px solid var(--green-deep);
+  border-radius: var(--radius-md); padding: 16px 20px 20px; display: grid; gap: 12px;
+}
+.dx-reveal h3 { margin: 0; font-size: 17px; }
+.dx-reveal p { margin: 0; font-size: 15px; color: var(--black); }
+.dx-reveal pre { margin: 0; background: var(--black); color: var(--sand); border-radius: 12px; padding: 14px 16px; overflow-x: auto; font: 500 13px/1.5 var(--mono); white-space: pre-wrap; word-break: break-word; }
+.dx-reveal .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+/* A checked header bar: a green strip with a tick, clearly marking the question as solved. */
+.dx-see {
+  display: flex; align-items: center; gap: 10px; margin: -16px -20px 2px; padding: 11px 20px;
+  background: var(--green-deep); color: var(--black); border-radius: var(--radius-md) var(--radius-md) 0 0;
+  font: 700 12px/1.4 var(--mono); text-transform: uppercase; letter-spacing: .08em;
+}
+.dx-see::before {
+  content: "\2713"; flex: none; display: inline-grid; place-items: center; width: 20px; height: 20px;
+  border-radius: 50%; background: var(--black); color: var(--green); font-size: 12px; font-weight: 700;
+}
+#dxSolution { background: var(--green-1); border: 1px solid var(--green-deep); border-radius: var(--radius-lg); padding: 26px 28px; display: grid; gap: 12px; max-width: 900px; }
+#dxSolution h3 { margin: 0; font-size: 20px; }
+#dxSolution p { margin: 0; font-size: 15px; color: var(--black); }
+#dxSolution ul { margin: 4px 0 0; padding-left: 20px; font-size: 15px; color: var(--black); }
+#dxSolution li { margin: 4px 0; }
+#dxSolution .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+
 /* ---------- Up next: the following page on the learning path ---------- */
 .up-next { padding: 0 0 64px; }
 .up-next-card {
