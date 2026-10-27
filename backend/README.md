@@ -13,7 +13,7 @@ There are no dependencies apart from the `newrelic` agent, which loads only when
 | `POST /api/checkout` | Calls `/internal/inventory` and `/internal/payment` over HTTP, which produces child spans |
 | `GET /api/orders/:id` | Order lookup |
 | `GET /api/slow?ms=1500` | Waits before responding (capped at 5000 ms) |
-| `GET /api/recommendations?iterations=4000000` | Returns a few recommended products after a fixed amount of real CPU work, so its response time rises under CPU contention (iterations capped at 50,000,000; the effective count is on the `x-compute-iterations` response header). Used by the noisy-neighbor exercise. |
+| `GET /api/recommendations?iterations=2000000` | Returns a few recommended products after a fixed amount of real CPU work, so its response time rises under CPU contention (iterations capped at 50,000,000; the effective count is on the `x-compute-iterations` response header). Used by the noisy-neighbor exercise. |
 | `GET /api/fail` | Returns 500 and reports the error with `noticeError` |
 | `GET /ws` (WebSocket) | Echo endpoint for `websockets.html`: one greeting, then every text and binary message comes back. It repeats the client's close code and reason, answers pings, and closes connections idle for 5 minutes or open for 15. Messages are capped at 64 KB. |
 

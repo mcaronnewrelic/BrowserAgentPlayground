@@ -46,7 +46,8 @@ The defaults are deliberately aggressive, to make the impact obvious on a small 
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `DURATION` | `300` | Seconds of load |
-| `CPU_WORKERS` | `0` | CPU hogs; `0` means one per core |
+| `CPU_WORKERS` | `0` | CPU hogs; `0` means oversubscribe (below) |
+| `CPU_OVERSUBSCRIBE` | `3` | When `CPU_WORKERS=0`, workers per core. Oversubscribing (more workers than cores) is what actually starves the app of CPU; one worker per core barely dents it. |
 | `VM_WORKERS` | `1` | Memory hogs |
 | `VM_BYTES` | `256M` | Memory per memory hog |
 | `IO_WORKERS` | `1` | Disk I/O hogs |

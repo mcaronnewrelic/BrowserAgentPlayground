@@ -125,7 +125,7 @@ test('recommendations does capped CPU work and returns products', async () => {
     const capped = await fetch(base + '/api/recommendations?iterations=999999999');
     assert.strictEqual(capped.headers.get('x-compute-iterations'), '50000000');
     const def = await fetch(base + '/api/recommendations?iterations=abc');
-    assert.strictEqual(def.headers.get('x-compute-iterations'), '4000000');
+    assert.strictEqual(def.headers.get('x-compute-iterations'), '2000000');
   });
 });
 

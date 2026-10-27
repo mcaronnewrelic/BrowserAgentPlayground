@@ -17,7 +17,8 @@
 #   BIN           the renamed stress-ng, from setup.sh.   Default: /usr/local/bin/noisy-neighbor
 #   DURATION      seconds of load.                         Default: 300
 #   GRACE         extra seconds before the hard kill.      Default: 30
-#   CPU_WORKERS   CPU hogs. 0 = one per core.              Default: 0 (all cores)
+#   CPU_WORKERS   CPU hogs. 0 = oversubscribe (see below).  Default: 0
+#   CPU_OVERSUBSCRIBE  when CPU_WORKERS=0, workers per core. Default: 3
 #   VM_WORKERS    memory hogs.                             Default: 1
 #   VM_BYTES      memory per VM worker.                    Default: 256M
 #   IO_WORKERS    disk I/O hogs.                           Default: 1
@@ -30,6 +31,7 @@ BIN="${BIN:-/usr/local/bin/noisy-neighbor}"
 DURATION="${DURATION:-300}"
 GRACE="${GRACE:-30}"
 CPU_WORKERS="${CPU_WORKERS:-0}"
+CPU_OVERSUBSCRIBE="${CPU_OVERSUBSCRIBE:-3}"
 VM_WORKERS="${VM_WORKERS:-1}"
 VM_BYTES="${VM_BYTES:-256M}"
 IO_WORKERS="${IO_WORKERS:-1}"
@@ -45,6 +47,14 @@ if [[ ! -x "$BIN" ]]; then
 fi
 
 note() { printf '%s noisy-neighbor: %s\n' "$(date -u +%FT%TZ)" "$*" | tee -a "$LOG" >&2; }
+
+# One stress worker per core barely dents a light app: the scheduler just shares the cores fairly. To
+# actually starve the app of CPU, oversubscribe - run more workers than cores. CPU_WORKERS=0 (the default)
+# means CPU_OVERSUBSCRIBE workers per core; a set CPU_WORKERS is used as-is (e.g. 1 for a gentle test).
+if [[ "$CPU_WORKERS" -eq 0 ]]; then
+  cores="$(nproc 2>/dev/null || echo 1)"
+  CPU_WORKERS=$((cores * CPU_OVERSUBSCRIBE))
+fi
 
 # Steady app traffic for the duration of the burst, so the APM response-time chart always shows the hit.
 # Each client loops: request (capped at 10s), brief pause. Stopped by stop_api_load when the burst ends.
@@ -68,7 +78,6 @@ stop_api_load() {
 # Always stop the app traffic, even if the burst errors or is interrupted.
 trap stop_api_load EXIT
 
-# --cpu 0 means one worker per online CPU: deliberately aggressive, to crowd out the app's containers.
 # --keep-name stops stress-ng renaming its workers after each stressor (stress-ng-cpu, -io, -vm), so every
 # process shows as noisy-neighbor instead of advertising that it is stress-ng.
 note "start: ${DURATION}s, cpu=${CPU_WORKERS} vm=${VM_WORKERS}x${VM_BYTES} io=${IO_WORKERS} (hard stop at $((DURATION + GRACE))s)"

@@ -16,7 +16,7 @@ const MAX_SLOW_MS = 5000;
 // so its response time climbs when the host's CPU is contended, e.g. by the noisy-neighbor exercise.
 // Fixed work, so wall-clock grows as the app's share of the CPU shrinks. Tunable per request with
 // ?iterations=, capped so it can't be abused.
-const RECOMMEND_ITERATIONS = 4000000;
+const RECOMMEND_ITERATIONS = 2000000;
 const MAX_RECOMMEND_ITERATIONS = 50000000;
 
 const PRODUCTS = [
