@@ -111,6 +111,24 @@ test('slow waits the requested time, capped at 5000 ms', async () => {
   assert.deepStrictEqual(waits, [1500, 5000, 1000]);
 });
 
+test('recommendations does capped CPU work and returns products', async () => {
+  await withServer({ nr: null }, async (base) => {
+    const res = await fetch(base + '/api/recommendations?iterations=1000');
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.headers.get('x-compute-iterations'), '1000');
+    const body = await res.json();
+    assert.strictEqual(body.data.recommendations.length, 3);
+    assert.ok(body.data.recommendations[0].sku, 'recommendations are products with a sku');
+
+    // Out-of-range and garbage fall back to the cap or the default, never the raw input. The effective
+    // work rides on the response header, so the body stays a plain product list.
+    const capped = await fetch(base + '/api/recommendations?iterations=999999999');
+    assert.strictEqual(capped.headers.get('x-compute-iterations'), '50000000');
+    const def = await fetch(base + '/api/recommendations?iterations=abc');
+    assert.strictEqual(def.headers.get('x-compute-iterations'), '4000000');
+  });
+});
+
 test('fail returns 500 and reports the error to APM', async () => {
   const nr = fakeNewRelic();
   await withServer({ nr }, async (base) => {

@@ -479,6 +479,7 @@ newrelic.<span class="k">log</span>(<span class="s">'GET /api/products 200'</spa
   var API = {
     health: ['GET', '/api/health'], products: ['GET', '/api/products'], cart: ['GET', '/api/cart'],
     checkout: ['POST', '/api/checkout'], order: ['GET', '/api/orders/latest'],
+    recommendations: ['GET', '/api/recommendations'],
     slow: ['GET', '/api/slow?ms=1500'], fail: ['GET', '/api/fail'], missing: ['GET', '/api/missing']
   };
   function resolveEndpoint(name, backendUrl) {
@@ -819,6 +820,7 @@ newrelic.<span class="k">log</span>(<span class="s">'GET /api/products 200'</spa
     var label = function (name) { var ep = L.resolveEndpoint(name, state.backend) || L.resolveEndpoint(name, 'https://api'); return shortUrl(ep.url); };
     $('singleButtons').appendChild(reqBtn('GET', 'Load catalog with fetch', label('products'), function () { return api('products', 'fetch'); }));
     $('singleButtons').appendChild(reqBtn('GET', 'Load catalog with XHR', label('products'), function () { return api('products', 'xhr'); }));
+    $('singleButtons').appendChild(reqBtn('GET', 'Get recommendations', label('recommendations') + ' (computes on the server)', function () { return api('recommendations'); }, needs));
     $('flowButtons').appendChild(reqBtn(be ? 'POST' : 'GET', 'Run checkout', 'cart, then checkout, then order', function () {
       return api('cart').then(function () { return api('checkout'); }).then(function () { return api('order'); });
     }));

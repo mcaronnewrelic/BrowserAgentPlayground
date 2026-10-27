@@ -65,8 +65,8 @@ SELECT average(cpuPercent), average(loadAverageOneMinute) FROM SystemSample WHER
 -- The busy process, once process metrics are on
 SELECT average(cpuPercent) FROM ProcessSample WHERE entityName = 'browser.nru.to' FACET commandName SINCE 1 hour ago
 
--- Whether the app's API felt it
-SELECT average(duration)*1000 AS 'ms' FROM Transaction WHERE entityGuid = 'NjkzMjM0N3xBUE18QVBQTElDQVRJT058MTExNzgyNTc1Ng' AND transactionType = 'Web' TIMESERIES SINCE 1 hour ago
+-- Whether the app's API felt it (the CPU-bound recommendations endpoint shows it most clearly)
+SELECT average(duration)*1000 AS 'ms' FROM Transaction WHERE entityGuid = 'NjkzMjM0N3xBUE18QVBQTElDQVRJT058MTExNzgyNTc1Ng' AND name = 'WebTransaction/Custom/api/recommendations' TIMESERIES SINCE 1 hour ago
 
 -- Whether the synthetic checks slowed or failed
 SELECT average(duration), filter(count(*), WHERE result = 'FAILED') AS 'failures' FROM SyntheticCheck WHERE monitorName LIKE 'Agent Playground - %' TIMESERIES SINCE 1 hour ago

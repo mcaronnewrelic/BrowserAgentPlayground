@@ -12,6 +12,12 @@ const { attachWebSocket } = require('./websocket.js');
 const DEFAULT_ORIGINS = ['https://mcaronnewrelic.github.io', 'http://localhost:8080', 'http://127.0.0.1:8080'];
 const ALLOW_HEADERS = 'newrelic, traceparent, tracestate, content-type';
 const MAX_SLOW_MS = 5000;
+// /api/recommendations computes "personalized" picks with a fixed amount of real CPU work (not a sleep),
+// so its response time climbs when the host's CPU is contended, e.g. by the noisy-neighbor exercise.
+// Fixed work, so wall-clock grows as the app's share of the CPU shrinks. Tunable per request with
+// ?iterations=, capped so it can't be abused.
+const RECOMMEND_ITERATIONS = 4000000;
+const MAX_RECOMMEND_ITERATIONS = 50000000;
 
 const PRODUCTS = [
   { sku: 'NR-TEE', name: 'Observability tee', price: 24 },
@@ -106,10 +112,11 @@ function createServer(opts) {
     try { stdout(JSON.stringify(Object.assign({ timestamp: new Date().toISOString() }, event))); } catch (e) { /* never break the demo */ }
   }
 
-  function send(req, res, status, payload, ctx) {
+  function send(req, res, status, payload, ctx, extraHeaders) {
     const trace = traceInfo(req);
     const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' };
     if (trace.apm) headers['x-trace-id'] = trace.apm.traceId;
+    if (extraHeaders) Object.assign(headers, extraHeaders);
     logRequest(req, ctx && ctx.path, status, ctx);
     res.writeHead(status, headers);
     res.end(JSON.stringify(Object.assign({}, payload, { trace })));
@@ -171,6 +178,19 @@ function createServer(opts) {
       if (path.startsWith('/api/orders/') && req.method === 'GET') {
         route('api/orders/:id');
         return send(req, res, 200, { data: { orderId: path.split('/').pop(), status: 'confirmed' } }, ctx);
+      }
+      if (path === '/api/recommendations' && req.method === 'GET') {
+        route('api/recommendations');
+        const asked = parseInt(url.searchParams.get('iterations'), 10);
+        const iterations = Math.min(Number.isFinite(asked) && asked > 0 ? asked : RECOMMEND_ITERATIONS, MAX_RECOMMEND_ITERATIONS);
+        // Real CPU work, not a sleep: this is what makes the endpoint feel CPU contention. The result
+        // orders the picks, so the loop can't be optimised away. The effective cost rides on a response
+        // header (not the body), so the payload stays a plain list of products.
+        let acc = 0;
+        for (let i = 0; i < iterations; i++) acc += Math.sqrt(i) * Math.sin(i);
+        const offset = Math.abs(Math.round(acc)) % PRODUCTS.length;
+        const recommendations = [0, 1, 2].map((n) => PRODUCTS[(offset + n) % PRODUCTS.length]);
+        return send(req, res, 200, { data: { recommendations } }, ctx, { 'x-compute-iterations': String(iterations) });
       }
       if (path === '/api/slow') {
         route('api/slow');

@@ -21,7 +21,7 @@
 #   VM_WORKERS    memory hogs.                             Default: 1
 #   VM_BYTES      memory per VM worker.                    Default: 256M
 #   IO_WORKERS    disk I/O hogs.                           Default: 1
-#   API_URL       app endpoint to drive.                   Default: http://127.0.0.1:3000/api/products
+#   API_URL       app endpoint to drive.                   Default: http://127.0.0.1:3000/api/recommendations
 #   API_CLIENTS   steady requests in flight. 0 = none.     Default: 2
 #   LOG           where to append a line per run.          Default: /var/log/noisy-neighbor.log
 set -euo pipefail
@@ -33,7 +33,9 @@ CPU_WORKERS="${CPU_WORKERS:-0}"
 VM_WORKERS="${VM_WORKERS:-1}"
 VM_BYTES="${VM_BYTES:-256M}"
 IO_WORKERS="${IO_WORKERS:-1}"
-API_URL="${API_URL:-http://127.0.0.1:3000/api/products}"
+# /api/recommendations does real CPU work, so its response time climbs under host CPU contention (unlike
+# the lighter endpoints, which are sleep- or IO-bound and barely notice).
+API_URL="${API_URL:-http://127.0.0.1:3000/api/recommendations}"
 API_CLIENTS="${API_CLIENTS:-2}"
 LOG="${LOG:-/var/log/noisy-neighbor.log}"
 
