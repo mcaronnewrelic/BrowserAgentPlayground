@@ -394,7 +394,7 @@ newrelic.<span class="k">noticeError</span>(err)
     var nr = agent();
     $('errorStatus').textContent = nr ? 'Reported a handled error just now.' : 'No agent detected. Nothing was sent.';
     if (nr && typeof nr.noticeError === 'function') {
-      safe(function () { nr.noticeError(new Error('[' + state.code + '] Simulated error click'), { demoUser: userName(), demoCode: state.code }); });
+      safe(function () { nr.noticeError(new Error('Simulated error click'),{ demoUser: userName(), demoCode: state.code }); });
     }
     record('error click button', nr ? 'noticeError() called' : 'noticeError() skipped (no agent)');
     toast(nr ? 'Reported a handled error' : 'No agent, nothing sent');

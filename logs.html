@@ -186,7 +186,7 @@ newrelic.<span class="k">wrapLogger</span>(myLogger, <span class="s">'warn'</spa
       <details class="who" id="who">
         <script>Demo.whoSummary()</script>
         <div class="who-body">
-          <p class="muted">Everyone shares one New Relic account, so we tag your logs. Your name and session code are attached to every log as <code>demoUser</code> and <code>demoCode</code>, your name also becomes your end-user ID via <code>newrelic.setUserId()</code>, and the code is added to the start of each message.</p>
+          <p class="muted">Everyone shares one New Relic account, so we tag your logs. Your name and session code are attached to every log as <code>demoUser</code> and <code>demoCode</code>, and your name also becomes your end-user ID via <code>newrelic.setUserId()</code>. The messages themselves stay the same for everyone, the way a real app's would, so filter on <code>demoCode</code> to find yours.</p>
           <script>Demo.identityForm()</script>
         </div>
       </details>
@@ -415,14 +415,10 @@ newrelic.<span class="k">wrapLogger</span>(appLogger, <span class="s">'error'</s
     return l > -1 && v > -1 && l <= v;
   }
 
-  function withCode(message, code) {
-    return '[' + code + '] ' + message;
-  }
-
   function buildNrql(code) {
     return "SELECT timestamp, level, message, demoUser\n" +
            "FROM Log\n" +
-           "WHERE demoCode = '" + code + "' OR message LIKE '%" + code + "%'\n" +
+           "WHERE demoCode = '" + code + "'\n" +
            "SINCE 1 hour ago LIMIT 100";
   }
 
@@ -434,7 +430,6 @@ newrelic.<span class="k">wrapLogger</span>(appLogger, <span class="s">'error'</s
     LEVEL_ORDER: LEVEL_ORDER,
     CONSOLE_LEVELS: CONSOLE_LEVELS,
     isCollected: isCollected,
-    withCode: withCode,
     buildNrql: buildNrql,
     buildLogsSearch: buildLogsSearch
   };
@@ -519,9 +514,8 @@ newrelic.<span class="k">wrapLogger</span>(appLogger, <span class="s">'error'</s
 
   // ---- Method 1: console -------------------------------------------------
   function sendConsole(method, text) {
-    var msg = L.withCode(text, state.code);
-    console[method](msg);
-    record('console.' + method, L.CONSOLE_LEVELS[method], msg, null);
+    console[method](text);
+    record('console.' + method, L.CONSOLE_LEVELS[method], text, null);
   }
 
   // ---- Method 2: newrelic.log -------------------------------------------
@@ -530,7 +524,7 @@ newrelic.<span class="k">wrapLogger</span>(appLogger, <span class="s">'error'</s
     var attrs = { demoUser: userName(), demoCode: state.code };
     var k = $('attrKey').value.trim().replace(/[^\w.\-]/g, '');
     if (k) attrs[k] = $('attrVal').value;
-    return { message: L.withCode($('apiMsg').value || '(empty message)', state.code), level: level, attrs: attrs };
+    return { message: $('apiMsg').value || '(empty message)', level: level, attrs: attrs };
   }
   function sendLog(message, level, attrs, via) {
     var nr = agent();
@@ -572,9 +566,8 @@ newrelic.<span class="k">wrapLogger</span>(appLogger, <span class="s">'error'</s
     state.wrapped = true;
   }
   function sendApp(level, text) {
-    var msg = L.withCode(text, state.code);
-    appLogger[level](msg);
-    record('appLogger.' + level, level, msg, state.wrapped ? { loggerName: 'appLogger' } : null);
+    appLogger[level](text);
+    record('appLogger.' + level, level, text, state.wrapped ? { loggerName: 'appLogger' } : null);
   }
 
   // ---- Scenarios ---------------------------------------------------------
@@ -632,7 +625,7 @@ newrelic.<span class="k">wrapLogger</span>(appLogger, <span class="s">'error'</s
       sendApp(s.level, s.msg);
     } else {
       var attrs = Object.assign({ demoUser: userName(), demoCode: state.code, scenario: s.scenario }, s.attrs || {});
-      sendLog(L.withCode(s.msg, state.code), s.level, attrs);
+      sendLog(s.msg, s.level, attrs);
     }
   }
   function runScenario(sc, btn) {

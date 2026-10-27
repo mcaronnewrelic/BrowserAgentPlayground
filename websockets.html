@@ -675,7 +675,8 @@ ws.close(<span class="k">1000</span>)      <span class="c">// closeCode, connect
       if (thrown) return;
       thrown = true;
       setTimeout(function () { ws.close(1000, 'Demo: done'); }, 800);
-      throw new Error('Demo: bad message [' + state.code + '] via ' + (viaListener ? 'addEventListener' : 'onmessage'));
+      // No session code in the message, so everyone's errors share one group; demoCode tells them apart.
+      throw new Error('Demo: bad message via ' + (viaListener ? 'addEventListener' : 'onmessage'));
     };
     if (viaListener) ws.addEventListener('message', boom);
     else ws.onmessage = boom;

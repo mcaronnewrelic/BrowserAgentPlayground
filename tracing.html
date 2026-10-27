@@ -715,7 +715,9 @@ newrelic.<span class="k">log</span>(<span class="s">'GET /api/products 200'</spa
   // Error-level requests also get a matching noticeError() call so the trace shows up on the Errors page too.
   function logRequest(opts, url, status, errMsg, trace) {
     var level = L.logLevelFor(status, !!errMsg);
-    var message = '[' + state.code + '] ' + opts.method + ' ' + shortUrl(url) + ' ' + (status || 'failed') + (errMsg ? ' (' + errMsg + ')' : '');
+    // No session code in the message: the log and error carry demoCode as an attribute, and everyone's
+    // failures of the same request share one error group.
+    var message = opts.method + ' ' + shortUrl(url) + ' ' + (status || 'failed') + (errMsg ? ' (' + errMsg + ')' : '');
     var attrs = L.buildLogAttributes({ trace: trace, url: shortUrl(url), method: opts.method, status: status, via: opts.via });
     var nr = agent(), sent = false;
     if (nr && typeof nr.log === 'function') { safe(function () { nr.log(message, { level: level, customAttributes: attrs }); }); sent = true; }

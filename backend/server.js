@@ -74,7 +74,7 @@ function createServer(opts) {
   function logRequest(req, path, status, ctx) {
     if (!ctx || !ctx.route || ctx.route === 'api/health') return;
     const level = status >= 500 ? 'ERROR' : (status >= 400 ? 'WARN' : 'INFO');
-    const message = (ctx.demoCode ? '[' + ctx.demoCode + '] ' : '') + req.method + ' ' + path + ' ' + status;
+    const message = req.method + ' ' + path + ' ' + status;
     const event = { message, level, route: ctx.route, httpStatus: status, method: req.method, receivedTraceparent: Boolean(req.headers.traceparent) };
     if (ctx.demoCode) event.demoCode = ctx.demoCode;
     if (ctx.demoUser) event.demoUser = ctx.demoUser;
@@ -93,7 +93,7 @@ function createServer(opts) {
     const demoCode = (s.query.get('demoCode') || '').slice(0, 32);
     const demoUser = (s.query.get('demoUser') || '').slice(0, 64);
     const normal = NORMAL_CLOSES.includes(s.closeCode) || (s.closeCode >= 3000 && s.closeCode <= 4999);
-    const message = (demoCode ? '[' + demoCode + '] ' : '') + 'WebSocket ' + s.path + ' closed ' + s.closeCode +
+    const message = 'WebSocket ' + s.path + ' closed ' + s.closeCode +
       (s.closeReason ? ' "' + s.closeReason + '"' : '') + ' by ' + s.closedBy + ' after ' + s.durationMs + ' ms';
     const event = {
       message, level: normal ? 'INFO' : 'WARN', route: 'ws',
@@ -181,7 +181,7 @@ function createServer(opts) {
       }
       if (path === '/api/fail') {
         route('api/fail');
-        const err = new Error('Payment service unavailable' + (ctx.demoCode ? ' [' + ctx.demoCode + ']' : ''));
+        const err = new Error('Payment service unavailable');
         apm('noticeError', err);
         ctx.error = err;
         return send(req, res, 500, { error: err.message }, ctx);

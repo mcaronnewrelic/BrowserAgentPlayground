@@ -98,9 +98,10 @@ test('logs: verbosity keeps a level and everything more severe', () => {
   assert.strictEqual(isCollected('nonsense', 'WARN'), false);
 });
 
-test('logs: messages carry the code, and the Logs UI search uses demoCode', () => {
-  const { withCode, buildLogsSearch } = L['logs.html'];
-  assert.strictEqual(withCode('hello', CODE), '[' + CODE + '] hello');
+test('logs: the query and the Logs UI search find your logs by demoCode, not the message', () => {
+  const { buildNrql, buildLogsSearch } = L['logs.html'];
+  assert.match(buildNrql(CODE), new RegExp("WHERE demoCode = '" + CODE + "'\\n"));
+  assert.doesNotMatch(buildNrql(CODE), /message LIKE/);
   assert.strictEqual(buildLogsSearch(CODE), 'demoCode:"' + CODE + '"');
 });
 

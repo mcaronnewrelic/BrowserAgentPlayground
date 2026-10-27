@@ -113,7 +113,7 @@ test('/ws greets, echoes text and binary, and repeats the close code and reason'
   assert.strictEqual(log.closeReason, 'Demo: user signed out');
   assert.strictEqual(log.closedBy, 'client');
   assert.deepStrictEqual([log.messagesIn, log.bytesIn, log.messagesOut], [2, 305, 3]);
-  assert.match(log.message, /^\[NR-AB12\] WebSocket \/ws closed 4000 "Demo: user signed out" by client after \d+ ms$/);
+  assert.match(log.message, /^WebSocket \/ws closed 4000 "Demo: user signed out" by client after \d+ ms$/);
 });
 
 test('fragmented messages are joined before they are echoed', async () => {

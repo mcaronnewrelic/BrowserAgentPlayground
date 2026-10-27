@@ -120,7 +120,9 @@ test('fail returns 500 and reports the error to APM', async () => {
     assert.ok(body.error);
     assert.ok(body.trace, 'trace info still returned on errors');
     assert.strictEqual(nr.calls.errors.length, 1);
-    assert.ok(nr.calls.errors[0].includes('NR-AB12'));
+    // Same message for everyone so the errors group; the code reaches the error as a transaction attribute.
+    assert.strictEqual(nr.calls.errors[0], 'Payment service unavailable');
+    assert.deepStrictEqual(nr.calls.attrs.find(([k]) => k === 'demoCode'), ['demoCode', 'NR-AB12']);
   });
 });
 
@@ -140,7 +142,7 @@ test('each API request records a log event in the transaction (trace context add
   assert.strictEqual(nr.calls.logs.length, 1);
   const log = nr.calls.logs[0];
   assert.strictEqual(log.level, 'INFO');
-  assert.match(log.message, /^\[NR-AB12\] GET \/api\/products 200/);
+  assert.strictEqual(log.message, 'GET /api/products 200'); // the code is an attribute, not in the message
   assert.strictEqual(log.route, 'api/products');
   assert.strictEqual(log.httpStatus, 200);
   assert.strictEqual(log.demoCode, 'NR-AB12');
