@@ -47,6 +47,9 @@ services:
     environment:
       NRIA_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY:?Set NEW_RELIC_LICENSE_KEY to your ingest license key}
       NRIA_DISPLAY_NAME: ${INFRA_DISPLAY_NAME:-browser.nru.to}
+      # Report per-process metrics (ProcessSample). Off by default in recent agents. The noisy-neighbor
+      # bonus exercise needs it, so students can trace host load down to the busy process. See exercises/.
+      NRIA_ENABLE_PROCESS_METRICS: "true"
       # Becomes a tag on the host entity; the Agent Playground workload finds the host by it.
       NRIA_CUSTOM_ATTRIBUTES: '{"project":"agent-playground"}'
     logging: *logging
