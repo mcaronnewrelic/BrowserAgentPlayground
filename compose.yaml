@@ -6,6 +6,13 @@
 # Settings come from the environment or a .env file next to this one (never commit it). See README.md.
 name: browser-agent-playground
 
+# Docker keeps container logs forever by default; keep at most 3 x 10 MB per container.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   # The pages and the tracing API on port 3000, with the APM agent (it also injects the browser agent).
   app:
@@ -21,6 +28,7 @@ services:
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
       # The APM app name comes from backend/newrelic.js. To report under another name, add
       # NEW_RELIC_APP_NAME here; New Relic then shows it as a separate APM app.
+    logging: *logging
     restart: unless-stopped
 
   # The infrastructure agent for this host and its containers, set up the way New Relic documents for
@@ -40,6 +48,7 @@ services:
       NRIA_DISPLAY_NAME: ${INFRA_DISPLAY_NAME:-browser.nru.to}
       # Becomes a tag on the host entity; the Agent Playground workload finds the host by it.
       NRIA_CUSTOM_ATTRIBUTES: '{"project":"agent-playground"}'
+    logging: *logging
     restart: unless-stopped
 
   # Simulated visitors: real Chromium, Firefox and WebKit browsers walking the learning path.
@@ -57,4 +66,5 @@ services:
     # Browsers need more shared memory than Docker's default, and a proper init to reap their processes.
     shm_size: "1gb"
     init: true
+    logging: *logging
     restart: unless-stopped

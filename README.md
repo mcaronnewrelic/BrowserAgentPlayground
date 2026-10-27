@@ -117,7 +117,14 @@ visitor ──HTTPS 443──> Caddy (host) ──> 127.0.0.1:3000 ──> app c
 ### One-time setup
 
 1. **Security group.** Allow inbound 80 and 443 from anywhere (Caddy needs 80 to get and renew its certificate), and 22 only from your own IP. Don't open 3000.
-2. **Install** Docker with the Compose plugin (`docker compose version` should work), git and Caddy.
+2. **Install** Docker with the Compose plugin, git and Caddy. Install Compose for all users, not just yours, because the commands below run with `sudo`: `sudo docker compose version` should print a version. The server runs Ubuntu, where Compose is its own package:
+
+   ```bash
+   sudo apt install docker.io docker-compose-v2 git caddy
+   ```
+
+   If Docker came from Docker's own apt repository (`docker-ce`), the Compose package is `docker-compose-plugin` instead. Don't use the Docker snap: it can't read the settings file in `/etc` or give the infrastructure agent the host access it needs. Don't use the old `docker-compose` package either: it's Compose v1 and doesn't add the `docker compose` command.
+
 3. **Clone the repository:**
 
    ```bash
@@ -190,7 +197,14 @@ Finally, record the deploy in New Relic with the commit you deployed (see [Chang
 gh workflow run change-tracking.yml -f event=server-deploy -f version=$(git rev-parse --short HEAD)
 ```
 
-Old images pile up after many builds. `sudo docker image prune -f` removes the ones no container uses.
+Every build leaves the previous images behind, and the traffic image alone is about 2 GB, so clean up now and then. These remove only images and build cache that no container uses:
+
+```bash
+sudo docker system df                                      # what is using the space
+sudo docker image prune -a -f && sudo docker builder prune -a -f
+```
+
+A 20 GB disk leaves room for a rebuild next to the running images. EC2's default of 8 GB fills up quickly.
 
 ### Roll back
 
@@ -206,6 +220,8 @@ To go forward again later, run `git switch main` and `git pull`, then rebuild.
 
 ### Troubleshooting
 
+- **`unknown flag: --env-file` (or `unknown shorthand flag: 'd'`):** Docker can't find the Compose plugin, so `compose` isn't a command it knows. Check `sudo docker compose version`, then install `docker-compose-v2` (or `docker-compose-plugin` with `docker-ce`) as in step 2. If it works without `sudo` but not with it, Compose is installed only for your user (in `~/.docker/cli-plugins`).
+- **`no space left on device`:** clean up old images and build cache as in [Deploy an update](#deploy-an-update), then build again. Check with `df -h /`. If it's still nearly full, grow the EBS volume.
 - **502 from Caddy:** the app isn't answering on `127.0.0.1:3000`. Check `sudo docker compose ps` and `sudo docker compose logs app`. A missing license key stops it with "Set NEW_RELIC_LICENSE_KEY…".
 - **Certificate errors:** run `sudo journalctl -u caddy --since "1 hour ago"`. Usually the DNS record doesn't point at the server yet, or port 80 is closed.
 - **Is 3000 private?** `sudo ss -tlnp | grep 3000` should show `127.0.0.1:3000`. From another machine, `curl -m 5 http://<server IP>:3000/` should fail.
