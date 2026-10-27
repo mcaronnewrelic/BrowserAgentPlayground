@@ -10,6 +10,13 @@ const SITE = '__SITE_URL__';
 const HOME_LOAD_BUDGET_MS = 5000;
 const WAIT_MS = 20000;
 
+// The site scrolls smoothly (scroll-behavior: smooth), so WebDriver's own scroll before a click is still
+// animating when it clicks, and the click lands where the element used to be. Scroll instantly first.
+async function click(element) {
+  await $webDriver.executeScript("arguments[0].scrollIntoView({ block: 'center', behavior: 'instant' });", element);
+  await element.click();
+}
+
 // 1. The home page is up and loads within budget.
 await $webDriver.get(SITE + '/');
 const loadMs = await $webDriver.executeScript(
@@ -19,14 +26,14 @@ assert.ok(loadMs <= HOME_LOAD_BUDGET_MS, 'Home page took ' + loadMs + ' ms to lo
 
 // 2. Starting the learning path works: name in, start, and the Install page has a running agent.
 await $webDriver.findElement(By.id('userName')).sendKeys('Synthetic check');
-await $webDriver.findElement(By.css('#startForm button[type="submit"]')).click();
+await click(await $webDriver.findElement(By.css('#startForm button[type="submit"]')));
 await $webDriver.wait(until.urlContains('install.html'), WAIT_MS, 'Start did not open the Install page');
 await $webDriver.wait(until.elementLocated(By.css('#agentBadge.on')), WAIT_MS, 'The browser agent did not load on the Install page');
 
 // 3. The Tracing page reaches the backend and the backend joins the browser's trace.
 await $webDriver.get(SITE + '/tracing.html');
 const button = await $webDriver.wait(until.elementLocated(By.css('#singleButtons .req-btn')), WAIT_MS, 'Tracing buttons did not render');
-await button.click();
+await click(button);
 const status = await $webDriver.wait(until.elementLocated(By.css('#feed .entry .status')), WAIT_MS, 'The request never finished');
 // getText() returns the text as displayed, and the status chip is styled in capitals.
 const text = (await status.getText()).trim();
