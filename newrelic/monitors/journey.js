@@ -35,6 +35,9 @@ await $webDriver.get(SITE + '/tracing.html');
 const button = await $webDriver.wait(until.elementLocated(By.css('#singleButtons .req-btn')), WAIT_MS, 'Tracing buttons did not render');
 await click(button);
 const status = await $webDriver.wait(until.elementLocated(By.css('#feed .entry .status')), WAIT_MS, 'The request never finished');
-// getText() returns the text as displayed, and the status chip is styled in capitals.
-const text = (await status.getText()).trim();
+// New feed entries fade in from opacity 0, and getText() returns "" for anything not yet visible, so read
+// textContent instead (it's also free of the chip's CSS capitals) once the status has text.
+const statusText = async () => ((await status.getAttribute('textContent')) || '').trim();
+await $webDriver.wait(async () => (await statusText()) !== '', WAIT_MS, 'The request status stayed empty');
+const text = await statusText();
 assert.equal(text.toLowerCase(), 'backend joined trace', 'Tracing request status was "' + text + '"');
