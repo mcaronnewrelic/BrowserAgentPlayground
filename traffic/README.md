@@ -36,6 +36,8 @@ Set these in the environment or in `.env` next to `compose.yaml`:
 
 By default visitors go through the public site, not the `app` container directly, so their data goes through Caddy and looks like any other visit.
 
+Alongside the page visits, the simulator sends a steady, light drip of direct API calls to the exercise endpoints (`/api/checkout`, `/api/catalog`, `/api/profile`), so the observability exercises in [`../exercises/`](../exercises/) always have fresh traces and their hourly fault windows show up whenever someone looks. These are tagged `demoCode=SIM-TRACE`. `API_HEARTBEAT_MS` (default `20000`) sets the interval; `0` turns it off. It's off automatically during `VISITS` test runs.
+
 For a quick test, `VISITS` stops after that many visits and `TIME_SCALE` shortens every pause (0.05 makes them 20 times shorter):
 
 ```bash

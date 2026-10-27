@@ -13,6 +13,9 @@ const CONCURRENCY = Math.max(1, Number(process.env.CONCURRENCY) || 2);
 // For a test run: stop after this many visits instead of running forever.
 const VISITS = Number(process.env.VISITS) || 0;
 const TIME_SCALE = Number(process.env.TIME_SCALE) || 1; // below 1 shortens every pause (tests)
+// A steady, light drip of direct API calls, so the observability exercises always have fresh traces and
+// their hourly fault windows are visible, no matter how many visitors are walking the pages. 0 disables it.
+const API_HEARTBEAT_MS = Number(process.env.API_HEARTBEAT_MS) || 20000;
 
 // Weighted roughly like real desktop and mobile traffic.
 const PROFILES = [
@@ -161,12 +164,41 @@ async function visit(n) {
   }
 }
 
+// ---- API heartbeat -------------------------------------------------------------------------------------------
+// Direct calls to the exercise endpoints (not page visits), so /api/checkout (downstream culprit),
+// /api/catalog (N+1) and /api/profile (bad deploy) always have traffic. These produce the APM and
+// distributed-tracing spans the exercises examine, and make the hourly fault windows show up whenever a
+// student looks. Tagged demoCode=SIM-TRACE so they can be told apart from real visits.
+async function hit(path, method) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15000);
+  try {
+    await fetch(SITE + path, {
+      method: method || 'GET',
+      signal: ctrl.signal,
+      headers: { 'Content-Type': 'application/json' },
+      body: method === 'POST' ? '{}' : undefined
+    });
+  } catch (e) { /* a slow or failing call inside a fault window is the point; ignore */ }
+  finally { clearTimeout(timer); }
+}
+async function apiHeartbeat() {
+  if (!API_HEARTBEAT_MS || VISITS) return; // off in test runs (VISITS), which must terminate
+  const tag = '?demoCode=SIM-TRACE&demoUser=' + encodeURIComponent('Trace heartbeat');
+  while (!stopping) {
+    await hit('/api/catalog' + tag + '&items=8', 'GET');
+    if (!stopping) await hit('/api/checkout' + tag, 'POST');
+    if (!stopping) await hit('/api/profile' + tag, 'GET');
+    await sleep(API_HEARTBEAT_MS);
+  }
+}
+
 // ---- Schedule ------------------------------------------------------------------------------------------------
 
 let running = 0, started = 0, stopping = false;
 async function main() {
   log(`Simulating visitors on ${SITE}: about ${VISITS_PER_HOUR} visits an hour at peak, up to ${CONCURRENCY} at a time.`);
-  const done = [];
+  const done = [apiHeartbeat()];
   while (!stopping && (!VISITS || started < VISITS)) {
     if (running < CONCURRENCY) {
       running++; started++;
