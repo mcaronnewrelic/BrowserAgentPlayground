@@ -56,7 +56,8 @@ The pages form a learning path in six stages. Each page ends with an **Up next**
 | `Dockerfile`, `compose.yaml` | The server's image, and the three containers browser.nru.to runs |
 | [`traffic/`](traffic/README.md) | Simulated visitors in real browsers |
 | [`newrelic/`](newrelic/README.md) | Scripts that create the dashboards, synthetic checks, alerts and workload in New Relic |
-| `.github/` | Workflows for tests, change tracking and New Relic setup |
+| [`account-cleanup/`](account-cleanup/README.md) | Not part of the site: deletes what the shared demo@ login leaves behind in the enablement accounts. Self-contained, to move to its own repository. |
+| `.github/` | Workflows for tests, change tracking, New Relic setup and account cleanup |
 
 ## Run it locally
 

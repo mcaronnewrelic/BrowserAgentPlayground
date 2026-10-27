@@ -1,0 +1,52 @@
+# Deletes what the shared demo@newrelicuniversity.com login left behind in the enablement accounts:
+# workflows, channels and destinations, alert policies, dashboards, service levels, workloads and
+# user API keys it created. Names in account-cleanup/keep.txt, or containing "DO NOT DELETE", are kept.
+#
+# Run it from the Actions tab. It's a dry run unless "apply" is ticked: the run summary lists what
+# would be deleted, so run it once without "apply" and read the list first. See account-cleanup/README.md.
+#
+# Secret: NEW_RELIC_API_KEY (User key, NRAK-...). It must belong to a user allowed to delete what demo@
+# made (demo@ itself can't delete workloads), and must not belong to demo@.
+name: Account cleanup
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: Delete (leave unticked for a dry run that only lists)
+        type: boolean
+        default: false
+      accounts:
+        description: Accounts to clean, comma-separated
+        default: "6932347"
+      key_accounts:
+        description: Accounts whose demo@ API keys to delete, comma-separated, or "all"
+        default: all
+      only:
+        description: "Only these kinds, comma-separated (empty = all): workflows, channels, policies, destinations, dashboards, service-levels, workloads, api-keys"
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: account-cleanup
+
+jobs:
+  cleanup:
+    name: Clean up after demo@
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run cleanup
+        env:
+          NEW_RELIC_API_KEY: ${{ secrets.NEW_RELIC_API_KEY }}
+          CLEANUP_APPLY: ${{ inputs.apply }}
+          CLEANUP_ACCOUNTS: ${{ inputs.accounts }}
+          CLEANUP_KEY_ACCOUNTS: ${{ inputs.key_accounts }}
+          CLEANUP_ONLY: ${{ inputs.only }}
+        run: python3 account-cleanup/cleanup.py

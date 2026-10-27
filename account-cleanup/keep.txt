@@ -1,0 +1,14 @@
+# Items the cleanup never deletes, one per line, matched against the item's name.
+# Case doesn't matter; * matches anything and ? one character. An exact ID or GUID works too.
+# Anything with "DO NOT DELETE" (or "DONOTDELETE") in its name is always kept and needn't be listed.
+# Only items created by the cleanup's owner (demo@newrelicuniversity.com) are ever considered.
+
+# Agent Playground (this site's dashboards, monitors, alerts and workload; some were created as demo@)
+Agent Playground*
+
+# Instructors' notification destinations, last edited through the demo@ login
+Dan Johnson
+demo@newrelicuniversity.com - Mobile Push
+
+# The demo@ copy of the Cosmic Coffee workload (Dan has his own)
+Cosmic Coffee Cluster
