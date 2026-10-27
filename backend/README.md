@@ -31,7 +31,7 @@ The same line is printed to stdout as JSON for local runs. Responses also carry 
 | Variable | Default | Notes |
 | --- | --- | --- |
 | `NEW_RELIC_LICENSE_KEY` | none | Your **ingest license key** (not the browser key). Never commit it. |
-| `NEW_RELIC_APP_NAME` | `BrowserLogsDemo API` | APM app name |
+| `NEW_RELIC_APP_NAME` | `Browser Agent Playground API` | APM app name. browser.nru.to sets `Browser Agent Playground`. |
 | `ALLOWED_ORIGINS` | `https://mcaronnewrelic.github.io,http://localhost:8080,http://127.0.0.1:8080` | Comma-separated origins allowed to call the API |
 | `PORT` | `3000` | |
 | `SITE_ROOT` | none (set to `/app/site` in the Docker image) | Folder of demo pages to serve. When set, the server also injects the browser agent into each page and requires `NEW_RELIC_LICENSE_KEY`. |

@@ -26,8 +26,9 @@ services:
       NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY:?Set NEW_RELIC_LICENSE_KEY to your ingest license key}
       # Empty means the default list in backend/server.js.
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
-      # The APM app name comes from backend/newrelic.js. To report under another name, add
-      # NEW_RELIC_APP_NAME here; New Relic then shows it as a separate APM app.
+      # The APM app name. Empty means the default in backend/newrelic.js ("Browser Agent Playground API").
+      # browser.nru.to sets it in its env file; changing it makes New Relic start a separate APM app.
+      NEW_RELIC_APP_NAME: ${NEW_RELIC_APP_NAME:-}
     logging: *logging
     restart: unless-stopped
 

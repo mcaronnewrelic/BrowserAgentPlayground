@@ -143,6 +143,7 @@ visitor ──HTTPS 443──> Caddy (host) ──> 127.0.0.1:3000 ──> app c
    Write one `KEY=value` per line, without quotes. Compose uses only the variables `compose.yaml` names:
 
    - `NEW_RELIC_LICENSE_KEY` (required)
+   - `NEW_RELIC_APP_NAME`: browser.nru.to uses `Browser Agent Playground`. Keep it the same, because a new name makes New Relic start a separate APM app (and browser app), and the change tracking secret and workload point at the existing one.
    - `ALLOWED_ORIGINS`
    - `INFRA_DISPLAY_NAME`
    - the `TRAFFIC_*` settings in [traffic/README.md](traffic/README.md)
