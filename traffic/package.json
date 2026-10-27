@@ -1,0 +1,13 @@
+{
+  "name": "browser-agent-playground-traffic",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Simulated visitors for the Browser Agent Playground site (see README.md).",
+  "main": "simulate.js",
+  "scripts": {
+    "start": "node simulate.js"
+  },
+  "dependencies": {
+    "playwright": "1.64.0"
+  }
+}

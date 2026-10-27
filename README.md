@@ -62,9 +62,9 @@ Every demo page follows the same learning shape:
 
 Each **Check yourself** question is multiple choice. Every pick is recorded with `newrelic.recordCustomEvent()` as a `DemoQuizAnswer` event (`site.js`), carrying `questionId`, `question`, `answer`, `outcome` (`correct` or `incorrect`), `attempt` (1 for a first try; a wrong pick can be retried) and `demoPage`, plus the usual `demoCode` and `demoUser`. Only the option picked is recorded, never free text. Question IDs (`data-qid`) are meant to stay the same when a question is reworded, so its history carries over.
 
-`dashboards/knowledge-checks.json` is a ready-made dashboard: first-try accuracy overall, by page and by question (hardest first), the most-picked wrong answers, and tries needed to get each question right. `newrelic/dashboards.sh` creates it if it's missing (see [newrelic/README.md](newrelic/README.md)); you can also import it by hand under **Dashboards → Import dashboard**. Its queries use account `6932347`, the one in `nr-config.js`. If your data goes to another account (for example the Docker image with your own license key), change `accountIds` first.
+`newrelic/dashboards/knowledge-checks.json` is a ready-made dashboard: first-try accuracy overall, by page and by question (hardest first), the most-picked wrong answers, and tries needed to get each question right. `newrelic/dashboards.sh` creates it if it's missing (see [newrelic/README.md](newrelic/README.md)); you can also import it by hand under **Dashboards → Import dashboard**. Its queries use account `6932347`, the one in `nr-config.js`. If your data goes to another account (for example the Docker image with your own license key), change `accountIds` first.
 
-`dashboards/learning-path.json` shows how visitors move through the learning path: a funnel of sessions reaching each of the six stages in order, page views by page, and the last page each session viewed (where people drop off). Its queries also filter on the browser app (`appId = 1117825756`); change that too if you report to another app. If you add or move a page in `PAGES` in `site.js`, update the funnel's stage conditions to match.
+`newrelic/dashboards/learning-path.json` shows how visitors move through the learning path: a funnel of sessions reaching each of the six stages in order, page views by page, and the last page each session viewed (where people drop off). Its queries also filter on the browser app (`appId = 1117825756`); change that too if you report to another app. If you add or move a page in `PAGES` in `site.js`, update the funnel's stage conditions to match.
 
 ```sql
 SELECT percentage(count(*), WHERE outcome = 'correct') FROM DemoQuizAnswer WHERE attempt = 1 FACET question SINCE 1 week ago
@@ -105,8 +105,114 @@ To run the tests: `cd backend && npm test` (Node 24, no install needed).
 ### Run it in Docker (pages and API on one origin)
 
 ```bash
+NEW_RELIC_LICENSE_KEY=your_ingest_key docker compose up -d --build
+```
+
+`compose.yaml` runs three containers:
+
+- `app`: the pages and API on port 3000.
+- `newrelic-infra`: the New Relic infrastructure agent for the host and its containers. It reports the host as `browser.nru.to` (set `INFRA_DISPLAY_NAME` to change that) with the tag `project=agent-playground`, which is how the Agent Playground workload finds it.
+- `traffic`: simulated visitors in real Chromium, Firefox and WebKit browsers. See [traffic/README.md](traffic/README.md).
+
+You can put the license key in a `.env` file next to `compose.yaml` instead (it is ignored by git). To run only the site: `docker compose up -d app`. Without Compose:
+
+```bash
 docker build -t browser-agent-playground .
 docker run -p 3000:3000 -e NEW_RELIC_LICENSE_KEY=your_ingest_key browser-agent-playground
 ```
 
 Then open `http://localhost:3000`. The container serves the pages and the tracing API together, so there is no CORS to set up. The APM agent injects the browser agent, so `nr-config.js` and `nr-agent.js` are not used, and the data goes to the account that owns the license key. The container will not start without `NEW_RELIC_LICENSE_KEY`.
+
+### Deploy to browser.nru.to (EC2)
+
+browser.nru.to is an EC2 server running this repository's `compose.yaml`, with [Caddy](https://caddyserver.com/) on the host in front of it. Caddy gets the HTTPS certificate and forwards requests to the `app` container. Port 3000 is published only on `127.0.0.1`, so the app can't be reached directly from the internet; everything goes through Caddy.
+
+```text
+visitor ──HTTPS 443──> Caddy (host) ──> 127.0.0.1:3000 ──> app container
+```
+
+#### One-time setup
+
+1. **Security group.** Allow inbound 80 and 443 from anywhere (Caddy needs 80 to get and renew its certificate) and 22 only from your own IP. Don't open 3000.
+2. **Install** Docker with the Compose plugin (`docker compose version` should work), git and Caddy.
+3. **Clone the repository:**
+
+   ```bash
+   git clone https://github.com/mcaronnewrelic/BrowserAgentPlayground.git
+   cd BrowserAgentPlayground
+   ```
+
+4. **Create the settings file** outside the repository, readable only by root, and link it as the `.env` Compose reads. `.env` is ignored by git and Docker, so the key is never committed or copied into an image.
+
+   ```bash
+   sudo install -m 600 /dev/null /etc/browser-agent-playground.env
+   sudo nano /etc/browser-agent-playground.env      # NEW_RELIC_LICENSE_KEY=your_ingest_key
+   sudo ln -s /etc/browser-agent-playground.env .env
+   ```
+
+   One `KEY=value` per line, without quotes. Only the variables `compose.yaml` names are used: `NEW_RELIC_LICENSE_KEY` (required), `ALLOWED_ORIGINS`, `INFRA_DISPLAY_NAME` and the `TRAFFIC_*` settings in [traffic/README.md](traffic/README.md). Without the link, add `--env-file /etc/browser-agent-playground.env` to every `docker compose up`, `down` and `run`.
+5. **Configure Caddy.** Put this in `/etc/caddy/Caddyfile`:
+
+   ```caddyfile
+   browser.nru.to {
+       reverse_proxy 127.0.0.1:3000
+   }
+   ```
+
+   That is the whole configuration. Caddy gets and renews the Let's Encrypt certificate for the name by itself (the DNS record must already point at the server), redirects HTTP to HTTPS, passes WebSocket upgrades for `/ws` through, and sends `X-Forwarded-For` and `X-Forwarded-Proto`. Use `127.0.0.1` rather than the server's IP, because that is the only address the app listens on. Check and apply it:
+
+   ```bash
+   caddy validate --config /etc/caddy/Caddyfile
+   sudo systemctl reload caddy
+   ```
+
+6. **Start everything:**
+
+   ```bash
+   sudo docker compose up -d --build
+   ```
+
+   Containers restart by themselves after a crash or a reboot (`restart: unless-stopped`), as long as Docker starts at boot (`sudo systemctl enable docker`).
+
+#### Deploy an update
+
+From the repository folder on the server:
+
+```bash
+git pull
+sudo docker compose up -d --build
+```
+
+There's no need to stop anything or clone again. Compose rebuilds the images and replaces only the containers whose image or settings changed; the others keep running. If `git pull` refuses because of local changes on the server, discard them with `git fetch && git reset --hard origin/main`.
+
+Then check it:
+
+```bash
+sudo docker compose ps                            # all three running
+curl -s https://browser.nru.to/api/health         # "ok":true, "apm":true, "websocket":true
+sudo docker compose logs --tail 20 traffic        # visits completing several pages
+```
+
+Finally, record the deploy in New Relic with the commit you deployed (see [Change tracking](#change-tracking)):
+
+```bash
+gh workflow run change-tracking.yml -f event=server-deploy -f version=$(git rev-parse --short HEAD)
+```
+
+Old images pile up after many builds; `sudo docker image prune -f` removes the ones no container uses.
+
+#### Roll back
+
+Check out the last good commit and rebuild. Run `git switch main` and `git pull` to go forward again later.
+
+```bash
+git log --oneline -5
+git checkout <commit>
+sudo docker compose up -d --build
+```
+
+#### Troubleshooting
+
+- **502 from Caddy:** the app isn't answering on `127.0.0.1:3000`. Check `sudo docker compose ps` and `sudo docker compose logs app`. A missing license key stops it with "Set NEW_RELIC_LICENSE_KEY…".
+- **Certificate errors:** `sudo journalctl -u caddy --since "1 hour ago"`. Usually the DNS record doesn't point at the server yet, or port 80 is closed.
+- **Is 3000 private?** `sudo ss -tlnp | grep 3000` should show `127.0.0.1:3000`. From another machine, `curl -m 5 http://<server IP>:3000/` should fail.

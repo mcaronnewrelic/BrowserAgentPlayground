@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Creates each dashboard in dashboards/*.json that doesn't exist yet, matched by the dashboard's name.
+# Creates each dashboard in newrelic/dashboards/*.json that doesn't exist yet, matched by the dashboard's name.
 # Queries in the files are pointed at NEW_RELIC_ACCOUNT_ID, so the same files work for another account.
 #
 #   NEW_RELIC_API_KEY=NRAK-... bash newrelic/dashboards.sh
@@ -7,7 +7,7 @@
 # shellcheck disable=SC2016
 source "$(dirname "$0")/lib.sh"
 
-DASHBOARD_DIR="${DASHBOARD_DIR:-$(dirname "$0")/../dashboards}"
+DASHBOARD_DIR="${DASHBOARD_DIR:-$(dirname "$0")/dashboards}"
 
 for file in "$DASHBOARD_DIR"/*.json; do
   name="$(jq -r '.name' "$file")"

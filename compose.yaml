@@ -1,0 +1,60 @@
+# browser.nru.to on one Docker host: the demo site and API, the New Relic infrastructure agent, and
+# simulated visitors. From the repository folder:
+#
+#   NEW_RELIC_LICENSE_KEY=your_ingest_key docker compose up -d --build
+#
+# Settings come from the environment or a .env file next to this one (never commit it). See README.md.
+name: browser-agent-playground
+
+services:
+  # The pages and the tracing API on port 3000, with the APM agent (it also injects the browser agent).
+  app:
+    build: .
+    image: browser-agent-playground
+    # Only this machine can reach port 3000 (Caddy on the host proxies to it). Docker's published ports
+    # bypass host firewalls such as ufw, so without 127.0.0.1 the app would be open on every interface.
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY:?Set NEW_RELIC_LICENSE_KEY to your ingest license key}
+      # Empty means the default list in backend/server.js.
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
+      # The APM app name comes from backend/newrelic.js. To report under another name, add
+      # NEW_RELIC_APP_NAME here; New Relic then shows it as a separate APM app.
+    restart: unless-stopped
+
+  # The infrastructure agent for this host and its containers, set up the way New Relic documents for
+  # Docker: it reads the host through /host and the Docker socket, and shares the host's network and processes.
+  newrelic-infra:
+    image: newrelic/infrastructure:1.80.5
+    cap_add:
+      - SYS_PTRACE
+    network_mode: host
+    pid: host
+    privileged: true
+    volumes:
+      - "/:/host:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    environment:
+      NRIA_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY:?Set NEW_RELIC_LICENSE_KEY to your ingest license key}
+      NRIA_DISPLAY_NAME: ${INFRA_DISPLAY_NAME:-browser.nru.to}
+      # Becomes a tag on the host entity; the Agent Playground workload finds the host by it.
+      NRIA_CUSTOM_ATTRIBUTES: '{"project":"agent-playground"}'
+    restart: unless-stopped
+
+  # Simulated visitors: real Chromium, Firefox and WebKit browsers walking the learning path.
+  # They go through the public site by default, so their data looks like real visits. Their session
+  # codes start with SIM-. To run without them: docker compose up -d app newrelic-infra
+  traffic:
+    build: ./traffic
+    image: browser-agent-playground-traffic
+    depends_on:
+      - app
+    environment:
+      SITE_URL: ${TRAFFIC_SITE_URL:-https://browser.nru.to}
+      VISITS_PER_HOUR: ${TRAFFIC_VISITS_PER_HOUR:-30}
+      CONCURRENCY: ${TRAFFIC_CONCURRENCY:-2}
+    # Browsers need more shared memory than Docker's default, and a proper init to reap their processes.
+    shm_size: "1gb"
+    init: true
+    restart: unless-stopped

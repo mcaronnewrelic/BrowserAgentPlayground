@@ -2,4 +2,6 @@
 .github
 node_modules
 backend/node_modules
+traffic/node_modules
+.env
 npm-debug.log

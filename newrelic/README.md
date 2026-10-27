@@ -6,7 +6,7 @@ That makes them safe to run any time. If someone changes one of these items by h
 
 | Script | Creates |
 |---|---|
-| `dashboards.sh` | Every dashboard in `../dashboards/*.json` |
+| `dashboards.sh` | Every dashboard in `dashboards/*.json` |
 | `synthetics.sh` | Three hourly synthetic monitors on browser.nru.to, an alert policy and condition that fire when any of them fails, and an email destination, channel and workflow that send the alert |
 | `workload.sh` | The **Agent Playground** workload: the browser app, the APM app, and the monitors and dashboards above |
 | `setup.sh` | All three, in that order |
@@ -38,7 +38,7 @@ bash newrelic/setup.sh            # everything
 bash newrelic/synthetics.sh       # or just one part
 ```
 
-On GitHub, the **New Relic setup** workflow runs the same scripts. Run it from the Actions tab, where you can pick one part. It also runs by itself when `dashboards/` or `newrelic/` change on `main`.
+On GitHub, the **New Relic setup** workflow runs the same scripts. Run it from the Actions tab, where you can pick one part. It also runs by itself when anything in `newrelic/` changes on `main`.
 
 ## Settings
 

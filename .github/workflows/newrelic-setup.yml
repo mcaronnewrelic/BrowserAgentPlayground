@@ -2,7 +2,8 @@
 # workload (newrelic/setup.sh). Existing items are left alone, so it is safe to run any time. To rebuild
 # something that was changed by hand, delete it in New Relic, then run this again.
 #
-# Runs on demand ("Run workflow" on the Actions tab) and when dashboards/ or newrelic/ change on main.
+# Runs on demand ("Run workflow" on the Actions tab) and when newrelic/ (the scripts, monitors and
+# dashboards) changes on main.
 # The same scripts run without GitHub too: see newrelic/README.md.
 #
 # Secret:   NEW_RELIC_API_KEY (User key, NRAK-...), the one the change-tracking workflow uses.
@@ -20,7 +21,6 @@ on:
   push:
     branches: [main]
     paths:
-      - "dashboards/**"
       - "newrelic/**"
 
 permissions:
