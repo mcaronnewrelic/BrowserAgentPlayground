@@ -8,9 +8,10 @@ That makes them safe to run any time. If someone changes one of these items by h
 |---|---|
 | `dashboards.sh` | Every dashboard in `dashboards/*.json` |
 | `synthetics.sh` | Three hourly synthetic monitors on browser.nru.to, an alert policy and condition that fire when any of them fails, and an email destination, channel and workflow that send the alert |
+| `alerts.sh` | A host-health alert policy, condition and workflow that fire when browser.nru.to's memory stays nearly full, reusing the synthetic checks' alert email |
 | `service-levels.sh` | Latency and availability service levels for the APM app and the browser app |
 | `workload.sh` | The **Agent Playground** workload: the browser app, the APM app, and the monitors, dashboards and service levels above |
-| `setup.sh` | All four, in that order |
+| `setup.sh` | All five, in that order |
 
 ## What gets created
 
@@ -23,8 +24,11 @@ That makes them safe to run any time. If someone changes one of these items by h
 | Agent Playground - Learning path journey (browser) | Scripted browser monitor | Performance and function: the home page loads within 5 seconds, starting the path opens Install with a running agent, and a Tracing request ends with "Backend joined trace" (`monitors/journey.js`) |
 | Agent Playground - Synthetic checks | Alert policy | One incident per monitor |
 | A synthetic check failed | NRQL alert condition | Fires when any check of an `Agent Playground - ` monitor fails |
-| Agent Playground alert email | Email destination and channel | Sends to `ALERT_EMAIL` |
-| Agent Playground - Synthetic check alerts | Alert workflow | Emails every issue from the policy, when it opens and when it closes |
+| Agent Playground alert email | Email destination and channel | Sends to `ALERT_EMAIL`. Shared by the synthetic and host-health workflows. |
+| Agent Playground - Synthetic check alerts | Alert workflow | Emails every issue from the synthetic policy, when it opens and when it closes |
+| Agent Playground - Host health | Alert policy | The browser.nru.to host |
+| Host memory nearly full | NRQL alert condition | Fires when the host's `memoryUsedPercent` stays above `MEMORY_PERCENT` (90) for 5 minutes — the condition that OOM-killed the box on 2026-10-28 |
+| Agent Playground - Host health alerts | Alert workflow | Emails every issue from the host-health policy, when it opens and when it closes |
 | Agent Playground API - Latency | Service level (APM app) | 95% of web requests answered in under 0.5 seconds, over 7 days |
 | Agent Playground API - Success | Service level (APM app) | 99% of web requests end without an unexpected error, over 7 days. Leaves out `/api/fail`, which fails on purpose. |
 | Agent Playground Browser - Latency (LCP) | Service level (browser app) | 95% of page loads have a Largest Contentful Paint under 2.5 seconds, over 7 days |
@@ -55,9 +59,11 @@ All optional, as environment variables. On GitHub, set the alert email as the re
 |---|---|---|
 | `NEW_RELIC_ACCOUNT_ID` | `6932347` | all; dashboard queries are pointed at this account |
 | `NERDGRAPH_URL` | `https://api.newrelic.com/graphql` | all; EU accounts use `https://api.eu.newrelic.com/graphql` |
-| `ALERT_EMAIL` | `demo@newrelicuniversity.com` | `synthetics.sh` |
+| `ALERT_EMAIL` | `demo@newrelicuniversity.com` | `synthetics.sh`, `alerts.sh` |
 | `SITE_URL` | `https://browser.nru.to` | `synthetics.sh` |
 | `MONITOR_LOCATIONS` | `US_WEST_1,US_EAST_1` | `synthetics.sh` |
+| `HOST_NAME` | `browser.nru.to` | `alerts.sh` (the host's `NRIA_DISPLAY_NAME`) |
+| `MEMORY_PERCENT` | `90` | `alerts.sh` |
 | `BROWSER_ENTITY_GUID`, `APM_ENTITY_GUID` | this site's two apps | `workload.sh` |
 
 Because existing items are never changed, a setting only applies to items the script creates. For example, to send alerts to a new address: delete the **Agent Playground alert email** destination in New Relic (its channel and workflow with it, if New Relic asks), then run `synthetics.sh` with the new `ALERT_EMAIL`.

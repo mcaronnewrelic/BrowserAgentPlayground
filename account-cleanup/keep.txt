@@ -11,6 +11,11 @@ Agent Playground API - Success
 Agent Playground Browser - Latency (LCP)
 Agent Playground Browser - Availability (AJAX)
 
+# Alert conditions whose names don't carry the "Agent Playground" prefix (their policies do, and are kept
+# by the glob above). Created by newrelic/synthetics.sh and newrelic/alerts.sh.
+A synthetic check failed
+Host memory nearly full
+
 # Instructors' notification destinations, last edited through the demo@ login
 Dan Johnson
 demo@newrelicuniversity.com - Mobile Push

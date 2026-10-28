@@ -65,15 +65,26 @@ function hourlyFactor(date = new Date()) {
   return curve[hour];
 }
 
-// One browser per engine, started on first use and restarted if it crashes.
-const browsers = new Map();
+// One browser per engine, started on first use and restarted if it crashes. A browser is also recycled
+// (closed and relaunched) after it has served RECYCLE_AFTER visits, so its memory can't grow without bound:
+// long-lived Chromium/WebKit/Firefox processes leak slowly, and on the 2 GB host that once filled memory and
+// OOM-killed the box. Recycling happens only while the browser is idle (no open contexts), so it never
+// interrupts a visit in progress; the mem_limit in compose.yaml is the backstop if a browser grows faster.
+const RECYCLE_AFTER = Math.max(1, Number(process.env.BROWSER_RECYCLE_AFTER) || 30);
+const browsers = new Map(); // engine -> { browser, uses }
 async function browserFor(engine) {
-  let b = browsers.get(engine);
-  if (!b || !b.isConnected()) {
-    b = await engine.launch();
-    browsers.set(engine, b);
+  let entry = browsers.get(engine);
+  if (entry && entry.browser.isConnected() && entry.uses >= RECYCLE_AFTER && entry.browser.contexts().length === 0) {
+    log(`recycling ${engine.name()} browser after ${entry.uses} visits`);
+    await entry.browser.close().catch(() => {});
+    entry = null;
   }
-  return b;
+  if (!entry || !entry.browser.isConnected()) {
+    entry = { browser: await engine.launch(), uses: 0 };
+    browsers.set(engine, entry);
+  }
+  entry.uses++;
+  return entry.browser;
 }
 
 // ---- What a visitor does on a page --------------------------------------------------------------------
@@ -209,7 +220,7 @@ async function main() {
     await sleep(Math.min(-Math.log(1 - Math.random()) * meanGapMs, meanGapMs * 4));
   }
   await Promise.allSettled(done);
-  for (const b of browsers.values()) await b.close().catch(() => {});
+  for (const { browser } of browsers.values()) await browser.close().catch(() => {});
   log('Stopped.');
 }
 

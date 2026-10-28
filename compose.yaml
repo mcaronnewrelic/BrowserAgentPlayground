@@ -70,5 +70,10 @@ services:
     # Browsers need more shared memory than Docker's default, and a proper init to reap their processes.
     shm_size: "1gb"
     init: true
+    # Hard memory ceiling for this container. On the 2 GB host the long-lived browsers once grew until the
+    # host ran out of RAM and the kernel OOM-killed processes across the box, taking the site offline. With a
+    # limit, a runaway is confined to this container: it alone is OOM-killed and restarted (below), while the
+    # app, the infra agent and the host keep running. Pair this with the browser recycling in traffic/simulate.js.
+    mem_limit: ${TRAFFIC_MEM_LIMIT:-1g}
     logging: *logging
     restart: unless-stopped
