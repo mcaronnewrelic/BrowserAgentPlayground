@@ -20,6 +20,8 @@ That makes them safe to run any time. If someone changes one of these items by h
 | Agent Playground Knowledge Checks | Dashboard | How all real visitors answer the Check yourself questions. From `dashboards/knowledge-checks.json`; leaves out simulated visitors (`SIM-` codes) |
 | Agent Playground Your Knowledge Checks | Dashboard | One learner's own answers, filtered by a `demoCode` session-code variable. From `dashboards/your-knowledge-checks.json` |
 | Agent Playground Learning Path | Dashboard | From `dashboards/learning-path.json` |
+| Agent Playground Investigations Evidence Board | Dashboard | One page per guided investigation (noisy neighbor, downstream culprit, N+1, bad deploy), showing the signals that close each case. From `dashboards/investigations-evidence.json` |
+| Agent Playground My Session | Dashboard | One learner's telemetry across the whole path (a page per stage), filtered by a `demoCode` variable, plus an NRQL Level-Up page of worked query examples. From `dashboards/my-session.json` |
 | Agent Playground - Home page (ping) | Ping monitor | Availability: the home page answers over valid TLS and contains "Click it." |
 | Agent Playground - Backend health (API) | Scripted API monitor | `/api/health` answers and the APM agent is attached (`monitors/api-health.js`) |
 | Agent Playground - Learning path journey (browser) | Scripted browser monitor | Performance and function: the home page loads within 5 seconds, starting the path opens Install with a running agent, and a Tracing request ends with "Backend joined trace" (`monitors/journey.js`) |

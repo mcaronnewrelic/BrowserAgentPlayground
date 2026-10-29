@@ -1,0 +1,144 @@
+{
+  "name": "Agent Playground Investigations Evidence Board",
+  "description": "The four guided investigations as evidence boards: one page each, showing the signals that close the case. Scoped to the last 3 hours, because the faults run on hourly or daily schedules (not the week the cohort dashboards use).",
+  "permissions": "PUBLIC_READ_WRITE",
+  "pages": [
+    {
+      "name": "Who's stealing the CPU?",
+      "description": null,
+      "widgets": [
+        {
+          "title": null,
+          "layout": { "column": 1, "row": 1, "width": 12, "height": 2 },
+          "visualization": { "id": "viz.markdown" },
+          "rawConfiguration": {
+            "text": "## Who's stealing the CPU?\nThe host runs a scheduled CPU hog (the **noisy-neighbor** job). **Case closed:** during a burst, host CPU spikes and one process in the by-process chart climbs well above the browsers that are normally on top. Nothing running? Start one with `exercises/noisy-neighbor`, or widen the time window to find the last burst."
+          }
+        },
+        {
+          "title": "Host CPU",
+          "layout": { "column": 1, "row": 3, "width": 6, "height": 3 },
+          "visualization": { "id": "viz.line" },
+          "rawConfiguration": {
+            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT average(cpuPercent) AS 'Host CPU %' FROM SystemSample WHERE entityName = 'browser.nru.to' TIMESERIES AUTO SINCE 3 hours ago" }]
+          }
+        },
+        {
+          "title": "Host memory (the OOM risk)",
+          "layout": { "column": 7, "row": 3, "width": 6, "height": 3 },
+          "visualization": { "id": "viz.line" },
+          "rawConfiguration": {
+            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT average(memoryUsedPercent) AS 'Host memory %' FROM SystemSample WHERE entityName = 'browser.nru.to' TIMESERIES AUTO SINCE 3 hours ago" }]
+          }
+        },
+        {
+          "title": "CPU by process (who's the hog)",
+          "layout": { "column": 1, "row": 6, "width": 12, "height": 4 },
+          "visualization": { "id": "viz.line" },
+          "rawConfiguration": {
+            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT max(cpuPercent) AS 'CPU %' FROM ProcessSample WHERE entityName = 'browser.nru.to' FACET commandName TIMESERIES AUTO SINCE 3 hours ago LIMIT 8" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "It's not checkout",
+      "description": null,
+      "widgets": [
+        {
+          "title": null,
+          "layout": { "column": 1, "row": 1, "width": 12, "height": 2 },
+          "visualization": { "id": "viz.markdown" },
+          "rawConfiguration": {
+            "text": "## It's not checkout\nCheckout breaks for the **first 15 minutes of each hour (UTC)**. **Case closed:** the payment dependency's response time and error rate spike while inventory stays flat, and checkout's error rate tracks payment's — the fault is downstream, not in checkout."
+          }
+        },
+        {
+          "title": "Dependency response time: payment vs inventory",
+          "layout": { "column": 1, "row": 3, "width": 6, "height": 3 },
+          "visualization": { "id": "viz.line" },
+          "rawConfiguration": {
+            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT average(duration)*1000 AS 'Response time (ms)' FROM Span WHERE name LIKE 'External/%/internal/payment' OR name LIKE 'External/%/internal/inventory' FACET name TIMESERIES AUTO SINCE 3 hours ago" }]
+          }
+        },
+        {
+          "title": "Error rate: checkout vs payment",
+          "layout": { "column": 7, "row": 3, "width": 6, "height": 3 },
+          "visualization": { "id": "viz.line" },
+          "rawConfiguration": {
+            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT percentage(count(*), WHERE error IS true) AS 'Error %' FROM Transaction WHERE name LIKE '%api/checkout' OR name LIKE '%internal/payment' FACET name TIMESERIES AUTO SINCE 3 hours ago" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "One page, a dozen calls",
+      "description": null,
+      "widgets": [
+        {
+          "title": null,
+          "layout": { "column": 1, "row": 1, "width": 12, "height": 2 },
+          "visualization": { "id": "viz.markdown" },
+          "rawConfiguration": {
+            "text": "## One page, a dozen calls\nThe catalog endpoint is **always** chatty. **Case closed:** each catalog request fans out to about **8** product calls — the N+1 pattern. The ratio holds steady no matter the traffic."
+          }
+        },
+        {
+          "title": "Catalog requests vs product fan-out calls",
+          "layout": { "column": 1, "row": 3, "width": 8, "height": 3 },
+          "visualization": { "id": "viz.line" },
+          "rawConfiguration": {
+            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT count(*) FROM Span WHERE name LIKE '%api/catalog' OR name LIKE 'External/%/internal/product/%' FACET CASES (WHERE name LIKE '%api/catalog' AS 'Catalog requests', WHERE name LIKE 'External/%/internal/product/%' AS 'Product fan-out calls') TIMESERIES AUTO SINCE 3 hours ago" }]
+          }
+        },
+        {
+          "title": "Product calls per catalog",
+          "layout": { "column": 9, "row": 3, "width": 4, "height": 3 },
+          "visualization": { "id": "viz.billboard" },
+          "rawConfiguration": {
+            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT filter(count(*), WHERE name LIKE 'External/%/internal/product/%') / filter(count(*), WHERE name = 'WebTransaction/Custom/api/catalog') AS 'Product calls per catalog' FROM Span SINCE 3 hours ago" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "A deploy broke it",
+      "description": null,
+      "widgets": [
+        {
+          "title": null,
+          "layout": { "column": 1, "row": 1, "width": 12, "height": 2 },
+          "visualization": { "id": "viz.markdown" },
+          "rawConfiguration": {
+            "text": "## A deploy broke it\nErrors run for the **second quarter of each hour (:30–:44 UTC)**, right after a deploy marker. **Case closed:** the error spike lines up with a `demo-*` deployment, and the cause is a `TypeError` reading `tier` on an undefined value."
+          }
+        },
+        {
+          "title": "Errors on /api/profile, by message",
+          "layout": { "column": 1, "row": 3, "width": 8, "height": 3 },
+          "visualization": { "id": "viz.line" },
+          "rawConfiguration": {
+            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT count(*) AS 'Errors' FROM TransactionError WHERE transactionName LIKE '%profile%' FACET error.message TIMESERIES AUTO SINCE 3 hours ago" }]
+          }
+        },
+        {
+          "title": "Deploy markers",
+          "layout": { "column": 9, "row": 3, "width": 4, "height": 3 },
+          "visualization": { "id": "viz.table" },
+          "rawConfiguration": {
+            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT latest(timestamp) AS 'Latest marker' FROM Deployment WHERE version LIKE 'demo-%' FACET version SINCE 3 hours ago LIMIT 20" }]
+          }
+        },
+        {
+          "title": null,
+          "layout": { "column": 1, "row": 6, "width": 12, "height": 2 },
+          "visualization": { "id": "viz.markdown" },
+          "rawConfiguration": {
+            "text": "**Deploy markers don't render inside NRQL widgets.** To see them on a timeline, open the demo service → **Change tracking**; for the full stack trace, open the **Errors inbox** and find the `TypeError` group."
+          }
+        }
+      ]
+    }
+  ],
+  "variables": []
+}

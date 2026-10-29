@@ -1,0 +1,941 @@
+{
+  "name": "Agent Playground My Session",
+  "description": "One learner's own telemetry across the whole learning path, filtered by a demoCode session-code variable, plus a cohort-wide NRQL Level-Up page of worked query examples. Simulated visitors (SIM- codes) are left out of the picker.",
+  "permissions": "PUBLIC_READ_WRITE",
+  "pages": [
+    {
+      "name": "My Session",
+      "description": null,
+      "widgets": [
+        {
+          "title": null,
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 12,
+            "height": 2
+          },
+          "visualization": {
+            "id": "viz.markdown"
+          },
+          "rawConfiguration": {
+            "text": "## Your session\nPick or type your **session code** in the `demoCode` variable at the top (it's in the header of every demo page). Every page of this dashboard then shows only your own data. Simulated visitors (`SIM-` codes) are left out of the picker."
+          }
+        },
+        {
+          "title": "You",
+          "layout": {
+            "column": 1,
+            "row": 3,
+            "width": 3,
+            "height": 2
+          },
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT latest(demoUser) AS 'You' FROM PageView WHERE demoCode = {{demoCode}} SINCE 1 week ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Pages visited",
+          "layout": {
+            "column": 4,
+            "row": 3,
+            "width": 3,
+            "height": 2
+          },
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT uniqueCount(pageUrl) AS 'Pages visited' FROM PageView WHERE demoCode = {{demoCode}} SINCE 1 week ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Quiz answers",
+          "layout": {
+            "column": 7,
+            "row": 3,
+            "width": 3,
+            "height": 2
+          },
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT count(*) AS 'Quiz answers' FROM DemoQuizAnswer WHERE demoCode = {{demoCode}} SINCE 1 week ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Right first try",
+          "layout": {
+            "column": 10,
+            "row": 3,
+            "width": 3,
+            "height": 2
+          },
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT percentage(count(*), WHERE outcome = 'correct') AS 'Right first try' FROM DemoQuizAnswer WHERE attempt = 1 AND demoCode = {{demoCode}} SINCE 1 week ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Your progress through the path",
+          "layout": {
+            "column": 1,
+            "row": 5,
+            "width": 12,
+            "height": 4
+          },
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT count(*) AS 'Page views' FROM PageView WHERE demoCode = {{demoCode}} FACET CASES (WHERE pageUrl LIKE '%/install.html' AS '1 · Install', WHERE pageUrl LIKE '%/vitals.html' AS '2 · Vitals', WHERE pageUrl LIKE '%/errors.html' AS '3 · Errors', WHERE pageUrl LIKE '%/frustration.html' AS '4 · Frustration', WHERE pageUrl LIKE '%/logs.html' AS '5 · Logs', WHERE pageUrl LIKE '%/events.html' AS '6 · Events', WHERE pageUrl LIKE '%/measures.html' AS '7 · Measures', WHERE pageUrl LIKE '%/tracing.html' AS '8 · Tracing', WHERE pageUrl LIKE '%/websockets.html' AS '9 · WebSockets', WHERE pageUrl LIKE '%/spa.html' AS '10 · SPA', WHERE pageUrl LIKE '%/replay.html' AS '11 · Replay') SINCE 1 week ago"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vitals",
+      "description": null,
+      "widgets": [
+        {
+          "title": null,
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 12,
+            "height": 2
+          },
+          "visualization": {
+            "id": "viz.markdown"
+          },
+          "rawConfiguration": {
+            "text": "## Your Core Web Vitals\nThe percentiles of your own page loads, and the distribution behind them. p75 is the threshold Google judges a page by."
+          }
+        },
+        {
+          "title": "Your vitals (percentiles)",
+          "layout": {
+            "column": 1,
+            "row": 3,
+            "width": 5,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT percentile(largestContentfulPaint, 50, 75, 95) AS 'LCP (s)', percentile(cumulativeLayoutShift, 75) AS 'CLS p75', percentile(interactionToNextPaint, 75) AS 'INP p75 (s)' FROM PageViewTiming WHERE demoCode = {{demoCode}} SINCE 1 week ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Your LCP distribution",
+          "layout": {
+            "column": 6,
+            "row": 3,
+            "width": 7,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.histogram"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT histogram(largestContentfulPaint, 4, 20) FROM PageViewTiming WHERE demoCode = {{demoCode}} SINCE 1 week ago"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Errors",
+      "description": null,
+      "widgets": [
+        {
+          "title": null,
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 12,
+            "height": 2
+          },
+          "visualization": {
+            "id": "viz.markdown"
+          },
+          "rawConfiguration": {
+            "text": "## Your errors\nJavaScript errors the agent caught for you, grouped by class and message, plus how many ERROR-level logs you sent."
+          }
+        },
+        {
+          "title": "Your JavaScript errors",
+          "layout": {
+            "column": 1,
+            "row": 3,
+            "width": 8,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT count(*) AS 'Errors' FROM JavaScriptError WHERE demoCode = {{demoCode}} FACET errorClass, errorMessage SINCE 1 week ago LIMIT 20"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Your ERROR logs",
+          "layout": {
+            "column": 9,
+            "row": 3,
+            "width": 4,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT count(*) AS 'ERROR logs' FROM Log WHERE demoCode = {{demoCode}} AND level = 'ERROR' SINCE 1 week ago"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Frustration",
+      "description": null,
+      "widgets": [
+        {
+          "title": null,
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 12,
+            "height": 2
+          },
+          "visualization": {
+            "id": "viz.markdown"
+          },
+          "rawConfiguration": {
+            "text": "## Your frustration signals\nRage, dead and error clicks land as `UserAction` events with a boolean flag. These are the signals most teams never see."
+          }
+        },
+        {
+          "title": "Your frustration signals",
+          "layout": {
+            "column": 1,
+            "row": 3,
+            "width": 12,
+            "height": 4
+          },
+          "visualization": {
+            "id": "viz.bar"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT count(*) FROM UserAction WHERE demoCode = {{demoCode}} FACET CASES (WHERE rageClick AS 'Rage clicks', WHERE deadClick AS 'Dead clicks', WHERE errorClick AS 'Error clicks') SINCE 1 week ago"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Logs",
+      "description": null,
+      "widgets": [
+        {
+          "title": null,
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 12,
+            "height": 2
+          },
+          "visualization": {
+            "id": "viz.markdown"
+          },
+          "rawConfiguration": {
+            "text": "## Your logs\nConsole calls become New Relic logs, carrying your `demoCode`. Here they are by level over time."
+          }
+        },
+        {
+          "title": "Your logs by level",
+          "layout": {
+            "column": 1,
+            "row": 3,
+            "width": 8,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT count(*) FROM Log WHERE demoCode = {{demoCode}} FACET level TIMESERIES AUTO SINCE 1 week ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Total log lines",
+          "layout": {
+            "column": 9,
+            "row": 3,
+            "width": 4,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT count(*) AS 'Log lines' FROM Log WHERE demoCode = {{demoCode}} SINCE 1 week ago"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "description": null,
+      "widgets": [
+        {
+          "title": null,
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 12,
+            "height": 2
+          },
+          "visualization": {
+            "id": "viz.markdown"
+          },
+          "rawConfiguration": {
+            "text": "## Your events\nThree ways to record “something happened”: `PageAction` (addPageAction), `DemoAction` (recordCustomEvent) and `BrowserInteraction` (SPA). One query spans all three with `eventType()`."
+          }
+        },
+        {
+          "title": "Your events by type",
+          "layout": {
+            "column": 1,
+            "row": 3,
+            "width": 12,
+            "height": 4
+          },
+          "visualization": {
+            "id": "viz.bar"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT count(*) FROM PageAction, DemoAction, BrowserInteraction WHERE demoCode = {{demoCode}} FACET eventType() SINCE 1 week ago"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Measures",
+      "description": null,
+      "widgets": [
+        {
+          "title": null,
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 12,
+            "height": 2
+          },
+          "visualization": {
+            "id": "viz.markdown"
+          },
+          "rawConfiguration": {
+            "text": "## Your measures\nYour custom timings from `performance.measure()` / `newrelic.measure()` land as `BrowserPerformance` events. They only appear once you create them on the Measures page; `name` is your measure's label."
+          }
+        },
+        {
+          "title": "Your measures",
+          "layout": {
+            "column": 1,
+            "row": 3,
+            "width": 12,
+            "height": 4
+          },
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT count(*) AS 'Count', average(duration) AS 'Avg duration (ms)', max(duration) AS 'Max (ms)' FROM BrowserPerformance WHERE demoCode = {{demoCode}} FACET name SINCE 1 week ago LIMIT 20"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tracing",
+      "description": null,
+      "widgets": [
+        {
+          "title": null,
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 12,
+            "height": 2
+          },
+          "visualization": {
+            "id": "viz.markdown"
+          },
+          "rawConfiguration": {
+            "text": "## Your traces\nAJAX requests from your pages, by response code, and the backend transactions they reached (the agent joins them into one distributed trace)."
+          }
+        },
+        {
+          "title": "Your AJAX requests",
+          "layout": {
+            "column": 1,
+            "row": 3,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT count(*) AS 'Requests', average(timeToSettle) AS 'Avg settle' FROM AjaxRequest WHERE demoCode = {{demoCode}} FACET httpResponseCode SINCE 1 week ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Backend transactions you reached",
+          "layout": {
+            "column": 7,
+            "row": 3,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT count(*) AS 'Transactions', average(duration) * 1000 AS 'Avg (ms)' FROM Transaction WHERE demoCode = {{demoCode}} FACET name SINCE 1 week ago LIMIT 20"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "WebSockets",
+      "description": null,
+      "widgets": [
+        {
+          "title": null,
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 12,
+            "height": 2
+          },
+          "visualization": {
+            "id": "viz.markdown"
+          },
+          "rawConfiguration": {
+            "text": "## Your WebSockets\nEach socket's lifecycle is a `WebSocket` event, including how it closed. 1000 is a clean close; 1006 is an abnormal one."
+          }
+        },
+        {
+          "title": "Your sockets",
+          "layout": {
+            "column": 1,
+            "row": 3,
+            "width": 4,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT uniqueCount(socketId) AS 'Sockets', count(*) AS 'WebSocket events' FROM WebSocket WHERE demoCode = {{demoCode}} SINCE 1 week ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "How your sockets closed",
+          "layout": {
+            "column": 5,
+            "row": 3,
+            "width": 8,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT count(*) AS 'Closes' FROM WebSocket WHERE demoCode = {{demoCode}} AND closeCode IS NOT NULL FACET closeCode, closeReason SINCE 1 week ago"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "SPA",
+      "description": null,
+      "widgets": [
+        {
+          "title": null,
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 12,
+            "height": 2
+          },
+          "visualization": {
+            "id": "viz.markdown"
+          },
+          "rawConfiguration": {
+            "text": "## Your SPA route changes\nWith the Pro + SPA agent, route changes become `BrowserInteraction` events — initial loads, route changes and custom interactions."
+          }
+        },
+        {
+          "title": "Your interactions by category",
+          "layout": {
+            "column": 1,
+            "row": 3,
+            "width": 12,
+            "height": 4
+          },
+          "visualization": {
+            "id": "viz.bar"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT count(*) FROM BrowserInteraction WHERE demoCode = {{demoCode}} FACET category, targetRouteName SINCE 1 week ago LIMIT 20"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Replay",
+      "description": null,
+      "widgets": [
+        {
+          "title": null,
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 12,
+            "height": 2
+          },
+          "visualization": {
+            "id": "viz.markdown"
+          },
+          "rawConfiguration": {
+            "text": "## Your session replays\nThis app samples 10% of sessions into replay, plus any with an error. `recordReplay()` forces one. Events carry `hasReplay = true` once a replay is recorded for that session."
+          }
+        },
+        {
+          "title": "Your sessions with a replay",
+          "layout": {
+            "column": 1,
+            "row": 3,
+            "width": 12,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT uniqueCount(session) AS 'Sessions with replay' FROM UserAction, PageAction WHERE demoCode = {{demoCode}} AND hasReplay = true SINCE 1 week ago"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "NRQL Level-Up",
+      "description": null,
+      "widgets": [
+        {
+          "title": null,
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 12,
+            "height": 2
+          },
+          "visualization": {
+            "id": "viz.markdown"
+          },
+          "rawConfiguration": {
+            "text": "## NRQL Level-Up\nCohort-wide worked examples — techniques beyond what the other dashboards use, each run against this site's own data. Read the title, then the query."
+          }
+        },
+        {
+          "title": "1 · percentile() + spread",
+          "layout": {
+            "column": 1,
+            "row": 3,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT percentile(largestContentfulPaint, 50, 75, 95, 99) FROM PageViewTiming WHERE largestContentfulPaint IS NOT NULL TIMESERIES AUTO SINCE 1 day ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "2 · histogram() — the distribution",
+          "layout": {
+            "column": 7,
+            "row": 3,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.histogram"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT histogram(largestContentfulPaint, 4, 20) FROM PageViewTiming WHERE largestContentfulPaint IS NOT NULL SINCE 1 day ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "3 · FACET CASES — rating buckets",
+          "layout": {
+            "column": 1,
+            "row": 6,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.bar"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT count(*) FROM PageViewTiming WHERE largestContentfulPaint IS NOT NULL FACET CASES (WHERE largestContentfulPaint <= 2.5 AS 'Good', WHERE largestContentfulPaint <= 4 AS 'Needs work', WHERE largestContentfulPaint > 4 AS 'Poor') SINCE 1 day ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "4 · COMPARE WITH — this week vs last",
+          "layout": {
+            "column": 7,
+            "row": 6,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT count(*) FROM PageView WHERE appId = 1117825756 TIMESERIES AUTO COMPARE WITH 1 week ago SINCE 1 week ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "5 · multi-event union + eventType()",
+          "layout": {
+            "column": 1,
+            "row": 9,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT count(*) FROM PageView, JavaScriptError, Log, PageAction WHERE demoCode IS NOT NULL FACET eventType() TIMESERIES AUTO SINCE 1 day ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "6 · filter() — % wrong by page",
+          "layout": {
+            "column": 7,
+            "row": 9,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.bar"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT filter(count(*), WHERE outcome = 'incorrect') / count(*) * 100 AS '% wrong' FROM DemoQuizAnswer FACET demoPage SINCE 1 week ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "7 · rate() — counts to rates",
+          "layout": {
+            "column": 1,
+            "row": 12,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT rate(count(*), 1 minute) AS 'Answers/min' FROM DemoQuizAnswer TIMESERIES AUTO SINCE 1 day ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "8 · uniqueCount() vs count()",
+          "layout": {
+            "column": 7,
+            "row": 12,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT count(*) AS 'Page views', uniqueCount(session) AS 'Sessions', uniqueCount(demoCode) AS 'Codes' FROM PageView WHERE appId = 1117825756 SINCE 1 day ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "9 · keyset() — what attributes exist",
+          "layout": {
+            "column": 1,
+            "row": 15,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT keyset() FROM DemoQuizAnswer SINCE 1 day ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "10 · nested subquery — still wrong",
+          "layout": {
+            "column": 7,
+            "row": 15,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT count(*) AS 'Still-wrong (code,question) pairs' FROM (SELECT latest(outcome) AS outcome FROM DemoQuizAnswer FACET demoCode, question LIMIT MAX) WHERE outcome = 'incorrect' SINCE 1 week ago"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "demoCode",
+      "items": null,
+      "defaultValues": [],
+      "nrqlQuery": {
+        "accountIds": [
+          6932347
+        ],
+        "query": "SELECT uniques(demoCode) FROM DemoQuizAnswer WHERE demoCode NOT LIKE 'SIM-%' SINCE 1 week ago"
+      },
+      "options": {
+        "hiddenOnVariablesBar": false,
+        "ignoreTimeRange": true,
+        "excluded": false
+      },
+      "title": "Session code (demoCode)",
+      "type": "NRQL",
+      "isMultiSelection": false,
+      "replacementStrategy": "STRING"
+    }
+  ]
+}
