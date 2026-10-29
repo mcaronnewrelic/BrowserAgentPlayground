@@ -231,7 +231,7 @@ POST /api/checkout        <span class="c">// slow, sometimes 502</span>
             <h3>The errors live on payment</h3>
             <p>The errors are recorded on the <code>/internal/payment</code> transaction, not on checkout's own logic. Checkout's failures are downstream of them, in the same windows.</p>
             <pre id="nrqlPaymentErr"></pre>
-            <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlPaymentErr" type="button">Copy NRQL</button><a class="btn secondary small" href="https://one.newrelic.com" target="_blank" rel="noopener">Open New Relic <span class="arrow" aria-hidden="true">→</span></a></div>
+            <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlPaymentErr" type="button">Copy NRQL</button><a class="btn secondary small" data-entity="apmService" href="https://one.newrelic.com" target="_blank" rel="noopener">Open New Relic <span class="arrow" aria-hidden="true">→</span></a></div>
           </div>
         </div>
 

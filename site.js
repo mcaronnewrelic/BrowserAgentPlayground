@@ -6,6 +6,91 @@
 (function () {
   'use strict';
 
+  // ---- "Open in New Relic" links --------------------------------------------------------------------------
+  // Every NRQL block on the site (a <pre id="nrql…"> with a "Copy NRQL" button) gets a one-click link that
+  // opens the query in New Relic, pre-filled and already filtered to the visitor's demoCode. The link is
+  // built from the <pre>'s own text at click time, so it can never disagree with the query shown above it,
+  // and demoCode / the time window are always current. The printed NRQL and its Copy button stay regardless:
+  // the link is an accelerator, never the only path.
+  //
+  // The config lives here, not in nr-config.js: on browser.nru.to the server replaces the whole NR:SNIPPET
+  // block (nr-config.js among it) with the APM-injected browser agent, so anything in nr-config.js is gone in
+  // production. site.js loads outside that block on every page, so this is always present.
+  //
+  // L1 pattern (the form that tested working, 2026-10-28): the legacy Insights query URL redirects into
+  // one.newrelic.com with the query and account pre-filled. If New Relic retires it, this one function is the
+  // only thing to change.
+  var NR_DEMO_LINKS = {
+    accountId: 6932347,     // "Enablement", the account the demo app reports to.
+    host: 'one.newrelic.com',
+    // Entity GUIDs, verified against the live account 2026-10-28 (each base64-decodes to
+    // 6932347|<domain>|<type>|<id>, which cross-checks the account and entity). GUIDs are identifiers, not
+    // secrets, but they must come from the real entities. The browser app and APM service share a name.
+    entities: {
+      browserApp: 'NjkzMjM0N3xCUk9XU0VSfEFQUExJQ0FUSU9OfDExMzQ3Mzk2OTQ', // "Browser Agent Playground" (BROWSER)
+      apmService: 'NjkzMjM0N3xBUE18QVBQTElDQVRJT058MTExNzgyNTc1Ng',      // "Browser Agent Playground" (APM)
+      host: 'NjkzMjM0N3xJTkZSQXxOQXwtNDI2NjI5NDI1MDYyMjM5NzkwMQ',        // host "browser.nru.to"
+      container: 'NjkzMjM0N3xJTkZSQXxOQXwxNjAxMTcwNTc0MTE0MzE5MTYz'      // "browser-agent-playground-app-1"
+    }
+  };
+  function nrQueryLink(nrql) {
+    return 'https://insights.newrelic.com/accounts/' + NR_DEMO_LINKS.accountId +
+      '/query?query=' + encodeURIComponent(nrql);
+  }
+  // L2 — the canonical permalink New Relic returns for an entity. It embeds the account (so it can't land in
+  // the wrong one) and survives UI redesigns better than any hand-built launcher URL. No time window is added:
+  // whether entity pages honour ?begin/&end is unverified, so the link reliably lands on the right entity and
+  // the label says which (the query's own SINCE and the surrounding steps carry the time context).
+  var ENTITY_LABELS = {
+    browserApp: 'Open the browser app ↗', apmService: 'Open the demo service ↗',
+    host: 'Open the host ↗', container: 'Open the container ↗'
+  };
+  function entityLink(kind) {
+    var guid = NR_DEMO_LINKS.entities[kind];
+    return guid ? 'https://' + NR_DEMO_LINKS.host + '/redirect/entity/' + guid : null;
+  }
+  // Points any element carrying data-entity="browserApp|apmService|host|container" at that entity, and labels
+  // it for the entity unless it opts out with data-keep-label.
+  function setupNrEntity() {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-entity]'), function (el) {
+      var kind = el.dataset.entity, href = entityLink(kind);
+      if (!href) return;
+      el.href = href;
+      if (ENTITY_LABELS[kind] && !el.hasAttribute('data-keep-label')) el.textContent = ENTITY_LABELS[kind];
+    });
+  }
+  // Adds an "Open in New Relic" link after each "Copy NRQL" button, plus a one-time note about the account.
+  function setupNrOpen() {
+    var noteAdded = false;
+    Array.prototype.forEach.call(document.querySelectorAll('.js-copy'), function (btn) {
+      var id = btn.dataset.copyTarget, next = btn.nextElementSibling;
+      // Only NRQL blocks (the nrql* ids); skip non-NRQL copy targets and anything already wired.
+      if (!id || !/nrql/i.test(id) || (next && next.classList.contains('nr-open'))) return;
+      var link = document.createElement('a');
+      link.className = 'btn small nr-open';
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.textContent = 'Open in New Relic ↗';
+      function refresh() {
+        var target = document.getElementById(id), q = target ? target.textContent.trim() : '';
+        link.href = q ? nrQueryLink(q)
+          : 'https://insights.newrelic.com/accounts/' + NR_DEMO_LINKS.accountId + '/query';
+      }
+      // Build the href from the current query text at the moment of the click (mouse, touch or keyboard).
+      ['mousedown', 'touchstart', 'focus'].forEach(function (ev) { link.addEventListener(ev, refresh); });
+      link.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') refresh(); });
+      refresh();
+      btn.parentNode.insertBefore(link, btn.nextSibling);
+      if (!noteAdded) {
+        var note = document.createElement('span');
+        note.className = 'nr-open-note';
+        note.textContent = 'Opens in the shared demo account (Enablement) — sign in there first. If you land in your own account the query still runs, but finds no demoCode data.';
+        link.parentNode.insertBefore(note, link.nextSibling);
+        noteAdded = true;
+      }
+    });
+  }
+
   // The learning path, in order. It drives the page switcher in every header and each page's "Up next" link,
   // and matches the stages on the home page. Add a page here and it shows up everywhere.
   var PAGES = [
@@ -339,6 +424,8 @@
         if (!target.classList.contains('placeholder')) copyText(target.textContent, btn);
       });
     });
+    setupNrOpen();
+    setupNrEntity();
 
     initQuiz();
     renderAgent();
@@ -357,6 +444,7 @@
   window.Demo = {
     PAGES: PAGES, header: header, whoSummary: whoSummary, identityForm: identityForm, upNext: upNext, pathCounts: pathCounts,
     $: $, agent: agent, safe: safe, esc: esc, time: time, renderAgent: renderAgent,
-    copyText: copyText, toast: toast, feed: feed, start: start, QUIZ_EVENT_TYPE: QUIZ_EVENT_TYPE, quizAnswer: quizAnswer
+    copyText: copyText, toast: toast, feed: feed, start: start, QUIZ_EVENT_TYPE: QUIZ_EVENT_TYPE, quizAnswer: quizAnswer,
+    nrQueryLink: nrQueryLink, entityLink: entityLink
   };
 })();

@@ -156,7 +156,7 @@ Host             <span class="c">// shared with...?</span>
             <h3>Open the APM service and watch response time</h3>
             <p>Open <b>APM &amp; services → the demo service</b> and look at the response-time chart. You'll see flat, fast baseline with sharp spikes that come and go. Note when a spike happens; you'll line the other tiers up against it.</p>
             <pre id="nrqlApp"></pre>
-            <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlApp" type="button">Copy NRQL</button></div>
+            <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlApp" type="button">Copy NRQL</button><a class="btn secondary small" data-entity="apmService" href="https://one.newrelic.com" target="_blank" rel="noopener">Open New Relic <span class="arrow" aria-hidden="true">→</span></a></div>
           </div>
         </div>
 
@@ -257,7 +257,7 @@ Host             <span class="c">// shared with...?</span>
             <h3>CPU by process on the host</h3>
             <p>Open <b>Processes</b> on the host, or run the query below. During the bursts, a process called <code>noisy-neighbor</code> dominates CPU, far above the app's own container processes. That's your culprit, found by following the chain, not by guessing.</p>
             <pre id="nrqlProc"></pre>
-            <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlProc" type="button">Copy NRQL</button><a class="btn secondary small" href="https://one.newrelic.com" target="_blank" rel="noopener">Open New Relic <span class="arrow" aria-hidden="true">→</span></a></div>
+            <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlProc" type="button">Copy NRQL</button><a class="btn secondary small" data-entity="host" href="https://one.newrelic.com" target="_blank" rel="noopener">Open New Relic <span class="arrow" aria-hidden="true">→</span></a></div>
           </div>
         </div>
 

@@ -96,6 +96,10 @@ h3 { font-size: 22px; line-height: 1.2; margin: 0; letter-spacing: -0.6px; font-
 .btn.green { background: var(--green); color: var(--black); }
 .btn.green:hover { background: #3ff09a; }
 .btn.small { padding: 11px 16px; font-size: 14px; }
+/* "Open in New Relic" link next to a Copy NRQL button: outlined, so it reads as "leaves the page". */
+.btn.nr-open { background: transparent; color: var(--green-deep); box-shadow: inset 0 0 0 1px var(--green-deep); }
+.btn.nr-open:hover { background: rgba(28, 231, 131, .12); }
+.nr-open-note { flex-basis: 100%; margin-top: 6px; font-size: 12px; line-height: 1.4; color: var(--ink-2); }
 .btn.ghost-dark { background: rgba(253,252,240,.08); color: var(--white); }
 .btn.ghost-dark:hover { background: rgba(253,252,240,.16); }
 .btn .arrow { transition: transform .15s ease; }
