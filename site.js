@@ -20,6 +20,9 @@
   // L1 pattern (the form that tested working, 2026-10-28): the legacy Insights query URL redirects into
   // one.newrelic.com with the query and account pre-filled. If New Relic retires it, this one function is the
   // only thing to change.
+  // All New Relic links share this named browser tab, so clicking several reuses one tab instead of opening
+  // a new one each time. See setupNrOpen for why rel="noopener" is left off.
+  var NR_TAB = 'newrelic';
   var NR_DEMO_LINKS = {
     accountId: 6932347,     // "Enablement", the account the demo app reports to.
     host: 'one.newrelic.com',
@@ -68,6 +71,9 @@
       var kind = el.dataset.entity, href = entityLink(kind);
       if (!href) return;
       el.href = href;
+      // Share the one New Relic tab with the query links (see NR_TAB); drop rel so the named target reuses it.
+      el.target = NR_TAB;
+      el.removeAttribute('rel');
       if (ENTITY_LABELS[kind] && !el.hasAttribute('data-keep-label')) el.textContent = ENTITY_LABELS[kind];
     });
   }
@@ -80,8 +86,10 @@
       if (!id || !/nrql/i.test(id) || (next && next.classList.contains('nr-open'))) return;
       var link = document.createElement('a');
       link.className = 'btn small nr-open';
-      link.target = '_blank';
-      link.rel = 'noopener';
+      // A named target (not _blank) so repeat clicks reuse one New Relic tab instead of piling up new ones.
+      // Named-target reuse and rel="noopener" are mutually exclusive in browsers, so noopener is omitted on
+      // purpose; the destination is New Relic, a trusted site.
+      link.target = NR_TAB;
       link.textContent = 'Open in New Relic ↗';
       function refresh() {
         var target = document.getElementById(id), q = target ? target.textContent.trim() : '';
