@@ -5,7 +5,7 @@
      NEW RELIC BROWSER SNIPPET + TRACE HEADER CAPTURE
      1. The small "header capture" script below must come BEFORE the
         New Relic snippet. The agent then wraps it, so it can see the
-        traceparent / tracestate / newrelic headers the agent adds and
+        traceparent and tracestate headers the agent adds and
         show them on the page. It never changes a request.
      2. Same Pro+SPA snippet as index.html, with distributed tracing on.
         If you enable CORS for a backend, re-copy the snippet from
@@ -20,7 +20,7 @@
 /* Trace header capture (demo only): records the trace headers on outgoing requests. */
 (function () {
   var cap = window.__dtCapture = [];
-  var NAMES = ['traceparent', 'tracestate', 'newrelic'];
+  var NAMES = ['traceparent', 'tracestate'];
   function pick(h, into) {
     if (!h) return into;
     NAMES.forEach(function (k) {
@@ -58,7 +58,7 @@
 <script>
 // Tracing page extras on top of nr-init.js. allowed_origins must list every backend the page calls cross-origin
 // (CONFIG.backendUrl below, and any you try with ?backend=); the agent adds no trace headers to other origins.
-NREUM.init.distributed_tracing={enabled:true,cors_use_newrelic_header:true,cors_use_tracecontext_headers:true,allowed_origins:['https://browser.nru.to','http://localhost:3000']};
+NREUM.init.distributed_tracing={enabled:true,exclude_newrelic_header:true,cors_use_tracecontext_headers:true,allowed_origins:['https://browser.nru.to','http://localhost:3000']};
 NREUM.init.web_sockets={enabled:false};
 NREUM.init.api={register:{enabled:true,duplicate_data_to_container:false}};
 </script>
@@ -256,7 +256,7 @@ NREUM.init.api={register:{enabled:true,duplicate_data_to_container:false}};
       <div class="primer">
         <div>
           <div class="tag-row"><div class="tag">You'll learn to</div><span class="chip auto">Automatic, needs a backend</span></div>
-          <ul><li>Recognize the <code>traceparent</code>, <code>tracestate</code> and <code>newrelic</code> headers the agent adds.</li><li>Follow one click from the browser into backend services in Distributed tracing.</li><li>Put browser and backend logs on the same trace.</li></ul>
+          <ul><li>Recognize the <code>traceparent</code> and <code>tracestate</code> headers the agent adds.</li><li>Follow one click from the browser into backend services in Distributed tracing.</li><li>Put browser and backend logs on the same trace.</li></ul>
         </div>
         <div>
           <div class="tag-row"><div class="tag">Before you start</div></div>
@@ -277,7 +277,7 @@ NREUM.init.api={register:{enabled:true,duplicate_data_to_container:false}};
           <article class="card wide" aria-labelledby="hdrTitle">
             <div class="tag">What the agent adds</div>
             <h3 id="hdrTitle">Headers on your last request</h3>
-            <p>These are the real values the browser agent attached. <code>traceparent</code> is the W3C standard header. <code>tracestate</code> and <code>newrelic</code> carry New Relic's account and app details so the trace is stitched together correctly.</p>
+            <p>These are the real values the browser agent attached. <code>traceparent</code> is the W3C standard header that carries the trace ID. <code>tracestate</code> carries New Relic's account and app details so the trace is stitched together correctly.</p>
             <div class="headers-panel" id="headersPanel"><span class="empty">Send a request below to see its trace headers.</span></div>
           </article>
 
@@ -461,14 +461,6 @@ newrelic.<span class="k">log</span>(<span class="s">'GET /api/products 200'</spa
     return { version: m[1], traceId: m[2], parentId: m[3], flags: m[4], sampled: (parseInt(m[4], 16) & 1) === 1 };
   }
 
-  // The base64 "newrelic" header holds JSON like { v: [0,1], d: { ty, ac, ap, id, tr, ti, tk } }.
-  function decodeNewrelicHeader(value, atobFn) {
-    try {
-      var decoded = JSON.parse((atobFn || root.atob)(String(value)));
-      return decoded && decoded.d && typeof decoded.d === 'object' ? decoded.d : null;
-    } catch (e) { return null; }
-  }
-
   function normalizeBackendUrl(url) {
     var s = String(url || '').trim();
     if (!/^https?:\/\/[^\s/]+/i.test(s)) return '';
@@ -573,7 +565,7 @@ newrelic.<span class="k">log</span>(<span class="s">'GET /api/products 200'</spa
 
   root.TraceDemo = {
     parseTraceparent: parseTraceparent,
-    decodeNewrelicHeader: decodeNewrelicHeader, normalizeBackendUrl: normalizeBackendUrl,
+    normalizeBackendUrl: normalizeBackendUrl,
     resolveEndpoint: resolveEndpoint, withParams: withParams, traceStatus: traceStatus,
     buildSpanNrql: buildSpanNrql, buildAjaxNrql: buildAjaxNrql, buildTransactionNrql: buildTransactionNrql,
     buildLogsNrql: buildLogsNrql, traceIdForLog: traceIdForLog, logLevelFor: logLevelFor, buildLogAttributes: buildLogAttributes
@@ -744,7 +736,7 @@ newrelic.<span class="k">log</span>(<span class="s">'GET /api/products 200'</spa
   function renderHeaders(h, opts, url) {
     var panel = $('headersPanel');
     var rows = '<div class="hrow"><span class="hname">request</span><span class="hval">' + esc(opts.method + ' ' + shortUrl(url)) + '</span></div>';
-    if (!h.traceparent && !h.newrelic) {
+    if (!h.traceparent && !h.tracestate) {
       rows += '<div class="hrow"><span class="hname">headers</span><span class="hval" style="color:var(--gray)">None added. ' +
         (!agent() ? 'The browser agent is not on this page.'
           : opts.target === 'thirdparty' ? 'This origin is not on the CORS allowed list.'
@@ -758,12 +750,6 @@ newrelic.<span class="k">log</span>(<span class="s">'GET /api/products 200'</spa
         '<div class="tp-legend"><b>version</b><b class="tid">trace ID</b><b class="pid">parent span ID</b><b>flags' + (p ? (p.sampled ? ' (sampled)' : ' (not sampled)') : '') + '</b></div></span></div>';
     }
     if (h.tracestate) rows += '<div class="hrow"><span class="hname">tracestate</span><span class="hval">' + esc(h.tracestate) + '</span></div>';
-    if (h.newrelic) {
-      var d = L.decodeNewrelicHeader(h.newrelic);
-      rows += '<div class="hrow"><span class="hname">newrelic</span><span class="hval">' + esc(h.newrelic.length > 60 ? h.newrelic.slice(0, 60) + '…' : h.newrelic) +
-        (d ? '<div class="kv" style="margin-top:6px"><span>type <b>' + esc(d.ty) + '</b></span><span>account <b>' + esc(d.ac) + '</b></span><span>app <b>' + esc(d.ap) + '</b></span><span>trace <b>' + esc(String(d.tr).slice(0, 8)) + '…</b></span></div>' : '') +
-        '</span></div>';
-    }
     panel.innerHTML = rows;
   }
   function record(e) {

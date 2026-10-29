@@ -142,13 +142,6 @@ test('tracing: traceparent parsing follows W3C and rejects all-zero IDs', () => 
   assert.strictEqual(parseTraceparent('not a header'), null);
 });
 
-test('tracing: the newrelic header decodes to its d object', () => {
-  const { decodeNewrelicHeader } = L['tracing.html'];
-  const header = Buffer.from(JSON.stringify({ v: [0, 1], d: { ty: 'Browser', ac: '1', ap: '2', tr: 'abc' } })).toString('base64');
-  assert.strictEqual(decodeNewrelicHeader(header).ty, 'Browser');
-  assert.strictEqual(decodeNewrelicHeader('not base64 json'), null);
-});
-
 test('tracing: endpoints are static files without a backend, API routes with one', () => {
   const { resolveEndpoint, normalizeBackendUrl, withParams } = L['tracing.html'];
   assert.deepStrictEqual({ ...resolveEndpoint('products', '') }, { url: 'data/products.json', method: 'GET', target: 'static' });
