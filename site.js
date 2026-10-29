@@ -34,6 +34,12 @@
       apmService: 'NjkzMjM0N3xBUE18QVBQTElDQVRJT058MTExNzgyNTc1Ng',      // "Browser Agent Playground" (APM)
       host: 'NjkzMjM0N3xJTkZSQXxOQXwtNDI2NjI5NDI1MDYyMjM5NzkwMQ',        // host "browser.nru.to"
       container: 'NjkzMjM0N3xJTkZSQXxOQXwxNjAxMTcwNTc0MTE0MzE5MTYz'      // "browser-agent-playground-app-1"
+    },
+    // Dashboard GUIDs (created by newrelic/dashboards.sh; a GUID embeds its account, so a link can't land in
+    // the wrong one). If a dashboard is deleted and recreated it gets a new GUID; update it here.
+    dashboards: {
+      mySession: 'NjkzMjM0N3xWSVp8REFTSEJPQVJEfGRhOjEzNDEzNTU3',            // "Agent Playground My Session"
+      investigationsEvidence: 'NjkzMjM0N3xWSVp8REFTSEJPQVJEfGRhOjEzNDEzNTU1' // "Agent Playground Investigations Evidence Board"
     }
   };
   function nrQueryLink(nrql) {
@@ -75,6 +81,27 @@
       el.target = NR_TAB;
       el.removeAttribute('rel');
       if (ENTITY_LABELS[kind] && !el.hasAttribute('data-keep-label')) el.textContent = ENTITY_LABELS[kind];
+    });
+  }
+
+  // L3 — a link to a whole dashboard. The GUID embeds the account. Used for the "see all your data" (My
+  // Session) link on the demo pages and the "evidence board" link on the Investigations. Any element with
+  // data-dashboard="mySession|investigationsEvidence" is pointed at it and labelled, unless it keeps its label.
+  var DASHBOARD_LABELS = {
+    mySession: 'See all your data ↗', investigationsEvidence: 'Open the evidence board ↗'
+  };
+  function dashboardLink(key) {
+    var guid = NR_DEMO_LINKS.dashboards[key];
+    return guid ? 'https://' + NR_DEMO_LINKS.host + '/dashboards/detail/' + guid : null;
+  }
+  function setupNrDashboard() {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-dashboard]'), function (el) {
+      var key = el.dataset.dashboard, href = dashboardLink(key);
+      if (!href) return;
+      el.href = href;
+      el.target = NR_TAB;
+      el.removeAttribute('rel');
+      if (DASHBOARD_LABELS[key] && !el.hasAttribute('data-keep-label')) el.textContent = DASHBOARD_LABELS[key];
     });
   }
   // Adds an "Open in New Relic" link after each "Copy NRQL" button, plus a one-time note about the account.
@@ -244,13 +271,15 @@
     PAGES.forEach(function (p, n) { if (p.file === here) i = n; });
     var next = i > 0 ? PAGES[i + 1] : null;
     var stageChange = next && next.stage !== PAGES[i].stage;
+    // A secondary link to the learner's own cross-path dashboard (L3), beside the primary "up next" button.
+    var seeAll = '<a class="btn ghost-dark small" data-dashboard="mySession">See all your data ↗</a>';
     var body = next
       ? '<div class="tag">Up next' + (stageChange ? ' · new stage: ' + next.stage : ' · ' + next.stage) + '</div>' +
         '<h3>' + next.label + ': ' + next.hook + '</h3>' +
-        '<a class="btn green small" href="' + next.file + '">Go to ' + next.label + ' <span class="arrow" aria-hidden="true">→</span></a>'
+        '<div class="actions"><a class="btn green small" href="' + next.file + '">Go to ' + next.label + ' <span class="arrow" aria-hidden="true">→</span></a>' + seeAll + '</div>'
       : '<div class="tag">End of the path</div>' +
         '<h3>You\'ve been through every page.</h3>' +
-        '<a class="btn green small" href="index.html#pages">Back to the path <span class="arrow" aria-hidden="true">→</span></a>';
+        '<div class="actions"><a class="btn green small" href="index.html#pages">Back to the path <span class="arrow" aria-hidden="true">→</span></a>' + seeAll + '</div>';
     writeHere('<section class="up-next"><div class="wrap"><div class="up-next-card">' + body + '</div></div></section>');
   }
 
@@ -454,6 +483,7 @@
     });
     setupNrOpen();
     setupNrEntity();
+    setupNrDashboard();
 
     initQuiz();
     renderAgent();
@@ -473,6 +503,6 @@
     PAGES: PAGES, header: header, whoSummary: whoSummary, identityForm: identityForm, upNext: upNext, pathCounts: pathCounts,
     $: $, agent: agent, safe: safe, esc: esc, time: time, renderAgent: renderAgent,
     copyText: copyText, toast: toast, feed: feed, start: start, QUIZ_EVENT_TYPE: QUIZ_EVENT_TYPE, quizAnswer: quizAnswer,
-    nrQueryLink: nrQueryLink, entityLink: entityLink
+    nrQueryLink: nrQueryLink, entityLink: entityLink, dashboardLink: dashboardLink
   };
 })();
