@@ -1,6 +1,6 @@
 {
   "name": "Agent Playground Knowledge Checks",
-  "description": "How visitors answer the Check yourself questions on the browser agent demo pages. Every answer is a DemoQuizAnswer custom event. attempt = 1 is a first try.",
+  "description": "How real visitors answer the Check yourself questions on the browser agent demo pages. Every answer is a DemoQuizAnswer custom event. attempt = 1 is a first try. Simulated visitors (session codes starting SIM-) are left out.",
   "permissions": "PUBLIC_READ_WRITE",
   "pages": [
     {
@@ -12,7 +12,7 @@
           "layout": { "column": 1, "row": 1, "width": 4, "height": 3 },
           "visualization": { "id": "viz.billboard" },
           "rawConfiguration": {
-            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT count(*) AS 'Answers', uniqueCount(demoCode) AS 'Session codes' FROM DemoQuizAnswer SINCE 1 week ago" }]
+            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT count(*) AS 'Answers', uniqueCount(demoCode) AS 'Session codes' FROM DemoQuizAnswer WHERE demoCode NOT LIKE 'SIM-%' SINCE 1 week ago" }]
           }
         },
         {
@@ -20,7 +20,7 @@
           "layout": { "column": 5, "row": 1, "width": 4, "height": 3 },
           "visualization": { "id": "viz.billboard" },
           "rawConfiguration": {
-            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT percentage(count(*), WHERE outcome = 'correct') AS 'Right on the first try' FROM DemoQuizAnswer WHERE attempt = 1 SINCE 1 week ago" }]
+            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT percentage(count(*), WHERE outcome = 'correct') AS 'Right on the first try' FROM DemoQuizAnswer WHERE attempt = 1 AND demoCode NOT LIKE 'SIM-%' SINCE 1 week ago" }]
           }
         },
         {
@@ -28,7 +28,7 @@
           "layout": { "column": 9, "row": 1, "width": 4, "height": 3 },
           "visualization": { "id": "viz.line" },
           "rawConfiguration": {
-            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT count(*) FROM DemoQuizAnswer FACET outcome TIMESERIES AUTO SINCE 1 week ago" }]
+            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT count(*) FROM DemoQuizAnswer WHERE demoCode NOT LIKE 'SIM-%' FACET outcome TIMESERIES AUTO SINCE 1 week ago" }]
           }
         },
         {
@@ -36,7 +36,7 @@
           "layout": { "column": 1, "row": 4, "width": 7, "height": 5 },
           "visualization": { "id": "viz.table" },
           "rawConfiguration": {
-            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT percentage(count(*), WHERE outcome = 'incorrect') AS 'Wrong first try (%)', count(*) AS 'First tries' FROM DemoQuizAnswer WHERE attempt = 1 FACET demoPage, question SINCE 1 week ago LIMIT 30" }]
+            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT percentage(count(*), WHERE outcome = 'incorrect') AS 'Wrong first try (%)', count(*) AS 'First tries' FROM DemoQuizAnswer WHERE attempt = 1 AND demoCode NOT LIKE 'SIM-%' FACET demoPage, question SINCE 1 week ago LIMIT 30" }]
           }
         },
         {
@@ -44,7 +44,7 @@
           "layout": { "column": 8, "row": 4, "width": 5, "height": 5 },
           "visualization": { "id": "viz.bar" },
           "rawConfiguration": {
-            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT percentage(count(*), WHERE outcome = 'correct') AS 'Right first try (%)' FROM DemoQuizAnswer WHERE attempt = 1 FACET demoPage SINCE 1 week ago" }]
+            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT percentage(count(*), WHERE outcome = 'correct') AS 'Right first try (%)' FROM DemoQuizAnswer WHERE attempt = 1 AND demoCode NOT LIKE 'SIM-%' FACET demoPage SINCE 1 week ago" }]
           }
         },
         {
@@ -52,7 +52,7 @@
           "layout": { "column": 1, "row": 9, "width": 7, "height": 5 },
           "visualization": { "id": "viz.table" },
           "rawConfiguration": {
-            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT count(*) AS 'Times picked' FROM DemoQuizAnswer WHERE outcome = 'incorrect' FACET question, answer SINCE 1 week ago LIMIT 25" }]
+            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT count(*) AS 'Times picked' FROM DemoQuizAnswer WHERE outcome = 'incorrect' AND demoCode NOT LIKE 'SIM-%' FACET question, answer SINCE 1 week ago LIMIT 25" }]
           }
         },
         {
@@ -60,7 +60,7 @@
           "layout": { "column": 8, "row": 9, "width": 5, "height": 5 },
           "visualization": { "id": "viz.table" },
           "rawConfiguration": {
-            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT average(attempt) AS 'Average tries' FROM DemoQuizAnswer WHERE outcome = 'correct' FACET questionId SINCE 1 week ago LIMIT 30" }]
+            "nrqlQueries": [{ "accountIds": [6932347], "query": "SELECT average(attempt) AS 'Average tries' FROM DemoQuizAnswer WHERE outcome = 'correct' AND demoCode NOT LIKE 'SIM-%' FACET questionId SINCE 1 week ago LIMIT 30" }]
           }
         }
       ]
