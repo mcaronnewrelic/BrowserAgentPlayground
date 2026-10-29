@@ -17,7 +17,8 @@ That makes them safe to run any time. If someone changes one of these items by h
 
 | Name | Type | Notes |
 |---|---|---|
-| Agent Playground Knowledge Checks | Dashboard | From `dashboards/knowledge-checks.json` |
+| Agent Playground Knowledge Checks | Dashboard | How all real visitors answer the Check yourself questions. From `dashboards/knowledge-checks.json`; leaves out simulated visitors (`SIM-` codes) |
+| Agent Playground Your Knowledge Checks | Dashboard | One learner's own answers, filtered by a `demoCode` session-code variable. From `dashboards/your-knowledge-checks.json` |
 | Agent Playground Learning Path | Dashboard | From `dashboards/learning-path.json` |
 | Agent Playground - Home page (ping) | Ping monitor | Availability: the home page answers over valid TLS and contains "Click it." |
 | Agent Playground - Backend health (API) | Scripted API monitor | `/api/health` answers and the APM agent is attached (`monitors/api-health.js`) |

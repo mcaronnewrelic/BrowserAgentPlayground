@@ -1,0 +1,262 @@
+{
+  "name": "Agent Playground Your Knowledge Checks",
+  "description": "How visitors answer the Check yourself questions on the browser agent demo pages. Every answer is a DemoQuizAnswer custom event. attempt = 1 is a first try.",
+  "permissions": "PUBLIC_READ_WRITE",
+  "pages": [
+    {
+      "name": "Your knowledge checks",
+      "description": null,
+      "widgets": [
+        {
+          "id": "581471007",
+          "title": null,
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 4,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.markdown"
+          },
+          "rawConfiguration": {
+            "text": "## Your knowledge checks\nPick (or type) your session code in the **demoCode** variable at the top of this dashboard — it's the code shown in the header of every demo page. Every widget on this page then shows only your own knowledge-check answers."
+          }
+        },
+        {
+          "id": "581471061",
+          "title": "Your answers",
+          "layout": {
+            "column": 5,
+            "row": 1,
+            "width": 4,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "chartStyles": {
+              "lineInterpolation": "linear"
+            },
+            "facet": {
+              "showOtherSeries": false
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT count(*) AS 'Answers', uniqueCount(question) AS 'Questions answered' FROM DemoQuizAnswer WHERE demoCode = {{demoCode}} SINCE 1 week ago"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            }
+          }
+        },
+        {
+          "id": "581471258",
+          "title": "Right on the first try — you",
+          "layout": {
+            "column": 9,
+            "row": 1,
+            "width": 4,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "chartStyles": {
+              "lineInterpolation": "linear"
+            },
+            "facet": {
+              "showOtherSeries": false
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT percentage(count(*), WHERE outcome = 'correct') AS 'Right on the first try' FROM DemoQuizAnswer WHERE attempt = 1 AND demoCode = {{demoCode}} SINCE 1 week ago"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            }
+          }
+        },
+        {
+          "id": "581471682",
+          "title": "Your first-try accuracy by page",
+          "layout": {
+            "column": 1,
+            "row": 4,
+            "width": 4,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.stacked-bar"
+          },
+          "rawConfiguration": {
+            "chartStyles": {
+              "gradient": {
+                "enabled": false
+              },
+              "seriesOrder": "original",
+              "stacked": {
+                "enabled": true
+              }
+            },
+            "facet": {
+              "showOtherSeries": false
+            },
+            "legend": {
+              "enabled": true
+            },
+            "markers": {
+              "displayedTypes": {
+                "annotations": true,
+                "criticalViolations": false,
+                "deployments": true,
+                "relatedDeployments": true,
+                "warningViolations": false
+              }
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT percentage(count(*), WHERE outcome = 'correct') AS 'Right first try (%)' FROM DemoQuizAnswer WHERE attempt = 1 AND demoCode = {{demoCode}} FACET demoPage SINCE 1 week ago"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            },
+            "thresholds": {
+              "isLabelVisible": true
+            }
+          }
+        },
+        {
+          "id": "581471740",
+          "title": "Your answers, question by question",
+          "layout": {
+            "column": 5,
+            "row": 4,
+            "width": 4,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "facet": {
+              "showOtherSeries": false
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT latest(answer) AS 'Your answer', latest(outcome) AS 'Result', max(attempt) AS 'Tries' FROM DemoQuizAnswer WHERE demoCode = {{demoCode}} FACET demoPage, question LIMIT 100 SINCE 1 week ago"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            }
+          }
+        },
+        {
+          "id": "581471747",
+          "title": "Your most-picked wrong answers",
+          "layout": {
+            "column": 9,
+            "row": 4,
+            "width": 4,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "facet": {
+              "showOtherSeries": false
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT count(*) AS 'Times picked' FROM DemoQuizAnswer WHERE outcome = 'incorrect' AND demoCode = {{demoCode}} FACET question, answer LIMIT 25 SINCE 1 week ago"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            }
+          }
+        },
+        {
+          "id": "581471940",
+          "title": "Still to revisit",
+          "layout": {
+            "column": 1,
+            "row": 7,
+            "width": 4,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "facet": {
+              "showOtherSeries": false
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  6932347
+                ],
+                "query": "SELECT count(*) AS 'Questions' FROM (SELECT latest(outcome) AS 'final' FROM DemoQuizAnswer WHERE demoCode = {{demoCode}} FACET demoPage, question LIMIT MAX) WHERE final = 'incorrect' FACET demoPage, question LIMIT 100 SINCE 1 week ago"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "demoCode",
+      "items": null,
+      "defaultValues": [],
+      "nrqlQuery": {
+        "accountIds": [
+          6932347
+        ],
+        "query": "SELECT uniques(demoCode) FROM DemoQuizAnswer WHERE demoCode NOT LIKE 'SIM-%' SINCE 1 week ago"
+      },
+      "options": {
+        "hiddenOnVariablesBar": false,
+        "ignoreTimeRange": true,
+        "excluded": false
+      },
+      "title": "Session code (demoCode)",
+      "type": "NRQL",
+      "isMultiSelection": false,
+      "replacementStrategy": "STRING"
+    }
+  ]
+}

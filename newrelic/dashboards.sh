@@ -16,9 +16,10 @@ for file in "$DASHBOARD_DIR"/*.json; do
     log "Dashboard exists, skipped: $name ($guid)"
     continue
   fi
-  # A page "guid" (from an export) would point at someone else's page, so it's dropped.
+  # Exported dashboards carry ids New Relic assigned: the dashboard guid, each page guid (which would point
+  # at someone else's page) and each widget id. On a create they don't belong, so they're dropped.
   dashboard="$(jq --argjson account "$NEW_RELIC_ACCOUNT_ID" '
-    del(.pages[].guid)
+    del(.guid, .pages[].guid, .pages[].widgets[].id)
     | (.. | objects | select(has("accountIds")) | .accountIds) |= [$account]' "$file")"
   result="$(nerdgraph 'mutation($account: Int!, $dashboard: DashboardInput!) {
       dashboardCreate(accountId: $account, dashboard: $dashboard) { entityResult { guid name } errors { description type } }
