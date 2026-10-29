@@ -37,6 +37,18 @@
     return 'https://insights.newrelic.com/accounts/' + NR_DEMO_LINKS.accountId +
       '/query?query=' + encodeURIComponent(nrql);
   }
+  // The Investigations fault on a fixed minute-of-the-hour schedule (UTC). A query block can carry
+  // data-burst="startMin,lenMin"; its link then frames the most recent burst with an absolute SINCE…UNTIL
+  // computed at click time, while the printed NRQL keeps its readable relative SINCE. Epoch milliseconds are
+  // what NRQL expects (verified 2026-10-28; seconds work too). If the hour's window hasn't started yet, the
+  // previous hour's is used, so the link always frames a real, most-recent burst.
+  function burstWindow(startMin, lenMin) {
+    var now = new Date();
+    var start = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), now.getUTCHours(), startMin);
+    var end = start + lenMin * 60000;
+    if (now.getTime() < start) { start -= 3600000; end -= 3600000; }
+    return { start: start, end: end };
+  }
   // L2 — the canonical permalink New Relic returns for an entity. It embeds the account (so it can't land in
   // the wrong one) and survives UI redesigns better than any hand-built launcher URL. No time window is added:
   // whether entity pages honour ?begin/&end is unverified, so the link reliably lands on the right entity and
@@ -73,6 +85,14 @@
       link.textContent = 'Open in New Relic ↗';
       function refresh() {
         var target = document.getElementById(id), q = target ? target.textContent.trim() : '';
+        var burst = target && target.getAttribute('data-burst');
+        if (q && burst) {
+          var p = burst.split(','), w = burstWindow(+p[0], +p[1]);
+          // Swap the printed relative window ("SINCE 1 hour ago") for the absolute burst window in the link only.
+          q = q.replace(/SINCE\s+\d+\s+(?:second|minute|hour|day|week)s?\s+ago/i,
+            'SINCE ' + w.start + ' UNTIL ' + w.end);
+          link.title = 'Opens framed to the most recent fault window (UTC)';
+        }
         link.href = q ? nrQueryLink(q)
           : 'https://insights.newrelic.com/accounts/' + NR_DEMO_LINKS.accountId + '/query';
       }

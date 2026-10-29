@@ -148,7 +148,7 @@ POST /api/checkout        <span class="c">// slow, sometimes 502</span>
             <span class="dx-see">See it in New Relic</span>
             <h3>Open the service: response time and errors</h3>
             <p>Open <b>APM &amp; services → the demo service</b>. Response time has sharp spikes that come and go, and the error rate climbs in the same windows. Note when a spike happens, then line the trace up with it.</p>
-            <pre id="nrqlCheckout"></pre>
+            <pre id="nrqlCheckout" data-burst="0,15"></pre>
             <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlCheckout" type="button">Copy NRQL</button></div>
           </div>
         </div>
@@ -169,7 +169,7 @@ POST /api/checkout        <span class="c">// slow, sometimes 502</span>
             <span class="dx-see">See it in New Relic</span>
             <h3>Response time by transaction</h3>
             <p>In the service, open <b>Transactions</b>, or run the query below. <code>/api/checkout</code> is the one that's slow and failing. Next, stop guessing why, and open one of its traces.</p>
-            <pre id="nrqlFacet"></pre>
+            <pre id="nrqlFacet" data-burst="0,15"></pre>
             <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlFacet" type="button">Copy NRQL</button></div>
           </div>
         </div>
@@ -209,7 +209,7 @@ POST /api/checkout        <span class="c">// slow, sometimes 502</span>
             <span class="dx-see">See it in New Relic</span>
             <h3>Inventory stays flat, payment spikes</h3>
             <p>Compare the two dependencies over time. Inventory holds steady; payment's duration jumps during the bursts. The query below shows them side by side, which confirms what the single trace suggested.</p>
-            <pre id="nrqlDeps"></pre>
+            <pre id="nrqlDeps" data-burst="0,15"></pre>
             <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlDeps" type="button">Copy NRQL</button></div>
           </div>
         </div>
@@ -230,7 +230,7 @@ POST /api/checkout        <span class="c">// slow, sometimes 502</span>
             <span class="dx-see">See it in New Relic</span>
             <h3>The errors live on payment</h3>
             <p>The errors are recorded on the <code>/internal/payment</code> transaction, not on checkout's own logic. Checkout's failures are downstream of them, in the same windows.</p>
-            <pre id="nrqlPaymentErr"></pre>
+            <pre id="nrqlPaymentErr" data-burst="0,15"></pre>
             <div class="actions"><button class="btn green small js-copy" data-copy-target="nrqlPaymentErr" type="button">Copy NRQL</button><a class="btn secondary small" data-entity="apmService" href="https://one.newrelic.com" target="_blank" rel="noopener">Open New Relic <span class="arrow" aria-hidden="true">→</span></a></div>
           </div>
         </div>
