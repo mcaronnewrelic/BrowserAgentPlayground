@@ -103,7 +103,7 @@ test('backend-served pages use the same origin; a backend override takes precede
 
 test('API and network failures are visible and never navigate to an unfiltered dashboard', async () => {
   for (const [fetch, message] of [
-    [async () => ({ ok: false, status: 500, json: async () => ({ error: 'NR_API_KEY environment variable not set' }) }), /NR_API_KEY/],
+    [async () => ({ ok: false, status: 500, json: async () => ({ error: 'NEW_RELIC_API_KEY environment variable not set' }) }), /NEW_RELIC_API_KEY/],
     [async () => ({ ok: false, status: 503, json: async () => ({}) }), /HTTP 503/],
     [async () => { throw new Error('Network unavailable'); }, /Network unavailable/],
     [async () => ({ ok: true, json: async () => ({ data: {} }) }), /no link/],

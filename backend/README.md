@@ -91,16 +91,24 @@ This backend provides a `/api/dashboard-deeplink` endpoint for generating New Re
 
 The root demo pages use this API through `site.js` for both **See all your data** and **Open the evidence board**. My Session receives the current `demoCode` variable and a one-hour time window; the evidence board has no template variables and uses a three-hour window. Links are generated on each click so a changed session code is used immediately. Query and entity links are unchanged.
 
-When the backend serves the page, requests use the same origin. Static pages (including GitHub Pages and a local static server) use `https://browser.nru.to`. Override that with `?backend=http://localhost:3000` for local development; `?backend=none` disables dashboard requests. Configure `NR_API_KEY` on whichever backend receives the requests and allow the page's origin in `ALLOWED_ORIGINS`. The API key stays server-side. Link failures are shown beside the button; there is no fallback to an unfiltered dashboard.
+When the backend serves the page, requests use the same origin. Static pages (including GitHub Pages and a local static server) use `https://browser.nru.to`. Override that with `?backend=http://localhost:3000` for local development; `?backend=none` disables dashboard requests. Configure `NEW_RELIC_API_KEY` on whichever backend receives the requests and allow the page's origin in `ALLOWED_ORIGINS`. The API key stays server-side. Link failures are shown beside the button; there is no fallback to an unfiltered dashboard.
+
+For Docker Compose, set `NEW_RELIC_API_KEY` in the repository-root `.env` file (alongside `NEW_RELIC_LICENSE_KEY`) or export it in your shell. Compose passes it into the app container; a file at `backend/.env` is not read by Compose. After pulling changes, rebuild and recreate the app from the repository root:
+
+```bash
+docker compose up -d --build app
+docker compose logs --tail=50 app
+curl --fail http://localhost:3000/api/health
+```
 
 ### Quick Start
 
 ```bash
-# 1. Set your New Relic user API key
-echo "NR_API_KEY=NRAK-<your-api-key>" > .env
+# 1. Add your New Relic user API key to the existing backend/.env file
+# NEW_RELIC_API_KEY=NRAK-<your-api-key>
 
 # 2. Start the backend
-npm start
+node --env-file=.env server.js
 
 # 3. Generate a deeplink
 curl -X POST http://localhost:3000/api/dashboard-deeplink \
@@ -197,7 +205,7 @@ else:
 const {createDashboardDeeplink} = require('./dashboard-deeplink.js');
 
 const url = await createDashboardDeeplink({
-  apiKey: process.env.NR_API_KEY,
+  apiKey: process.env.NEW_RELIC_API_KEY,
   account: 7673270,
   guid: 'NzY3MzI3MHx...',
   variables: {Environment: 'production'}
@@ -225,11 +233,11 @@ console.log('Dashboard URL:', url);
 
 ### Configuration
 
-The endpoint requires `NR_API_KEY` from your environment:
+The endpoint requires `NEW_RELIC_API_KEY` from your environment:
 
 ```bash
 # Create .env file (git-ignored)
-NR_API_KEY=NRAK-<your-new-relic-user-api-key>
+NEW_RELIC_API_KEY=NRAK-<your-new-relic-user-api-key>
 ```
 
 Get your API key from https://one.newrelic.com/user-menu:
@@ -241,7 +249,7 @@ Get your API key from https://one.newrelic.com/user-menu:
 
 | Problem | Solution |
 | --- | --- |
-| "NR_API_KEY not set" | Create `.env` file with `NR_API_KEY=NRAK-...` |
+| "NEW_RELIC_API_KEY environment variable not set" | Set `NEW_RELIC_API_KEY=NRAK-...` in the environment, or load `.env` with `node --env-file=.env server.js` |
 | 401 Unauthorized | API key is invalid or expired; get a new one from New Relic |
 | Variables not appearing | Check variable names are exact and case-sensitive |
 | Link opens but filters don't apply | Verify NRQL filter syntax is correct |

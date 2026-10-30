@@ -5,7 +5,7 @@ FROM node:24-alpine
 WORKDIR /app
 COPY backend/package*.json ./
 RUN npm install --omit=dev && npm cache clean --force
-COPY backend/server.js backend/pages.js backend/websocket.js backend/newrelic.js ./
+COPY backend/server.js backend/pages.js backend/websocket.js backend/newrelic.js backend/dashboard-deeplink.js ./
 COPY *.html *.js *.css site/
 COPY images site/images
 COPY favicons site/favicons

@@ -6,7 +6,7 @@
  * dashboard deeplink generation for Node.js environments.
  *
  * Required environment variables:
- *   - NR_API_KEY: New Relic user API key (NRAK-...)
+ *   - NEW_RELIC_API_KEY: New Relic user API key (NRAK-...)
  *
  * Optional environment variables:
  *   - NR_ENV: New Relic environment, "us" or "eu" (default: "us")

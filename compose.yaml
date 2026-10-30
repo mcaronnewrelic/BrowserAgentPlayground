@@ -29,6 +29,7 @@ services:
       # The APM app name. Empty means the default in backend/newrelic.js ("Browser Agent Playground API").
       # browser.nru.to sets it in its env file; changing it makes New Relic start a separate APM app.
       NEW_RELIC_APP_NAME: ${NEW_RELIC_APP_NAME:-}
+      NEW_RELIC_API_KEY: ${NEW_RELIC_API_KEY:-}
     logging: *logging
     restart: unless-stopped
 

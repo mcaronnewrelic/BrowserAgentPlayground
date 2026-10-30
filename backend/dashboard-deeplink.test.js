@@ -2,7 +2,7 @@
 
 // Test cases for dashboard-deeplink module
 // Note: These are basic unit tests that don't require a live NR account.
-// For integration tests, set NR_API_KEY and actual dashboard parameters.
+// For integration tests, set NEW_RELIC_API_KEY and actual dashboard parameters.
 
 const assert = require('node:assert');
 const { createDashboardDeeplink } = require('./dashboard-deeplink.js');
@@ -72,13 +72,13 @@ async function testApiKeyEnvironmentVariable() {
 
   // Note: This test just verifies the function can be called with env var
   // It will fail with network error since we're not providing a real API key
-  const oldKey = process.env.NR_API_KEY;
-  process.env.NR_API_KEY = 'NRAK-test123';
+  const oldKey = process.env.NEW_RELIC_API_KEY;
+  process.env.NEW_RELIC_API_KEY = 'NRAK-test123';
 
   try {
     // This will fail with network/auth error, but that's expected
     await createDashboardDeeplink({
-      apiKey: process.env.NR_API_KEY,
+      apiKey: process.env.NEW_RELIC_API_KEY,
       account: 12345,
       guid: 'test-guid-123',
       variables: { TestVar: 'TestValue' },
@@ -88,7 +88,8 @@ async function testApiKeyEnvironmentVariable() {
     console.log('✓ API key can be retrieved from environment');
   }
 
-  process.env.NR_API_KEY = oldKey;
+  if (oldKey === undefined) delete process.env.NEW_RELIC_API_KEY;
+  else process.env.NEW_RELIC_API_KEY = oldKey;
   console.log('');
 }
 

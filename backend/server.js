@@ -305,9 +305,9 @@ function createServer(opts) {
           req.on('end', async () => {
             try {
               const { account, guid, variables, filter, duration, env = 'us' } = JSON.parse(body);
-              const apiKey = process.env.NR_API_KEY;
+              const apiKey = process.env.NEW_RELIC_API_KEY;
               if (!apiKey) {
-                return send(req, res, 500, { error: 'NR_API_KEY environment variable not set' }, ctx);
+                return send(req, res, 500, { error: 'NEW_RELIC_API_KEY environment variable not set' }, ctx);
               }
               const url = await createDashboardDeeplink({
                 apiKey,
