@@ -8,6 +8,7 @@ const nr = process.env.NEW_RELIC_LICENSE_KEY ? require('newrelic') : null;
 const http = require('node:http');
 const { createPages } = require('./pages.js');
 const { attachWebSocket } = require('./websocket.js');
+const { createDashboardDeeplink } = require('./dashboard-deeplink.js');
 
 const DEFAULT_ORIGINS = ['https://mcaronnewrelic.github.io', 'http://localhost:8080', 'http://127.0.0.1:8080'];
 const ALLOW_HEADERS = 'newrelic, traceparent, tracestate, content-type';
@@ -290,6 +291,46 @@ function createServer(opts) {
         const sku = decodeURIComponent(path.split('/').pop());
         const product = PRODUCTS.filter((p) => p.sku === sku)[0] || { sku: sku, name: 'Unknown', price: 0 };
         return send(req, res, 200, { data: product }, ctx);
+      }
+      if (path === '/api/dashboard-deeplink' && req.method === 'POST') {
+        // Ignore this endpoint in APM — it's an internal utility, not part of the demo
+        const originalRoute = ctx.route;
+        route('dashboard-deeplink');
+        if (agent && typeof agent.setIgnoreTransaction === 'function') {
+          try { agent.setIgnoreTransaction(true); } catch (e) { /* never break the demo */ }
+        }
+        try {
+          let body = '';
+          req.on('data', (chunk) => { body += chunk; });
+          req.on('end', async () => {
+            try {
+              const { account, guid, variables, filter, duration, env = 'us' } = JSON.parse(body);
+              const apiKey = process.env.NR_API_KEY;
+              if (!apiKey) {
+                return send(req, res, 500, { error: 'NR_API_KEY environment variable not set' }, ctx);
+              }
+              const url = await createDashboardDeeplink({
+                apiKey,
+                env,
+                account,
+                guid,
+                variables,
+                filter,
+                duration,
+              });
+              return send(req, res, 200, { data: { url } }, ctx);
+            } catch (err) {
+              apm('noticeError', err);
+              ctx.error = err;
+              return send(req, res, 400, { error: err.message }, ctx);
+            }
+          });
+        } catch (err) {
+          apm('noticeError', err);
+          ctx.error = err;
+          return send(req, res, 400, { error: 'Invalid JSON in request body' }, ctx);
+        }
+        return;
       }
       route('not-found');
       return send(req, res, 404, { error: 'Not found: ' + path }, ctx);

@@ -14,6 +14,12 @@ exports.config = {
   application_logging: { enabled: true, forwarding: { enabled: true } },
   logging: { level: process.env.NEW_RELIC_LOG_LEVEL || 'info', filepath: 'stdout' },
   allow_all_headers: true,
+  // Ignore the dashboard-deeplink endpoint from APM (it's an internal utility, not part of the demo)
+  rules: {
+    ignore: [
+      '/api/dashboard-deeplink'
+    ]
+  },
   attributes: {
     exclude: [
       'request.headers.cookie',

@@ -16,6 +16,7 @@ There are no dependencies apart from the `newrelic` agent, which loads only when
 | `GET /api/slow?ms=1500` | Waits before responding (capped at 5000 ms) |
 | `GET /api/recommendations?iterations=2000000` | Returns a few recommended products after a fixed amount of real CPU work, so its response time rises under CPU contention (iterations capped at 50,000,000; the effective count is on the `x-compute-iterations` response header). Used by the noisy-neighbor exercise. |
 | `GET /api/fail` | Returns 500 and reports the error with `noticeError` |
+| `POST /api/dashboard-deeplink` | Generates New Relic dashboard deeplinks with template variables pre-set. See Dashboard Deeplink API below. |
 | `GET /ws` (WebSocket) | Echo endpoint for `websockets.html`: one greeting, then every text and binary message comes back. It repeats the client's close code and reason, answers pings, and closes connections idle for 5 minutes or open for 15. Messages are capped at 64 KB. |
 
 Every response includes `trace.received` (the `traceparent`, `tracestate` and `newrelic` headers the server saw) and `trace.apm` (the trace ID from the APM agent). The page compares them to show "Backend joined trace". The `demoCode` and `demoUser` query params are added to each transaction as custom attributes.
@@ -80,6 +81,184 @@ If the page shows **"Agent added no trace headers"** for backend requests, step 
 npm test
 ```
 
-This runs `server.test.js`, `websocket.test.js`, `demo-identity.test.js` and `page-logic.test.js`, and needs no install. `page-logic.test.js` loads each demo page's `LOGIC` block straight from the HTML, so it tests the code the pages run. Among other things, it checks that every NRQL query a page offers is a single statement that filters to the learner's session code.
+This runs `server.test.js`, `websocket.test.js`, `demo-identity.test.js`, `page-logic.test.js` and `dashboard-links.test.js`, and needs no install. `page-logic.test.js` loads each demo page's `LOGIC` block straight from the HTML, so it tests the code the pages run. Among other things, it checks that every NRQL query a page offers is a single statement that filters to the learner's session code. `dashboard-links.test.js` checks dashboard API requests, session-code changes, backend selection, tab handling and visible failures with mocked API responses.
 
 A reverse proxy in front of the server must pass WebSocket upgrades through. Caddy's `reverse_proxy` does this by default. With nginx, add `proxy_http_version 1.1;` and set the `Upgrade` and `Connection` headers for `/ws`.
+
+## Dashboard Deeplink API
+
+This backend provides a `/api/dashboard-deeplink` endpoint for generating New Relic dashboard deeplinks with template variables pre-set. This is useful for sharing dashboards with specific configurations without requiring users to manually set variables.
+
+The root demo pages use this API through `site.js` for both **See all your data** and **Open the evidence board**. My Session receives the current `demoCode` variable and a one-hour time window; the evidence board has no template variables and uses a three-hour window. Links are generated on each click so a changed session code is used immediately. Query and entity links are unchanged.
+
+When the backend serves the page, requests use the same origin. Static pages (including GitHub Pages and a local static server) use `https://browser.nru.to`. Override that with `?backend=http://localhost:3000` for local development; `?backend=none` disables dashboard requests. Configure `NR_API_KEY` on whichever backend receives the requests and allow the page's origin in `ALLOWED_ORIGINS`. The API key stays server-side. Link failures are shown beside the button; there is no fallback to an unfiltered dashboard.
+
+### Quick Start
+
+```bash
+# 1. Set your New Relic user API key
+echo "NR_API_KEY=NRAK-<your-api-key>" > .env
+
+# 2. Start the backend
+npm start
+
+# 3. Generate a deeplink
+curl -X POST http://localhost:3000/api/dashboard-deeplink \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "account": 7673270,
+    "guid": "NzY3MzI3MHxWSVp8REFTSEJPQVJEfGRhOjI3NDA2NjM",
+    "variables": {"Environment": "production"}
+  }'
+```
+
+### API Details
+
+**Endpoint:** `POST /api/dashboard-deeplink`
+
+**Required Parameters:**
+- `account` (number): Your New Relic account ID
+- `guid` (string): Dashboard entity GUID from the dashboard URL: `/dashboards/detail/<GUID>`
+
+**Optional Parameters:**
+- `env` (string): New Relic region, `"us"` or `"eu"` (default: `"us"`)
+- `duration` (number): Time window in milliseconds (default: `1800000` = 30 minutes)
+  - Common values: `1800000` (30 min), `3600000` (1 hr), `86400000` (24 hrs)
+- `variables` (object): Template variables to pre-set, e.g., `{"Environment": "production", "Customer": "Acme Inc"}`
+- `filter` (string): Entity filter bar value, e.g., `"tags.env = production"`
+
+**Response:**
+```json
+{
+  "data": {
+    "url": "https://one.newrelic.com/dashboards/detail/<GUID>?state=..."
+  },
+  "trace": { ... }
+}
+```
+
+**Error Response:**
+```json
+{
+  "error": "account is required",
+  "trace": { ... }
+}
+```
+
+### APM Behavior
+
+This endpoint is **automatically ignored** by the New Relic APM agent and will **not** appear as a transaction in APM dashboards. This is configured via `rules.ignore` in `newrelic.js` and keeps your APM view focused on actual application traffic.
+
+### Usage Examples
+
+**JavaScript (Frontend)**
+```javascript
+async function openDashboard() {
+  const response = await fetch('/api/dashboard-deeplink', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      account: 7673270,
+      guid: 'NzY3MzI3MHx...',
+      variables: {Environment: 'production', Customer: 'Acme Inc'}
+    })
+  });
+  const {data, error} = await response.json();
+  if (error) {
+    console.error('Error:', error);
+  } else {
+    window.open(data.url, '_blank');
+  }
+}
+```
+
+**Python**
+```python
+import requests
+
+response = requests.post(
+  'http://localhost:3000/api/dashboard-deeplink',
+  json={
+    'account': 7673270,
+    'guid': 'NzY3MzI3MHx...',
+    'variables': {'Environment': 'production'}
+  }
+)
+
+data = response.json()
+if 'error' in data:
+  print(f"Error: {data['error']}")
+else:
+  print(f"Dashboard link: {data['data']['url']}")
+```
+
+**Node.js Backend**
+```javascript
+const {createDashboardDeeplink} = require('./dashboard-deeplink.js');
+
+const url = await createDashboardDeeplink({
+  apiKey: process.env.NR_API_KEY,
+  account: 7673270,
+  guid: 'NzY3MzI3MHx...',
+  variables: {Environment: 'production'}
+});
+
+console.log('Dashboard URL:', url);
+```
+
+### Finding Your Dashboard Information
+
+**Account ID:**
+1. Go to New Relic → Settings → Account settings
+2. Or look in the URL: `https://one.newrelic.com/accounts/<ACCOUNT_ID>/...`
+
+**Dashboard GUID:**
+1. Open the dashboard in New Relic
+2. Look at the URL: `https://one.newrelic.com/dashboards/detail/<GUID>`
+3. Copy the GUID value
+
+**Variable Names:**
+1. Open your dashboard
+2. Click **Edit** → **Variables**
+3. Note the **Name** field (not the display title) for each variable
+4. Variable names are **case-sensitive**
+
+### Configuration
+
+The endpoint requires `NR_API_KEY` from your environment:
+
+```bash
+# Create .env file (git-ignored)
+NR_API_KEY=NRAK-<your-new-relic-user-api-key>
+```
+
+Get your API key from https://one.newrelic.com/user-menu:
+1. Click your profile
+2. Select **API Keys**
+3. Create or copy a **User API Key** (starts with `NRAK-`)
+
+### Troubleshooting
+
+| Problem | Solution |
+| --- | --- |
+| "NR_API_KEY not set" | Create `.env` file with `NR_API_KEY=NRAK-...` |
+| 401 Unauthorized | API key is invalid or expired; get a new one from New Relic |
+| Variables not appearing | Check variable names are exact and case-sensitive |
+| Link opens but filters don't apply | Verify NRQL filter syntax is correct |
+| Dashboard not found (404) | Verify the GUID is correct |
+
+### Interactive Demo
+
+An interactive demo interface is available at `dashboard-deeplink-demo.html` in the root directory when the backend is running on `http://localhost:8080/dashboard-deeplink-demo.html`.
+
+### Implementation Details
+
+The Node.js implementation converts the original Python utility (`DeepLinkDashboard/nr-dashboard-deeplink.py`) into a backend API. It:
+
+1. Validates all input parameters
+2. Constructs the dashboard state JSON payload
+3. Makes an HTTPS PUT request to the New Relic Hurl service
+4. Parses the response with the state UUID
+5. Returns the full dashboard deeplink URL
+
+The module has zero external dependencies and uses only built-in Node.js modules.

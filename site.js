@@ -90,18 +90,71 @@
   var DASHBOARD_LABELS = {
     mySession: 'See all your data ↗', investigationsEvidence: 'Open the evidence board ↗'
   };
-  function dashboardLink(key) {
+  function dashboardEndpoint() {
+    var backend = new URLSearchParams(location.search).get('backend');
+    if (backend === 'none') throw new Error('Dashboard links need a backend; remove ?backend=none to enable them.');
+    var base = backend || (document.querySelector('meta[name="demo-backend"]') ? location.origin : 'https://browser.nru.to');
+    var url = new URL(base);
+    if (!/^https?:$/.test(url.protocol)) throw new Error('Dashboard backend must use HTTP or HTTPS.');
+    return base.replace(/\/+$/, '') + '/api/dashboard-deeplink';
+  }
+  async function dashboardLink(key) {
     var guid = NR_DEMO_LINKS.dashboards[key];
-    return guid ? 'https://' + NR_DEMO_LINKS.host + '/dashboards/detail/' + guid : null;
+    if (!guid) throw new Error('Unknown dashboard: ' + key);
+    var response = await fetch(dashboardEndpoint(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(15000),
+      body: JSON.stringify({
+        account: NR_DEMO_LINKS.accountId,
+        guid: guid,
+        variables: key === 'mySession' ? { demoCode: window.DemoIdentity.current().code } : {},
+        duration: key === 'mySession' ? 3600000 : 10800000
+      })
+    });
+    var result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Dashboard link request failed (HTTP ' + response.status + ').');
+    if (!result.data || typeof result.data.url !== 'string') throw new Error('Dashboard API returned no link.');
+    var url = new URL(result.data.url);
+    if (url.origin !== 'https://' + NR_DEMO_LINKS.host) throw new Error('Dashboard API returned an unexpected destination.');
+    return url.href;
   }
   function setupNrDashboard() {
     Array.prototype.forEach.call(document.querySelectorAll('[data-dashboard]'), function (el) {
-      var key = el.dataset.dashboard, href = dashboardLink(key);
-      if (!href) return;
-      el.href = href;
+      var key = el.dataset.dashboard;
+      el.href = '#';
       el.target = NR_TAB;
       el.removeAttribute('rel');
       if (DASHBOARD_LABELS[key] && !el.hasAttribute('data-keep-label')) el.textContent = DASHBOARD_LABELS[key];
+      var status = document.createElement('span'), pending = false;
+      status.className = 'hint';
+      status.setAttribute('role', 'status');
+      el.insertAdjacentElement('afterend', status);
+      async function openDashboard(e) {
+        if (e.type === 'auxclick' && e.button !== 1) return;
+        e.preventDefault();
+        if (pending) return;
+        pending = true;
+        el.setAttribute('aria-busy', 'true');
+        status.textContent = 'Creating dashboard link...';
+        try {
+          // Reserve the named tab during the click, before awaiting the API, to avoid popup blocking.
+          var tab = window.open('', NR_TAB);
+          if (!tab) throw new Error('Allow popups for this site, then try again.');
+          var href = await dashboardLink(key);
+          if (tab.closed) throw new Error('The New Relic tab was closed. Try again.');
+          tab.location.href = href;
+          tab.focus();
+          status.textContent = '';
+        } catch (err) {
+          status.textContent = 'Could not open dashboard: ' + err.message;
+        } finally {
+          pending = false;
+          el.removeAttribute('aria-busy');
+        }
+      }
+      el.addEventListener('click', openDashboard);
+      el.addEventListener('auxclick', openDashboard);
     });
   }
   // Adds an "Open in New Relic" link after each "Copy NRQL" button, plus a one-time note about the account.

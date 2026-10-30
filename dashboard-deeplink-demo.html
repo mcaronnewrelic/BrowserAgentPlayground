@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Deeplink Generator</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 30px;
+    }
+    h1 {
+      margin-top: 0;
+      color: #0066cc;
+    }
+    .section {
+      margin-bottom: 30px;
+    }
+    .section-title {
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #333;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+      font-size: 14px;
+      color: #555;
+    }
+    input[type="text"],
+    input[type="number"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 13px;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+      font-family: monospace;
+    }
+    .variable-item {
+      background: #f9f9f9;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      border: 1px solid #eee;
+    }
+    .variable-item input {
+      margin-bottom: 6px;
+    }
+    .variable-item input:last-child {
+      margin-bottom: 0;
+    }
+    button {
+      padding: 10px 16px;
+      margin-right: 8px;
+      margin-bottom: 8px;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #0066cc;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #0052a3;
+    }
+    .btn-secondary {
+      background: #ddd;
+      color: #333;
+    }
+    .btn-secondary:hover {
+      background: #ccc;
+    }
+    .btn-small {
+      padding: 6px 12px;
+      font-size: 12px;
+      margin: 0;
+    }
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+    }
+    .btn-danger:hover {
+      background: #c82333;
+    }
+    .button-group {
+      margin-top: 12px;
+    }
+    .result {
+      background: #e8f5e9;
+      border: 1px solid #4caf50;
+      border-radius: 4px;
+      padding: 16px;
+      margin-top: 16px;
+      display: none;
+    }
+    .result.error {
+      background: #ffebee;
+      border-color: #f44336;
+    }
+    .result h3 {
+      margin-top: 0;
+      color: #2e7d32;
+    }
+    .result.error h3 {
+      color: #c62828;
+    }
+    .result-url {
+      background: white;
+      padding: 12px;
+      border-radius: 4px;
+      margin-top: 12px;
+      word-break: break-all;
+      font-family: monospace;
+      font-size: 12px;
+      border: 1px solid #ddd;
+    }
+    .loading {
+      display: none;
+      text-align: center;
+      margin-top: 12px;
+      color: #666;
+    }
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #0066cc;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .info-box {
+      background: #e3f2fd;
+      border: 1px solid #1976d2;
+      border-radius: 4px;
+      padding: 12px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .info-box strong {
+      color: #1565c0;
+    }
+    .preset-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔗 Dashboard Deeplink Generator</h1>
+    
+    <div class="info-box">
+      <strong>ℹ️ How it works:</strong> This tool uses the backend API to generate New Relic dashboard deeplinks 
+      with template variables pre-set. The generated link will open the dashboard with your specified 
+      variables already applied.
+    </div>
+
+    <form id="form">
+      <!-- Required Parameters -->
+      <div class="section">
+        <div class="section-title">Required Parameters</div>
+        
+        <label for="account">Account ID *</label>
+        <input type="number" id="account" name="account" placeholder="e.g., 7673270" required>
+        <small style="display: block; color: #999; margin-top: -8px; margin-bottom: 12px;">
+          Find in New Relic → Account settings
+        </small>
+
+        <label for="guid">Dashboard GUID *</label>
+        <input type="text" id="guid" name="guid" 
+          placeholder="e.g., NzY3MzI3MHxWSVp8REFTSEJPQVJEfGRhOjI3NDA2NjM" required>
+        <small style="display: block; color: #999; margin-top: -8px; margin-bottom: 12px;">
+          From dashboard URL: dashboards/detail/<GUID>
+        </small>
+      </div>
+
+      <!-- Optional Parameters -->
+      <div class="section">
+        <div class="section-title">Optional Parameters</div>
+
+        <label for="env">Environment</label>
+        <select id="env" name="env">
+          <option value="us">US (one.newrelic.com)</option>
+          <option value="eu">EU (one.eu.newrelic.com)</option>
+        </select>
+
+        <label for="duration">Time Range Duration (milliseconds)</label>
+        <select id="duration" name="duration" style="margin-bottom: 12px;">
+          <option value="1800000">30 minutes (default)</option>
+          <option value="3600000">1 hour</option>
+          <option value="86400000">24 hours</option>
+          <option value="604800000">7 days</option>
+          <option value="custom">Custom...</option>
+        </select>
+        <input type="number" id="duration-custom" name="duration-custom" 
+          placeholder="Enter custom duration in ms" style="display: none;">
+
+        <label for="filter">Entity Filter (optional)</label>
+        <input type="text" id="filter" name="filter" 
+          placeholder="e.g., tags.env = production or name LIKE 'prod-'">
+        <small style="display: block; color: #999; margin-top: -8px; margin-bottom: 12px;">
+          Applied to the entity filter bar in the dashboard
+        </small>
+      </div>
+
+      <!-- Template Variables -->
+      <div class="section">
+        <div class="section-title">Template Variables</div>
+        <p style="font-size: 13px; color: #666; margin-top: 0;">
+          Add custom variables from your dashboard. Names are case-sensitive.
+        </p>
+
+        <div id="variables-list"></div>
+
+        <div class="button-group">
+          <button type="button" class="btn-secondary btn-small" onclick="addVariable()">+ Add Variable</button>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="section">
+        <div class="button-group">
+          <button type="submit" class="btn-primary">Generate Deeplink</button>
+          <button type="reset" class="btn-secondary">Clear Form</button>
+        </div>
+      </div>
+
+      <div class="loading" id="loading">
+        <div class="spinner"></div> Generating deeplink...
+      </div>
+    </form>
+
+    <!-- Results -->
+    <div class="result" id="result">
+      <h3 id="result-title">Success!</h3>
+      <p id="result-message"></p>
+      <div class="result-url" id="result-url"></div>
+      <button class="btn-primary" onclick="copyToClipboard()">📋 Copy Link</button>
+      <button class="btn-secondary" onclick="openInNewTab()">🔗 Open in New Tab</button>
+    </div>
+  </div>
+
+  <script>
+    <!-- ================= LOGIC (pure functions, tested by backend/page-logic.test.js) ================= -->
+    /*LOGIC-START*/
+    window.DashboardDeeplicGenerator = {
+      validateDashboardDeeplinkInputs(account, guid, variables) {
+        if (!account || typeof account !== 'number') return 'account must be a number';
+        if (!guid || typeof guid !== 'string') return 'guid must be a string';
+        if (variables && typeof variables !== 'object') return 'variables must be an object';
+        return null;
+      }
+    };
+    /*LOGIC-END*/
+    <!-- ================= end LOGIC ================= -->
+
+    const API_URL = '/api/dashboard-deeplink';
+    let currentUrl = null;
+
+    // UI State Management
+    document.getElementById('duration').addEventListener('change', (e) => {
+      const custom = document.getElementById('duration-custom');
+      custom.style.display = e.target.value === 'custom' ? 'block' : 'none';
+    });
+
+    // Form Submission
+    document.getElementById('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await generateDeeplink();
+    });
+
+    // Add initial empty variable slot
+    addVariable();
+
+    function addVariable() {
+      const list = document.getElementById('variables-list');
+      const id = 'var-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+      
+      const item = document.createElement('div');
+      item.className = 'variable-item';
+      item.id = id;
+      item.innerHTML = `
+        <label>Variable Name <small style="font-weight: normal;">(e.g., "Customer")</small></label>
+        <input type="text" class="var-name" placeholder="e.g., Customer" />
+        
+        <label>Variable Value <small style="font-weight: normal;">(e.g., "Acme Inc")</small></label>
+        <input type="text" class="var-value" placeholder="e.g., Acme Inc" />
+        
+        <button type="button" class="btn-danger btn-small" onclick="removeVariable('${id}')">Remove</button>
+      `;
+      
+      list.appendChild(item);
+    }
+
+    function removeVariable(id) {
+      const list = document.getElementById('variables-list');
+      const items = list.querySelectorAll('.variable-item');
+      
+      // Don't remove if it's the last one and it's empty
+      if (items.length === 1) {
+        // Clear the inputs instead
+        document.querySelector('#' + id + ' .var-name').value = '';
+        document.querySelector('#' + id + ' .var-value').value = '';
+        return;
+      }
+      
+      document.getElementById(id).remove();
+    }
+
+    function collectVariables() {
+      const variables = {};
+      document.querySelectorAll('.variable-item').forEach(item => {
+        const name = item.querySelector('.var-name').value.trim();
+        const value = item.querySelector('.var-value').value.trim();
+        if (name && value) {
+          variables[name] = value;
+        }
+      });
+      return variables;
+    }
+
+    async function generateDeeplink() {
+      const account = document.getElementById('account').value.trim();
+      const guid = document.getElementById('guid').value.trim();
+      const env = document.getElementById('env').value;
+      let duration = document.getElementById('duration').value;
+      const filter = document.getElementById('filter').value.trim() || undefined;
+      const variables = collectVariables();
+
+      if (!account || !guid) {
+        showError('Please fill in Account ID and Dashboard GUID');
+        return;
+      }
+
+      if (duration === 'custom') {
+        duration = document.getElementById('duration-custom').value.trim();
+        if (!duration || isNaN(duration)) {
+          showError('Please enter a valid custom duration in milliseconds');
+          return;
+        }
+        duration = parseInt(duration, 10);
+      } else {
+        duration = parseInt(duration, 10);
+      }
+
+      const loading = document.getElementById('loading');
+      loading.style.display = 'block';
+
+      try {
+        const body = {
+          account: parseInt(account, 10),
+          guid,
+          env,
+          duration,
+          variables,
+          ...(filter ? { filter } : {})
+        };
+
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        const data = await response.json();
+        loading.style.display = 'none';
+
+        if (response.ok && data.data && data.data.url) {
+          currentUrl = data.data.url;
+          showSuccess('Dashboard deeplink created successfully!', currentUrl);
+        } else {
+          showError(data.error || 'Failed to generate deeplink');
+        }
+      } catch (err) {
+        loading.style.display = 'none';
+        showError('Error: ' + err.message);
+      }
+    }
+
+    function showSuccess(message, url) {
+      const result = document.getElementById('result');
+      const title = document.getElementById('result-title');
+      const msg = document.getElementById('result-message');
+      const urlDiv = document.getElementById('result-url');
+
+      result.classList.remove('error');
+      title.textContent = '✅ Success!';
+      msg.textContent = message;
+      urlDiv.textContent = url;
+      result.style.display = 'block';
+      result.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showError(message) {
+      const result = document.getElementById('result');
+      const title = document.getElementById('result-title');
+      const msg = document.getElementById('result-message');
+      const urlDiv = document.getElementById('result-url');
+
+      result.classList.add('error');
+      title.textContent = '❌ Error';
+      msg.textContent = message;
+      urlDiv.textContent = '';
+      result.style.display = 'block';
+      result.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function copyToClipboard() {
+      if (!currentUrl) return;
+      navigator.clipboard.writeText(currentUrl).then(() => {
+        alert('Deeplink copied to clipboard!');
+      }).catch(() => {
+        alert('Failed to copy. Please try again.');
+      });
+    }
+
+    function openInNewTab() {
+      if (!currentUrl) return;
+      window.open(currentUrl, '_blank');
+    }
+  </script>
+</body>
+</html>
