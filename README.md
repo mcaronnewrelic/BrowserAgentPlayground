@@ -92,6 +92,31 @@ The `app` at the end starts only the site. A plain `docker compose up` also star
 - `newrelic-infra`: the New Relic infrastructure agent. It runs privileged with access to the whole host, and reports it as `browser.nru.to` (set `INFRA_DISPLAY_NAME` to change that) with the tag `project=agent-playground`, which is how the Agent Playground workload finds it.
 - `traffic`: simulated visitors. By default they visit the public site, not your local one. See [traffic/README.md](traffic/README.md).
 
+#### Process reporting
+
+The infrastructure agent's `NRIA_INCLUDE_MATCHING_METRICS` allowlist in [compose.yaml](compose.yaml) reports `ProcessSample` only for `node`, `noisy-neighbor`, `caddy`, `dockerd`, `containerd` and `newrelic-infra`. These retain the demo application, the noisy-neighbor culprit and supporting services. The exercise uses `--keep-name` so its stress workers also match `noisy-neighbor`.
+
+Browser workers (including headless Chrome, Firefox and WebKit), `sleep`, shells and other processes are not reported individually. Their resource use still contributes to host and container metrics. The filter matches process names, not container names, so both the app and simulator's Node.js coordinator are retained as `node`. This intentionally trades visibility into other processes for a cleaner investigation.
+
+After pulling the change, recreate only the infrastructure agent (no image rebuild needed):
+
+```bash
+sudo docker compose up -d --no-deps newrelic-infra
+sudo docker compose logs --tail=50 newrelic-infra
+```
+
+Allow a few collection cycles, then check newly reported process names in New Relic:
+
+```sql
+SELECT count(*) FROM ProcessSample
+WHERE entityName = 'browser.nru.to'
+FACET commandName SINCE 5 minutes ago LIMIT MAX
+```
+
+Replace the host name if you changed `INFRA_DISPLAY_NAME`. Historical samples remain until retention expires, so the query window must fall entirely after the restart. `noisy-neighbor` appears only while the exercise runs. To restore reporting of all processes, remove `NRIA_INCLUDE_MATCHING_METRICS` and recreate the agent again.
+
+See New Relic's [agent configuration template](https://github.com/newrelic/infrastructure-agent/blob/1.80.5/assets/examples/infrastructure/newrelic-infra-template.yml.example) for the `include_matching_metrics` syntax.
+
 Without Compose:
 
 ```bash

@@ -51,6 +51,8 @@ services:
       # Report per-process metrics (ProcessSample). Off by default in recent agents. The noisy-neighbor
       # bonus exercise needs it, so students can trace host load down to the busy process. See exercises/.
       NRIA_ENABLE_PROCESS_METRICS: "true"
+      # Keep the app, investigation culprit and supporting services; omit browser workers and helper processes.
+      NRIA_INCLUDE_MATCHING_METRICS: '{"process.name":["node","noisy-neighbor","caddy","dockerd","containerd","newrelic-infra"]}'
       # Becomes a tag on the host entity; the Agent Playground workload finds the host by it.
       NRIA_CUSTOM_ATTRIBUTES: '{"project":"agent-playground"}'
     logging: *logging
