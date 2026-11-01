@@ -18,6 +18,10 @@ on:
         type: choice
         options: [all, dashboards, synthetics, alerts, service-levels, workload]
         default: all
+      update:
+        description: Update existing dashboards from their JSON files (dashboards changes only)
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
@@ -44,6 +48,7 @@ jobs:
           NEW_RELIC_API_KEY: ${{ secrets.NEW_RELIC_API_KEY }}
           ALERT_EMAIL: ${{ vars.NEW_RELIC_ALERT_EMAIL }}
           STEP: ${{ inputs.step || 'all' }}
+          DASHBOARD_UPDATE: ${{ inputs.update && '1' || '' }}
         run: |
           case "$STEP" in
             all) bash newrelic/setup.sh ;;
