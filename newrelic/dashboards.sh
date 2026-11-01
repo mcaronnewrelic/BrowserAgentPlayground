@@ -2,6 +2,10 @@
 # Creates each dashboard in newrelic/dashboards/*.json that doesn't exist yet, matched by the dashboard's name.
 # Queries in the files are pointed at NEW_RELIC_ACCOUNT_ID, so the same files work for another account.
 #
+# With DASHBOARD_UPDATE=1, dashboards that already exist are updated in place from the files instead
+# (same GUID, so links to them keep working) - that is how a wording fix in a text widget reaches the
+# live dashboard. Without it, existing dashboards are left exactly as they are.
+#
 #   NEW_RELIC_API_KEY=NRAK-... bash newrelic/dashboards.sh
 # GraphQL is single-quoted on purpose: its $names are GraphQL variables, not shell ones.
 # shellcheck disable=SC2016
@@ -12,7 +16,7 @@ DASHBOARD_DIR="${DASHBOARD_DIR:-$(dirname "$0")/dashboards}"
 for file in "$DASHBOARD_DIR"/*.json; do
   name="$(jq -r '.name' "$file")"
   guid="$(entity_guid "$name" "type = 'DASHBOARD'")"
-  if [[ -n "$guid" ]]; then
+  if [[ -n "$guid" && -z "${DASHBOARD_UPDATE:-}" ]]; then
     log "Dashboard exists, skipped: $name ($guid)"
     continue
   fi
@@ -21,6 +25,14 @@ for file in "$DASHBOARD_DIR"/*.json; do
   dashboard="$(jq --argjson account "$NEW_RELIC_ACCOUNT_ID" '
     del(.guid, .pages[].guid, .pages[].widgets[].id)
     | (.. | objects | select(has("accountIds")) | .accountIds) |= [$account]' "$file")"
+  if [[ -n "$guid" ]]; then
+    result="$(nerdgraph 'mutation($guid: EntityGuid!, $dashboard: DashboardInput!) {
+        dashboardUpdate(guid: $guid, dashboard: $dashboard) { entityResult { guid name } errors { description type } }
+      }' "$(jq -n --arg guid "$guid" --argjson dashboard "$dashboard" '{guid: $guid, dashboard: $dashboard}')")"
+    check_result "$result" '.dashboardUpdate'
+    log "Dashboard updated: $name ($guid)"
+    continue
+  fi
   result="$(nerdgraph 'mutation($account: Int!, $dashboard: DashboardInput!) {
       dashboardCreate(accountId: $account, dashboard: $dashboard) { entityResult { guid name } errors { description type } }
     }' "$(jq -n --argjson account "$NEW_RELIC_ACCOUNT_ID" --argjson dashboard "$dashboard" '{account: $account, dashboard: $dashboard}')")"

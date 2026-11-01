@@ -110,7 +110,7 @@
           "layout": { "column": 1, "row": 1, "width": 12, "height": 2 },
           "visualization": { "id": "viz.markdown" },
           "rawConfiguration": {
-            "text": "## A deploy broke it\nErrors run for the **second quarter of each hour (:30–:44 UTC)**, right after a deploy marker. **Case closed:** the error spike lines up with a `demo-*` deployment, and the cause is a `TypeError` reading `tier` on an undefined value."
+            "text": "## A deploy broke it\nErrors run for the **third quarter of each hour (:30–:44 UTC)**, right after a deploy marker. **Case closed:** the error spike lines up with a `demo-*` deployment, and the cause is a `TypeError` reading `tier` on an undefined value."
           }
         },
         {
