@@ -2,3 +2,12 @@ node_modules/
 .env
 *.log
 .DS_Store
+
+# Terraform: provider downloads, state (it holds secrets), and local variable files
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+*.auto.tfvars
+crash.log
+tfplan

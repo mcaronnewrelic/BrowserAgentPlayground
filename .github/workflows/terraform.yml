@@ -1,0 +1,67 @@
+# The Terraform version of newrelic-setup.yml: the same dashboards, alerts, service levels, workload and
+# synthetics, defined in terraform/. Unlike the scripts it also fixes drift: anything changed or deleted in
+# New Relic is put back to match the files.
+#
+# Manual only ("Run workflow" on the Actions tab). Pick "plan" to see what would change, "apply" to change it.
+# State lives in S3 (see terraform/versions.tf), so every run sees what earlier runs and your laptop did.
+#
+# Secret:   NEW_RELIC_API_KEY (User key, NRAK-...), the one the other workflows use.
+# Variable: AWS_TERRAFORM_ROLE_ARN, an IAM role GitHub can assume through OIDC with access to the state bucket.
+name: Terraform
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: plan only shows changes; apply makes them
+        type: choice
+        options: [plan, apply]
+        default: plan
+
+permissions:
+  contents: read
+  id-token: write # lets the job ask AWS for temporary credentials
+
+concurrency:
+  group: terraform
+
+jobs:
+  terraform:
+    name: Terraform ${{ inputs.action }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: terraform
+    env:
+      TF_VAR_api_key: ${{ secrets.NEW_RELIC_API_KEY }}
+      TF_IN_AUTOMATION: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_TERRAFORM_ROLE_ARN }}
+          aws-region: us-west-2
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_wrapper: false
+
+      - run: terraform init -input=false
+
+      - run: terraform validate
+
+      - name: Plan
+        run: terraform plan -input=false -out=tfplan
+
+      - name: Apply
+        if: inputs.action == 'apply'
+        run: terraform apply -input=false tfplan
+
+      - name: Summary
+        if: always()
+        run: |
+          { echo '### Terraform ${{ inputs.action }}'; echo; echo '```'; terraform show -no-color tfplan 2>&1 | tail -n 40; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
