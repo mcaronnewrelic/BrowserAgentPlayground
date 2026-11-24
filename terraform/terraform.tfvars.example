@@ -1,0 +1,9 @@
+# Copy to terraform.tfvars (gitignored) and fill in. Or skip the file and export TF_VAR_api_key=NRAK-...
+api_key = "NRAK-REPLACE_ME"
+
+# Everything below is optional; these are the defaults.
+# account_id        = 6932347
+# region            = "US"
+# alert_email       = "demo@newrelicuniversity.com"
+# site_url          = "https://browser.nru.to"
+# monitor_locations = ["US_WEST_1", "US_EAST_1"]
